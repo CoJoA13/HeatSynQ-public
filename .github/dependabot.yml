@@ -1,0 +1,53 @@
+version: 2
+
+# The public source repository. Dependabot opens version-update and security-update PRs here, under the
+# maintained source tree's holds, which security updates honour too:
+# - no major upgrades: each needs a deliberate migration;
+# - next and eslint-config-next move together, only after the development server's memory probe passes;
+# - pdfmake stays on the version the PDF renderer's layout hooks are written against.
+# Prisma's packages move in lockstep, security updates included. Every change here arrives from the
+# maintained source tree, so a Dependabot PR is a signal to make the same move there; the next export
+# replaces this tree. erp/tests/public-dependabot.test.ts holds this policy.
+
+updates:
+  - package-ecosystem: npm
+    directory: /erp
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:17"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 3
+    cooldown:
+      default-days: 3
+    versioning-strategy: increase
+    ignore:
+      # Major upgrades require a deliberate migration.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+      # Change both packages together, and only after the development server's memory probe passes.
+      - dependency-name: next
+      - dependency-name: eslint-config-next
+      # The PDF renderer's layout hooks are written against this version. Like the Next hold, this stops
+      # security PRs for pdfmake too.
+      - dependency-name: pdfmake
+    groups:
+      # prisma, @prisma/client and @prisma/adapter-pg must move in lockstep.
+      prisma:
+        patterns:
+          - "prisma"
+          - "@prisma/*"
+      # Groups default to version updates only, so without this an advisory against one Prisma package
+      # would raise a single-package security PR and break the lockstep.
+      prisma-security:
+        applies-to: security-updates
+        patterns:
+          - "prisma"
+          - "@prisma/*"
+      npm-minor-and-patch:
+        update-types:
+          - minor
+          - patch
+        exclude-patterns:
+          - "prisma"
+          - "@prisma/*"

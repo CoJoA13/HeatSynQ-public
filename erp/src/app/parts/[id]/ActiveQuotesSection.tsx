@@ -1,0 +1,84 @@
+"use client";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { api } from "@/lib/fetcher";
+import { gate } from "@/lib/permission-ui";
+import { quoteWindowLabel } from "@/lib/quote-window";
+import { CARD, LINK, NOTICE } from "@/lib/ui-classes";
+
+// Mirrors src/server/quote-links.ts's QuoteLinkCandidate — local copy, the client/server
+// boundary rule (CLAUDE.md), same as every other type on this page.
+type QuoteLinkCandidate = {
+  quoteLineId: string;
+  quoteId: string;
+  quoteNumber: number;
+  effectiveDate: string;
+  expiryDate: string;
+};
+
+/**
+ * The active-quote indicator (spec §4.2): the part's in-date OPEN quote line(s), latest-effective
+ * first, each linked to its quote.
+ *
+ * Served by `GET /api/quotes/eligible` with NO receivedDate — the route defaults an absent date
+ * to TODAY, and "eligible as of today" IS "in-date and OPEN" (§5.2's one rule), already in
+ * ruling 7's latest-effective-first order. No new read was needed (the Task 9 brief's own
+ * closest-fit call), and the served order is rendered as-is — no client-side re-sort to drift
+ * from the server's tie-break. The route is gated orders.view OR quotes.view (#101 — it serves
+ * order entry's pick-list AND this indicator); a viewer with neither gets the reason named,
+ * never a silently absent section — and the §5.16 message names quotes.view, the quotes-area
+ * vocabulary this parts-screen read speaks (owner ruling 5, 2026-08-12).
+ */
+export function ActiveQuotesSection({
+  partId, customerId, perms,
+}: {
+  partId: string;
+  customerId: string;
+  perms: string[] | undefined;
+}) {
+  const quotesGate = gate(perms, "quotes.view");
+  const ordersGate = gate(perms, "orders.view");
+  const allowed = quotesGate.allowed || ordersGate.allowed;
+  const [rows, setRows] = useState<QuoteLinkCandidate[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!allowed) return;
+    let stale = false;
+    const qs = new URLSearchParams({ customerId, partId });
+    api<{ candidates: QuoteLinkCandidate[] }>(`/api/quotes/eligible?${qs}`).then((p) => {
+      if (!stale) setRows(p.candidates);
+    }).catch((e) => {
+      // Its own error, rendered in place — never the page's shared `error` a later save clears,
+      // and never a silent catch (the loadError precedent on this page).
+      if (!stale) setError((e as Error).message);
+    });
+    return () => { stale = true; };
+  }, [partId, customerId, allowed]);
+
+  return (
+    <section className={`${CARD} mb-6`}>
+      <h2 className="mb-2 font-medium">Active quotes</h2>
+      {!allowed ? (
+        <p className="text-sm text-ink-500">{quotesGate.title} to see which open quotes cover this part.</p>
+      ) : error ? (
+        <p className={NOTICE.warning}>Could not load active quotes: {error}</p>
+      ) : rows === null ? (
+        <p className="text-sm text-ink-500">Loading…</p>
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-ink-500">No open quote covers this part today.</p>
+      ) : (
+        <ul className="space-y-1 text-sm">
+          {rows.map((r) => (
+            <li key={r.quoteLineId}>
+              <Link href={`/quotes/${r.quoteId}`} className={LINK}>
+                Quote #{r.quoteNumber}
+              </Link>{" "}
+              <span className="text-ink-500">— {quoteWindowLabel(r)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}

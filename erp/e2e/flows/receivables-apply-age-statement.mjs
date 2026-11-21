@@ -1,0 +1,480 @@
+// The north-star A/R flow (Task 17, P5B design spec §11/§4/§6/§8): seeds a shipped -> invoiced
+// order (the 5A `invoice-shipped-order.mjs` precedent — same createOrderViaUi/startNewShipment/
+// waitForShipmentPage helpers, same /invoicing "Ready to invoice" -> Create -> Finalize path),
+// then drives the NEW `/receivables` screens end to end: a deposit batch, a check payment applied
+// as a partial payment + a small write-off (leaving an on-account remainder), the aging report
+// (the invoice's own bucket + the Unapplied column), a printed, archived statement (combined
+// family, the finance-charge figure shown — never billed, #162) that reappears in the customer's
+// own Documents list, a
+// STANDALONE bad-debt write-off and its undo on the customer's A/R section (#77), and finally a
+// SECOND check that settles the invoice and takes the early-pay discount.
+//
+// The #77 round trip is deliberately NET-ZERO and sits between the statement and the settling
+// check: it writes off the whole 470.00 still open (proving the invoice stays listed and flagged
+// at zero instead of vanishing — the reason the owner put the void surface in scope), then voids
+// it, putting the 470.00 back for the settling apply below. All it leaves behind is one
+// soft-deleted Application, which no balance, aging, close or GL read ever sees.
+//
+// Fixture math (e2e/lib/db-fixtures.ts's `arCustomer`/`arPart`/`arTerms`/`arPaymentType`): one
+// priced OPERATION line, unitPrice 100.00 x qty 10 = invoice total 1000.00 (`surchargeOptOut` +
+// `taxable: false` on the fixture customer keep this exact — no surcharge/tax line rides along).
+// Terms are 2/10/30 (netDays 30, discountPercent 2, discountDays 10) and both checks are received
+// today, well inside the 10-day window. **The two applies are the two halves of #69** (owner ruling
+// 2026-08-19: an early-pay discount is earned only by a payment that SETTLES the invoice) — the
+// first is refused the offer and asserts its ABSENCE, the second earns it. Before that ruling the
+// first apply took 20.00 on a partial payment.
+//
+//   FIRST APPLY — a partial payment; no discount offered (700.00 cannot settle 1,000.00):
+//   check received:              700.00
+//   PAYMENT applied to invoice:  500.00
+//   WRITE_OFF applied:            30.00
+//   ---------------------------------------
+//   applied to the invoice:      530.00  -> invoice open balance 1000.00 - 530.00 = 470.00
+//                                            (CURRENT bucket: dueDate = invoiceDate + 30 days,
+//                                            not yet past due)
+//   on-account (unapplied cash): 700.00 (check) - 500.00 (PAYMENT-type applications) = 200.00
+//
+// So the aging report's row for this customer must show Current 470.00, Unapplied 200.00, Net
+// 270.00 — the exact figures asserted below, and the statement's total due must match that Net.
+//
+//   SECOND APPLY — the settling remittance, which DOES earn the discount (runs LAST, after every
+//   aging/statement assertion, so it moves none of the figures above):
+//   eligible discount:             9.40  (2% x the 470.00 still open, under the 20.00 entitlement)
+//   check received:              460.60  (= 470.00 - 9.40, exactly the offer's boundary)
+//   PAYMENT applied:             460.60
+//   DISCOUNT taken:                9.40
+//   ---------------------------------------
+//   invoice open balance:          0.00, second check fully applied (on account 0.00)
+//
+// Never `page.waitForURL` for a route -> route/[id] hop (the Phase 3/4/5A trap, spec §13,
+// re-armed in invoice-shipped-order.mjs) — every wait below is for post-navigation-ONLY content.
+import assert from "node:assert/strict";
+import { answerModal, modalTitle } from "../lib/modal.mjs";
+import { assertNeverVisible, waitForValue } from "../lib/ui.mjs";
+import { createOrderViaUi, startNewShipment, orderPanel, waitForShipmentPage } from "../lib/orders.mjs";
+import { openRecordTab } from "../lib/record-tabs.mjs";
+import { openBatchesView } from "../lib/receivables.mjs";
+import { glanceValue, invoicesSection as registerSection, openInvoicingView } from "../lib/invoicing.mjs";
+
+const WRITE_OFF_REASON =
+  "E2E receivables-apply-age-statement flow: small collection adjustment, demonstrating write-off UX for the demo.";
+const BAD_DEBT_REASON =
+  "E2E receivables-apply-age-statement flow: standalone bad-debt write-off (#77), voided again below.";
+const VOID_REASON =
+  "E2E receivables-apply-age-statement flow: undoing the bad-debt write-off from the screen that made it.";
+
+/** Both `/invoicing`'s two sections are plain `<section>`s, each headed by its own `<h2>` — the
+ *  `invoice-shipped-order.mjs` `sectionByHeading` precedent, duplicated here (private there). */
+function sectionByHeading(page, headingText) {
+  return page.locator("section").filter({ has: page.getByRole("heading", { name: headingText, exact: true }) });
+}
+
+export async function run(page, shot, ctx) {
+  const { fixtures } = ctx;
+
+  // --- Seed a shipped -> invoiced order (the invoice-shipped-order.mjs precedent). ---
+  const order = await createOrderViaUi(page, ctx, {
+    customerCode: fixtures.arCustomerCode,
+    lines: [{ partNumber: fixtures.arPartNumber, qty: 10 }],
+  });
+  await shot("order-created");
+
+  await startNewShipment(page, ctx, fixtures.arCustomerId, [order]);
+  const panel = orderPanel(page, `#${order.number}`);
+  await waitForValue(panel.getByLabel("Line 1 ship-now quantity", { exact: true }), "10");
+  await page.getByRole("button", { name: "Save shipment", exact: true }).click();
+  await waitForShipmentPage(page);
+  await shot("shipment-saved");
+
+  // --- /invoicing: create, then finalize, the invoice. ---
+  await page.goto(`${ctx.baseURL}/invoicing`);
+  await page.getByRole("heading", { name: "Invoicing", exact: true }).waitFor({ state: "visible" });
+  const readySection = sectionByHeading(page, "Ready to invoice");
+  const readyRow = readySection.locator("tr").filter({ has: page.getByText(String(order.number), { exact: true }) });
+  await readyRow.waitFor({ state: "visible", timeout: 15000 });
+  await readyRow.locator('input[type="checkbox"]').check();
+
+  const created = page.waitForResponse((res) =>
+    new URL(res.url()).pathname === "/api/invoices" && res.request().method() === "POST" && res.ok());
+  await page.getByRole("button", { name: "Create invoices", exact: true }).click();
+  await created;
+
+  await openInvoicingView(page, "Register"); // PR 6: the register is behind its view
+  const invoicesSection = registerSection(page);
+  const invoiceRow = invoicesSection.locator("tr")
+    .filter({ has: page.getByText(String(order.number), { exact: true }) });
+  await invoiceRow.waitFor({ state: "visible", timeout: 15000 });
+  await invoiceRow.getByRole("link").click();
+
+  const invoiceHeading = page.getByRole("heading", { name: new RegExp(`Invoice.*${order.number}`) });
+  await invoiceHeading.waitFor({ state: "visible", timeout: 20000 });
+  await shot("invoice-draft");
+  await openRecordTab(page, "Lines"); // PR 6: the grid is on the Lines tab
+
+  // #309: invoice lines use the same local grid reset, before finalization freezes the paper.
+  const description = page.getByLabel("Line 1 description", { exact: true });
+  const originalDescription = await description.inputValue();
+  await description.fill("Discard this unsaved invoice description");
+  await page.getByRole("button", { name: "Discard changes to invoice lines", exact: true }).click();
+  await waitForValue(description, originalDescription);
+
+  // One priced OPERATION line, no surcharge (`surchargeOptOut`) and no tax (`taxable: false` on
+  // the fixture customer) — total = subtotal = 1000.00 (see the file-header fixture-math
+  // comment). Caught here, before the money math downstream gets harder to debug.
+  // The total is the At a glance card's Invoice total row (PR 6).
+  assert.equal(await glanceValue(page, "Invoice total").textContent(), "$1,000.00",
+    "the AR fixture's one priced operation (100.00 x 10, no surcharge/tax) must total 1000.00");
+
+  await page.getByRole("button", { name: "Finalize invoice", exact: true }).click();
+  await page.getByText("Finalized", { exact: true }).waitFor({ state: "visible", timeout: 15000 });
+  await shot("invoice-finalized");
+
+  // --- /receivables: open a new deposit batch. ---
+  const today = new Date().toISOString().slice(0, 10);
+
+  await page.goto(`${ctx.baseURL}/receivables`);
+  await page.getByRole("heading", { name: "Receivables", exact: true }).waitFor({ state: "visible" });
+  // The three views are the status filter's settings (PR 7 of the UX redesign): Posted, All and
+  // back to Open each light their pill and re-read the list (the Open read lands under its own
+  // response). Then the header's New batch button only takes the cursor to the form: the Deposit
+  // date box is focused and no batch is created by it (the request count is read before and after).
+  for (const view of ["Posted", "All", "Open"]) {
+    const read = page.waitForResponse((res) => new URL(res.url()).pathname === "/api/receivables/batches" && res.ok());
+    await openBatchesView(page, view);
+    await read;
+  }
+  let batchPosts = 0;
+  const countPosts = (req) => { if (req.method() === "POST" && new URL(req.url()).pathname === "/api/receivables/batches") batchPosts++; };
+  page.on("request", countPosts);
+  await page.getByRole("button", { name: "New batch", exact: true }).click();
+  const depositDate = page.getByLabel("Deposit date", { exact: true });
+  assert.equal(await depositDate.evaluate((el) => el === document.activeElement), true,
+    "the header's New batch button puts the cursor in Deposit date");
+  await depositDate.fill(today);
+  assert.equal(batchPosts, 0, "the header's New batch button creates nothing");
+  page.off("request", countPosts);
+  await page.getByRole("button", { name: "Create batch", exact: true }).click();
+
+  const batchHeading = page.getByRole("heading", { name: /^Batch #\d+/ });
+  await batchHeading.waitFor({ state: "visible", timeout: 15000 });
+  // Recorded for cleanup's id-driven backstop (run.mjs's `state.created` comment) — a
+  // `ReceiptBatch` this flow creates but a later step fails before ever paying into is otherwise
+  // invisible to the customer-scoped `deleteReceivables` sweep (no `Payment` row to find it by).
+  ctx.created.receivablesBatchId = page.url().split("/").pop();
+  // #163: this batch was opened with the Control total left blank, so it has been proved against
+  // NOTHING — and the Balance tile has to say so instead of rendering the reassuring 0.00 that
+  // `(controlTotal ?? enteredTotal) − enteredTotal` used to collapse to. Asserted here rather than
+  // merely screenshotted: this is the ONE content-level check on #163's third display state.
+  await page.getByText("Not proved — no control total", { exact: true })
+    .waitFor({ state: "visible", timeout: 15000 });
+  await shot("batch-created");
+
+  // --- Add a check payment. ---
+  // NOT `getByLabel(..., { exact: true })` for these two: BatchDetail.tsx wraps each `<select>`
+  // directly inside its own `<label>` text (nesting, not `aria-label`/`for`), and Playwright's
+  // getByLabel computes that label's match text as the label's FULL textContent — which for a
+  // `<select>` child recursively includes every `<option>`'s own rendered text too. So the
+  // computed string is "Payer customerSelect…E2EARCUST · E2E AR Customer…", never literally
+  // "Payer customer" — `exact: true` then matches nothing (verified live against this exact page:
+  // 0 matches with `exact: true`, 1 without). `getByRole("combobox")`'s OWN accessible-name
+  // computation does collapse to the clean "Payer customer" (confirmed via `ariaSnapshot()`), so
+  // this is a getByLabel-specific quirk, not a real accessibility defect in the app — but it means
+  // a `<select>` wrapped by a label needs a scoped `label ... select` locator instead (a plain
+  // `<input>` has no text content of its own to pollute the label with — the "Amount"/"Check #"/
+  // "Received date" fields below are unaffected and keep `exact: true`).
+  await page.locator("label", { hasText: "Payer customer" }).locator("select").selectOption(fixtures.arCustomerId);
+  await page.locator("label", { hasText: "Payment type" }).locator("select").selectOption(fixtures.arPaymentTypeId);
+  await page.getByLabel("Amount", { exact: true }).fill("700.00");
+  await page.getByLabel("Check #", { exact: true }).fill("E2E-1001");
+  await page.getByLabel("Received date", { exact: true }).fill(today);
+  await page.getByRole("button", { name: "Add payment", exact: true }).click();
+
+  const paymentRow = page.locator("tr").filter({ has: page.getByText(fixtures.arPaymentTypeName, { exact: true }) });
+  await paymentRow.waitFor({ state: "visible", timeout: 15000 });
+  await shot("payment-added");
+
+  // --- Apply: a partial payment + a small write-off, leaving an on-account remainder (see the
+  // file-header fixture-math comment for the exact figures). ---
+  await paymentRow.getByRole("button", { name: "Apply", exact: true }).click();
+  // Scoped to the ApplyPanel's OWN nested `<table>` (found via its unique "Write-off" column
+  // header's NEAREST ancestor `<table>`), not a bare `page.locator("tr")` and not even
+  // `page.locator("table").filter({ has: ... })` — the panel renders inside `<td colSpan={8}>` of
+  // a wrapper `<tr>` in the OUTER Payments table, so BOTH `tr` (candidate row vs. that outer
+  // wrapper row) and `table` (inner ApplyPanel table vs. the outer Payments table, which also
+  // "has" the header transitively through its nested descendant) go ambiguous under a `has:`
+  // filter — a strict-mode violation caught live, twice, during this task's own development.
+  // `ancestor::table[1]` picks the CLOSEST table, sidestepping the "has" transitivity trap.
+  const applyTable = page.getByRole("columnheader", { name: "Write-off", exact: true })
+    .locator("xpath=ancestor::table[1]");
+  const invoiceCandidateRow = applyTable.locator("tbody tr")
+    .filter({ has: page.getByText(String(order.number), { exact: true }) });
+  await invoiceCandidateRow.waitFor({ state: "visible", timeout: 15000 });
+
+  // #309: abandoning an application clears every entry field without applying or closing it.
+  await invoiceCandidateRow.getByLabel(`${order.number} amount`, { exact: true }).fill("123.00");
+  await invoiceCandidateRow.getByLabel(`${order.number} write-off amount`, { exact: true }).fill("5.00");
+  await invoiceCandidateRow.getByLabel(`${order.number} write-off reason`, { exact: true }).fill("Discard this reason");
+  // A tab switch is never a departure (ruling 7; src/lib/receipt-batch-page.ts): the dirty apply
+  // grid badges Payments, History opens and closes over it, and the typed text is still there.
+  await page.getByRole("tab", { name: "Payments Unsaved changes", exact: true }).waitFor({ state: "visible", timeout: 15000 });
+  await openRecordTab(page, "History");
+  await openRecordTab(page, "Payments");
+  await waitForValue(invoiceCandidateRow.getByLabel(`${order.number} amount`, { exact: true }), "123.00");
+  await waitForValue(invoiceCandidateRow.getByLabel(`${order.number} write-off reason`, { exact: true }), "Discard this reason");
+  await page.getByRole("button", { name: "Discard changes to payment application", exact: true }).click();
+  for (const field of ["amount", "write-off amount", "write-off reason"]) {
+    await waitForValue(invoiceCandidateRow.getByLabel(`${order.number} ${field}`, { exact: true }), "");
+  }
+  await invoiceCandidateRow.waitFor({ state: "visible" });
+
+  await invoiceCandidateRow.getByLabel(`${order.number} amount`, { exact: true }).fill("500.00");
+  // #69: the "Take 20.00" checkbox renders only when the server has a figure to offer
+  // (BatchDetail.tsx). This 700.00 check cannot settle the 1,000.00 invoice, so the affordance is
+  // absent — asserted rather than merely not-clicked, because a silently reappearing checkbox is
+  // exactly how the pre-ruling behavior would creep back in.
+  assert.equal(await invoiceCandidateRow.locator('input[type="checkbox"]').count(), 0,
+    "no early-pay discount may be offered on a payment that cannot settle the invoice (#69)");
+  // #155 arm 2: the checkbox is NOT the only thing the Discount cell can render any more, and its
+  // absence used to be the whole of what this cell said — an operator saw an empty column and had
+  // no way to learn that 20.00 was within reach. The hint is text (never a disabled control, which
+  // would break the count assertion directly above, correctly). Its figures are the SERVER's:
+  // 980.00 = the 1,000.00 open net of the 20.00 it would earn. The sentence deliberately says
+  // "applying … here", not "remit …", because the guard measures the receipt's UNAPPLIED cash —
+  // see `DiscountOffer`'s docblock in applications.ts.
+  await invoiceCandidateRow.getByText("Applying $980.00 here would earn $20.00.", { exact: true })
+    .waitFor({ state: "visible", timeout: 15000 });
+  await invoiceCandidateRow.getByLabel(`${order.number} write-off amount`, { exact: true }).fill("30.00");
+  await invoiceCandidateRow.getByLabel(`${order.number} write-off reason`, { exact: true }).fill(WRITE_OFF_REASON);
+  await shot("apply-panel-filled");
+
+  // The toggle button on `paymentRow` reads "Hide" once expanded (BatchDetail.tsx), so the ONLY
+  // "Apply" button left on the page at this point is the ApplyPanel's own submit button.
+  const applied = page.waitForResponse((res) =>
+    new URL(res.url()).pathname === "/api/receivables/applications" && res.request().method() === "POST" && res.ok());
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+  await applied;
+
+  await page.getByText("Payment $700.00 · Applied $500.00 · On account $200.00", { exact: true })
+    .waitFor({ state: "visible", timeout: 15000 });
+  await shot("applied");
+
+  // The Payments table's own "On account" column reflects the same figure.
+  const onAccountCell = paymentRow.locator("td").nth(5);
+  assert.equal((await onAccountCell.textContent()).trim(), "$200.00",
+    "the payment's on-account column must show the 200.00 unapplied remainder");
+
+  // --- Aging report: the invoice's open balance (1000.00 - 530.00 = 470.00) sits in the CURRENT
+  // bucket (dueDate = invoiceDate + 30 days, not yet past due); Unapplied carries the payment's
+  // 200.00 on-account cash; Net = 470.00 - 200.00 = 270.00. ---
+  await page.goto(`${ctx.baseURL}/receivables/aging`);
+  await page.getByRole("heading", { name: "A/R Aging", exact: true }).waitFor({ state: "visible" });
+  // Scoped `label ... select`, not `getByLabel(..., { exact: true })` — the same wrapping-label
+  // `<select>` quirk as the batch's "Payer customer"/"Payment type" fields above.
+  await page.locator("label", { hasText: "Customer" }).locator("select").selectOption(fixtures.arCustomerId);
+
+  const agingRow = page.locator("tbody tr").filter({ has: page.getByText(fixtures.arCustomerCode, { exact: false }) });
+  await agingRow.waitFor({ state: "visible", timeout: 15000 });
+  const agingCells = agingRow.locator("td");
+  assert.equal((await agingCells.nth(1).textContent()).trim(), "$470.00", "Current bucket must hold the open balance");
+  assert.equal((await agingCells.nth(2).textContent()).trim(), "$0.00", "1–30 bucket must be empty — nothing is past due yet");
+  assert.equal((await agingCells.nth(6).textContent()).trim(), "$200.00", "Unapplied column must carry the on-account cash");
+  assert.equal((await agingCells.nth(7).textContent()).trim(), "$270.00", "Net column must be buckets minus unapplied");
+  await page.getByText("Unapplied credit and cash reduce Net.", { exact: true }).waitFor({ state: "visible" });
+  await shot("aging-report");
+
+  // --- Statement: combined family, finance charge shown (not billed). Preselected via
+  // `?customerId=` (Statements.tsx reads it straight off the URL — no dropdown pick needed). ---
+  await page.goto(`${ctx.baseURL}/receivables/statements?customerId=${fixtures.arCustomerId}`);
+  await page.getByRole("heading", { name: "Statements", exact: true }).waitFor({ state: "visible" });
+  await page.getByLabel("Combine family", { exact: true }).check();
+  // #162 relabelled this control — "Assess" read as "levy", and the figure is only ever shown.
+  await page.getByLabel("Show finance charge (not billed)", { exact: true }).check();
+
+  const totalDueLine = page.locator("p", { hasText: "Total due:" });
+  await totalDueLine.waitFor({ state: "visible", timeout: 15000 });
+  assert.match((await totalDueLine.textContent()) ?? "", /270\.00/, "the statement's total due must match the aging report's Net");
+  await shot("statement-preview");
+
+  const documentsSection = sectionByHeading(page, "Saved statements");
+  const printed = page.waitForResponse((res) =>
+    new URL(res.url()).pathname === "/api/receivables/statements" && res.request().method() === "POST" && res.ok());
+  const popup = page.context().waitForEvent("page", { timeout: 5000 }).catch(() => null);
+  await page.getByRole("button", { name: "Print statement", exact: true }).click();
+  await printed;
+  await (await popup)?.close().catch(() => {});
+
+  await documentsSection.getByRole("link", { name: "Statement", exact: true })
+    .waitFor({ state: "visible", timeout: 15000 });
+  await shot("statement-printed-archived");
+
+  // --- The STANDALONE bad-debt write-off and its undo (#77), on the customer's own A/R section.
+  // A deliberate NET-ZERO round trip, inserted here rather than at the tail: the whole point of the
+  // owner's void ruling is that a fully written-off invoice must stay reachable, which can only be
+  // shown while there IS an open balance — and the settling apply below needs the same 470.00 the
+  // void puts back. It leaves nothing behind but one soft-deleted Application (invisible to every
+  // balance, the aging, the close and the GL delta, all of which read live rows only), so every
+  // figure asserted above and below is untouched. ---
+  await page.goto(`${ctx.baseURL}/customers/${fixtures.arCustomerId}`);
+  await openRecordTab(page, "Receivables"); // the section is on its own tab (PR 8)
+  const receivables = sectionByHeading(page, "Receivables");
+  const netBalance = receivables.locator("p", { hasText: "Net balance:" });
+  await netBalance.waitFor({ state: "visible", timeout: 15000 });
+  assert.match((await netBalance.textContent()) ?? "", /Net balance:\s*\$270\.00/,
+    "the customer A/R section must open on the same 270.00 net the aging report and statement showed");
+  // PR 8: the At a glance card's Open balance is the section's Net, handed up once its read lands.
+  const openBalance = glanceValue(page, "Open balance");
+  await openBalance.filter({ hasText: "$270.00" }).waitFor({ state: "visible", timeout: 15000 });
+  assert.equal((await openBalance.textContent()).trim(), "$270.00", "the card's Open balance must read the section's Net");
+
+  // `arInvoiceRow`, not `invoiceRow`: that name is already taken at the top of this function by the
+  // /invoicing section's row. Same function scope, so the duplicate was a parse error that took the
+  // WHOLE flow down (see the fix-round note in task-4-report.md).
+  //
+  // WHY substring + `.first()` IS SAFE HERE, and is not the board shape #167a fixed (this comment
+  // covers the three identical lookups in this section — write-off, written-off, restored). The
+  // board is plant-wide, so any order's row can collide with any other's number; this table is the
+  // open-items list of ONE customer — the fixture's own, freshly created by `create()` — and every
+  // row in it is paper this flow raised. Its columns are document number, dates and money for that
+  // customer alone, so the only digits that could collide are this same fixture's, and the fixture
+  // raises exactly one invoice. `.first()` therefore cannot reach a stranger's row: there are no
+  // strangers in this table. Do NOT copy the shape to a plant-wide table — `.first()` silently
+  // picks a row instead of failing, which is precisely what makes it wrong there.
+  const arInvoiceRow = receivables.locator("tbody tr").filter({ hasText: String(order.number) }).first();
+  await arInvoiceRow.waitFor({ state: "visible", timeout: 15000 });
+  assert.equal((await arInvoiceRow.locator("td").nth(5).textContent()).trim(), "$470.00",
+    "the open-items row must carry the invoice's live open balance");
+
+  await arInvoiceRow.getByRole("button", { name: "Write off", exact: true }).click();
+  const writeOffAmount = receivables.getByLabel("Amount to write off", { exact: true });
+  // Owner ruling 2026-08-19: editable, defaulting to the FULL open balance. Asserting the DEFAULT
+  // (rather than typing over it) is what pins that half of the ruling.
+  await waitForValue(writeOffAmount, "470.00");
+  await receivables.getByLabel("Reason for the write-off", { exact: true }).fill(BAD_DEBT_REASON);
+  await shot("write-off-form-filled");
+
+  const wroteOff = page.waitForResponse((res) =>
+    new URL(res.url()).pathname === "/api/receivables/write-offs" && res.request().method() === "POST" && res.ok());
+  await receivables.getByRole("button", { name: "Write off balance", exact: true }).click();
+  await wroteOff;
+
+  // The invoice is settled to zero AND STILL LISTED, flagged — the void ruling's whole substance.
+  // Before #77 this row vanished here, and with it the only handle its undo had.
+  const writtenOffRow = receivables.locator("tbody tr").filter({ hasText: String(order.number) }).first();
+  await writtenOffRow.getByText("Written off", { exact: true }).waitFor({ state: "visible", timeout: 15000 });
+  assert.equal((await writtenOffRow.locator("td").nth(5).textContent()).trim(), "$0.00",
+    "a fully written-off invoice must read 0.00 open and still be on screen");
+  await netBalance.filter({ hasText: "-$200.00" }).waitFor({ state: "visible", timeout: 15000 });
+  assert.match((await netBalance.textContent()) ?? "", /Net balance:\s*-\$200\.00/,
+    "the net must fall to the on-account cash alone once the receivable is written off");
+  await openBalance.filter({ hasText: "-$200.00" }).waitFor({ state: "visible", timeout: 15000 });
+  assert.equal((await openBalance.textContent()).trim(), "-$200.00", "the card's Open balance must follow the written-off Net");
+  await shot("invoice-written-off");
+
+  // The undo, from the same screen that made it (§5.14).
+  const voided = page.waitForResponse((res) =>
+    /^\/api\/receivables\/applications\/[^/]+$/.test(new URL(res.url()).pathname)
+    && res.request().method() === "DELETE" && res.ok());
+  await receivables.getByRole("button", { name: "Void", exact: true }).click();
+  assert.match(await modalTitle(page), /Void the write-off of \$470\.00/);
+  await answerModal(page, { reason: VOID_REASON });
+  await voided;
+
+  await netBalance.filter({ hasText: "$270.00" }).waitFor({ state: "visible", timeout: 15000 });
+  const restoredRow = receivables.locator("tbody tr").filter({ hasText: String(order.number) }).first();
+  assert.equal((await restoredRow.locator("td").nth(5).textContent()).trim(), "$470.00",
+    "voiding the write-off must put the whole open balance back");
+  await assertNeverVisible(
+    restoredRow.getByText("Written off", { exact: true }),
+    "the written-off flag must be gone once the write-off is voided",
+  );
+  await shot("write-off-voided");
+
+  // --- LAST, and deliberately after every assertion above: a SECOND check that SETTLES the
+  // invoice, which is the only way an early-pay discount can be earned since #69. This is the
+  // discount's happy path — the checkbox rendered, checked, and driven through the route into a
+  // real DISCOUNT application — restored end to end after the first apply above lost it. It runs
+  // at the tail so the aging/statement fixture math it would otherwise move stays untouched.
+  //
+  //   invoice open after the first apply:  470.00
+  //   eligible discount:                     9.40  (2% x 470.00, under the 20.00 entitlement)
+  //   second check received:               460.60  (= 470.00 - 9.40, the settling remittance)
+  //   PAYMENT applied:                     460.60
+  //   DISCOUNT taken:                        9.40
+  //   ---------------------------------------------
+  //   invoice open balance:                  0.00, and the check is fully applied (on account 0.00)
+  //
+  // 460.60 is the offer's boundary exactly (`cash >= open - eligible`), so a cent lost anywhere in
+  // the chain shows up here as an absent checkbox rather than a wrong number.
+  await page.goto(`${ctx.baseURL}/receivables/batches/${ctx.created.receivablesBatchId}`);
+  await batchHeading.waitFor({ state: "visible", timeout: 15000 });
+  await page.locator("label", { hasText: "Payer customer" }).locator("select").selectOption(fixtures.arCustomerId);
+  await page.locator("label", { hasText: "Payment type" }).locator("select").selectOption(fixtures.arPaymentTypeId);
+  await page.getByLabel("Amount", { exact: true }).fill("460.60");
+  await page.getByLabel("Check #", { exact: true }).fill("E2E-1002");
+  await page.getByLabel("Received date", { exact: true }).fill(today);
+  await page.getByRole("button", { name: "Add payment", exact: true }).click();
+
+  // By CHECK NUMBER, not by payment type: both checks share this batch's one payment type now, so
+  // the `paymentRow` locator used earlier in this flow would match two rows from here on.
+  const settlingRow = page.locator("tr").filter({ has: page.getByText("E2E-1002", { exact: true }) });
+  await settlingRow.waitFor({ state: "visible", timeout: 15000 });
+  await settlingRow.getByRole("button", { name: "Apply", exact: true }).click();
+
+  const settleTable = page.getByRole("columnheader", { name: "Write-off", exact: true })
+    .locator("xpath=ancestor::table[1]");
+  const settleCandidateRow = settleTable.locator("tbody tr")
+    .filter({ has: page.getByText(String(order.number), { exact: true }) });
+  await settleCandidateRow.waitFor({ state: "visible", timeout: 15000 });
+
+  // The offer is present THIS time, and for the right amount — the mirror of the absence assertion
+  // on the first apply, and the half of #69 that would otherwise have no end-to-end coverage.
+  await settleCandidateRow.getByText(/^Take \$9\.40$/).waitFor({ state: "visible", timeout: 15000 });
+  await settleCandidateRow.getByLabel(`${order.number} amount`, { exact: true }).fill("460.60");
+  await settleCandidateRow.locator('input[type="checkbox"]').check();
+  await page.getByRole("button", { name: "Discard changes to payment application", exact: true }).click();
+  await waitForValue(settleCandidateRow.getByLabel(`${order.number} amount`, { exact: true }), "");
+  assert.equal(await settleCandidateRow.locator('input[type="checkbox"]').isChecked(), false,
+    "Discard must clear the selected discount along with the cash amount");
+  await settleCandidateRow.getByLabel(`${order.number} amount`, { exact: true }).fill("460.60");
+  await settleCandidateRow.locator('input[type="checkbox"]').check();
+  await shot("settling-apply-panel-filled");
+
+  // Scoped to the panel's own wrapper `<tr>` — the `<tr><td colSpan={8}>` BatchDetail.tsx renders
+  // the ApplyPanel into, reached from the PAYMENT ROW rather than from the candidate table.
+  //
+  // THE PANEL-LIFETIME TRAP (cost this flow a red group E2E run): the obvious anchor is the
+  // candidate table, since `settleTable` is already in hand — but that table renders only while
+  // `rows.length > 0` (BatchDetail.tsx), and a settling apply empties the candidate list by
+  // construction. So the very success being asserted is what unmounts the anchor, and every
+  // locator derived from it (`ancestor::td[1]` included) resolves to nothing the moment the apply
+  // lands. The panel itself stays open — `apply()` never touches `expandedPaymentId` — which is
+  // why the summary line and the applications table below are still there to be found once the
+  // scope is anchored on something that survives. Anchor POST-apply assertions on the payment row;
+  // PRE-apply ones may keep using the candidate table, which is alive then by definition.
+  //
+  // The scope also disambiguates the submit button, which an unscoped `page.getByRole` cannot: with
+  // a second payment row on screen the page carries the OTHER row's "Apply" toggle too. The wrapper
+  // row holds the panel's submit button and nothing else called "Apply".
+  const settlePanel = settlingRow.locator("xpath=following-sibling::tr[1]");
+  const settled = page.waitForResponse((res) =>
+    new URL(res.url()).pathname === "/api/receivables/applications" && res.request().method() === "POST" && res.ok());
+  await settlePanel.getByRole("button", { name: "Apply", exact: true }).click();
+  await settled;
+
+  // Asserted FIRST, and deliberately: a settled invoice drops out of the candidate list, so this
+  // waits out the panel's post-apply reload as well as pinning the outcome — the two assertions
+  // below then read a settled DOM rather than racing the refresh (before the reload lands, the
+  // stale candidate table's own "Discount" COLUMN HEADER would make the row filter ambiguous).
+  await settleCandidateRow.waitFor({ state: "detached", timeout: 15000 });
+  await settlePanel.getByText("Payment $460.60 · Applied $460.60 · On account $0.00", { exact: true })
+    .waitFor({ state: "visible", timeout: 15000 });
+  // The DISCOUNT actually landed as its own application row, at the offered figure. Filtered on the
+  // amount as well as the type, so it can only ever match the applications table's own data row.
+  const discountRow = settlePanel.locator("tr")
+    .filter({ has: page.getByText("Discount", { exact: true }) })
+    .filter({ hasText: "$9.40" });
+  await discountRow.waitFor({ state: "visible", timeout: 15000 });
+  assert.equal((await discountRow.locator("td").nth(2).textContent()).trim(), "$9.40",
+    "the DISCOUNT application must be written for the offered early-pay amount (#69)");
+  await shot("settling-payment-applied");
+}

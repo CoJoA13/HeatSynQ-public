@@ -1,0 +1,1398 @@
+import { describe, it, expect } from "vitest";
+import { readdirSync, readFileSync } from "node:fs";
+import { join, sep } from "node:path";
+import { fileURLToPath } from "node:url";
+import ts from "typescript";
+import {
+  HTTP_METHODS, callsBareIdentifier, foldUrl, isLocalSpecifier, methodOf, namesAMethod, resolveLocalModule, routePattern,
+  urlConstants, urlMatchesRoute,
+} from "./helpers/ts-parse";
+
+// THE CENSUS BEHIND THE ARCHIVAL/REPLACE RULE (#277).
+//
+// CLAUDE.md carries the rule — "a control that ARCHIVES paper or REPLACES server rows must consult
+// `useUnsavedPresent()` and REFUSE while an editor is dirty" — and then admits, in the same
+// paragraph, that the list of such controls "was assembled one review round at a time and is a
+// census by hand, not by test". Four successive review rounds each found another path, which is the
+// signature of an incomplete enumeration rather than a converging one, and a hand list cannot report
+// the entry nobody remembered: a control that drops out of it looks exactly like a control that was
+// never dangerous.
+//
+// This sweep replaces the list. It derives the dangerous SERVER entry points from the code, walks
+// them out to the API routes that expose them, joins those routes to the CLIENT call sites through
+// the only thing that actually connects the two halves — the URL string — and requires every
+// resulting (file, route) pair to carry a verdict: a named gate this file proves, or a written
+// exemption. Nothing may be absent.
+//
+// TWO HALVES, AND THEY ARE NOT EQUALLY MECHANICAL. Saying so plainly is the point:
+//
+//   ARCHIVES PAPER is fully derived. `storeDocument` (src/server/documents.ts) is the only writer of
+//   a `StoredDocument` row anywhere in `src/`, and this file ASSERTS that rather than believing it —
+//   so "does this route file permanent paper" reduces to "does its handler reach that function",
+//   which a call graph answers exactly.
+//
+//   REPLACES SERVER ROWS is NOT derivable, and no signal was found that comes close. The write that
+//   destroys an overlay looks identical to the write that SAVES one: `replaceInvoiceLines` and
+//   `recalculateInvoice` are the same delete-then-create on the same model, and only one is a
+//   hazard. The discriminator is whether the operator's own click IS that write — a fact about the
+//   UI, not about the query. So hazards are SEEDED by hand (`REPLACE_SEEDS`) and pushed through the
+//   identical machinery, and what stops the seeds rotting is `REPLACE_CANDIDATES` below: every
+//   function in `src/server` that destroys rows wholesale must be classified, WITH the routes that
+//   reach it, so neither a new destroyer nor a new caller of an old one can arrive in silence.
+//
+// THE RESIDUALS, stated rather than implied away:
+//
+//   1. A destroyer that issues no request is invisible here, because the subject of this sweep is a
+//      REQUEST. The receivables apply-panel collapse and the new-shipment customer switch are both
+//      correctly gated today and neither could ever be seen from a URL; nothing static can watch a
+//      `setState` unmount a child holding a draft. That pair stays prose, in use-unsaved-section.ts.
+//   2. An ask verdict is proved per control by `asksBeforeRequest`, as far as naming the function
+//      that issues the request and every caller of it; what the ask's answer then does inside that
+//      function would need a renderer. A `useUnsavedPresent` verdict is proved by the taint below,
+//      which is why the two claim shapes are kept apart instead of being folded into "the file calls
+//      something".
+//   3. A replace expressed as a status or flag FLIP rather than a delete — `reverseShipper` un-ships
+//      by clearing `lineComplete` — produces no candidate. It is seeded by hand and says so.
+//
+// Doctrine cloned from `tests/audit-children.test.ts` and `tests/unsaved-registration-sweep.test.ts`:
+// parse rather than pattern-match, match the CALL and not the import (#188), over-match so a
+// detector fails CLOSED, assert a non-vacuous floor so a bad glob cannot pass silently, and exercise
+// every rule against sources written to break it.
+
+/** `erp/`. From `import.meta.url` rather than `process.cwd()` — the package is `"type": "module"`,
+ *  and this is the idiom the other repo-path tests here already use. */
+const ROOT = fileURLToPath(new URL("..", import.meta.url)).replace(/\/$/, "");
+const SRC = join(ROOT, "src");
+
+const read = (file: string): string => readFileSync(join(ROOT, file), "utf8");
+
+/** Every source under `src/` with this extension, root-relative and slash-separated. One
+ *  enumeration, so the server graph and the client scan cannot be looking at different trees. */
+function srcFiles(ext: ".ts" | ".tsx"): string[] {
+  return readdirSync(SRC, { recursive: true, encoding: "utf8" })
+    .filter((rel) => rel.endsWith(ext))
+    .map((rel) => `src/${rel.split(sep).join("/")}`)
+    .sort();
+}
+
+const parseSource = (file: string, src = read(file)): ts.SourceFile =>
+  ts.createSourceFile(
+    file, src, ts.ScriptTarget.Latest, /* setParentNodes */ true,
+    file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+  );
+
+// ---------------------------------------------------------------------------------------------
+// THE SERVER CALL GRAPH — which routes reach a dangerous function
+// ---------------------------------------------------------------------------------------------
+
+/** A function addressed across the tree: `"src/server/traveler.ts#printTraveler"`. */
+type FnKey = string;
+const fnKey = (file: string, name: string): FnKey => `${file}#${name}`;
+
+type ModuleFacts = {
+  /** local binding name -> the function it names elsewhere. `import * as X` records `X#*`. */
+  imports: Map<string, FnKey>;
+  /** `export { a } from "./b"` — this module's `a` IS `./b`'s `a`, with no declaration of its own.
+   *  A missed re-export is fail-OPEN, and this is not hypothetical: `src/server/orders.ts` is a
+   *  barrel forwarding `createOrder`, `listOrders` and more from four sibling modules. */
+  reexports: Map<string, FnKey>;
+  /** top-level declaration name -> every identifier reached from inside it. */
+  calls: Map<string, Set<string>>;
+  /** local specifiers that resolved to nothing — asserted empty, since each is a lost edge. */
+  unresolved: string[];
+};
+
+/**
+ * Everything the graph needs from one module, in a single parse.
+ *
+ * DECLARATIONS ARE READ AT TOP LEVEL ONLY, and every call in the subtree beneath one is attributed
+ * to it. That is what makes `export const POST = handle(async (req) => …)` work — the callees sit
+ * two closures deep inside a higher-order wrapper, and a rule that read only the initializer's head
+ * would see `handle` and stop. It also means a nested `const doc = await storeDocument(…)` is
+ * attributed to its enclosing function rather than becoming a phantom function named `doc`.
+ *
+ * AN IDENTIFIER PASSED AS AN ARGUMENT COUNTS AS A CALL. `handle(printCert)` is point-free: the
+ * dangerous function is never syntactically called, so a callee-only rule loses the edge and the
+ * route silently stops being archival. Counting arguments over-matches — a callback that is never
+ * invoked reads as reached — and over-matching marks MORE routes dangerous, which is the closed
+ * direction. Measured on this tree it changes nothing: the archival route set is the same eight
+ * either way.
+ */
+function moduleFacts(file: string, src = read(file)): ModuleFacts {
+  const sf = parseSource(file, src);
+  const facts: ModuleFacts = { imports: new Map(), reexports: new Map(), calls: new Map(), unresolved: [] };
+
+  const resolve = (spec: string): string | null => {
+    if (!isLocalSpecifier(spec)) return null;                 // a package: not ours to follow
+    const target = resolveLocalModule(ROOT, file, spec);
+    if (target === null) facts.unresolved.push(spec);
+    return target;
+  };
+
+  const calleesIn = (node: ts.Node): Set<string> => {
+    const out = new Set<string>();
+    const walk = (n: ts.Node): void => {
+      if (ts.isCallExpression(n)) {
+        if (ts.isIdentifier(n.expression)) out.add(n.expression.text);
+        else if (ts.isPropertyAccessExpression(n.expression) && ts.isIdentifier(n.expression.expression)) {
+          out.add(`${n.expression.expression.text}.${n.expression.name.text}`);
+        }
+        for (const arg of n.arguments) if (ts.isIdentifier(arg)) out.add(arg.text);
+      }
+      ts.forEachChild(n, walk);
+    };
+    walk(node);
+    return out;
+  };
+
+  const declare = (name: string, body: ts.Node): void => {
+    const prev = facts.calls.get(name) ?? new Set<string>();
+    for (const callee of calleesIn(body)) prev.add(callee);
+    facts.calls.set(name, prev);
+  };
+
+  for (const stmt of sf.statements) {
+    if (ts.isImportDeclaration(stmt) && ts.isStringLiteral(stmt.moduleSpecifier)) {
+      const clause = stmt.importClause;
+      if (!clause || clause.isTypeOnly) continue;             // a type import is erased; it calls nothing
+      const target = resolve(stmt.moduleSpecifier.text);
+      if (target === null) continue;
+      if (clause.name) facts.imports.set(clause.name.text, fnKey(target, "default"));
+      const bindings = clause.namedBindings;
+      if (bindings && ts.isNamespaceImport(bindings)) facts.imports.set(bindings.name.text, fnKey(target, "*"));
+      else if (bindings) {
+        for (const el of bindings.elements) {
+          if (el.isTypeOnly) continue;
+          facts.imports.set(el.name.text, fnKey(target, (el.propertyName ?? el.name).text));
+        }
+      }
+    } else if (
+      ts.isExportDeclaration(stmt) && stmt.moduleSpecifier && ts.isStringLiteral(stmt.moduleSpecifier)
+      && !stmt.isTypeOnly && stmt.exportClause && ts.isNamedExports(stmt.exportClause)
+    ) {
+      const target = resolve(stmt.moduleSpecifier.text);
+      if (target === null) continue;
+      for (const el of stmt.exportClause.elements) {
+        if (el.isTypeOnly) continue;
+        facts.reexports.set(el.name.text, fnKey(target, (el.propertyName ?? el.name).text));
+      }
+    } else if (ts.isFunctionDeclaration(stmt) && stmt.name && stmt.body) {
+      declare(stmt.name.text, stmt.body);
+    } else if (ts.isVariableStatement(stmt)) {
+      for (const d of stmt.declarationList.declarations) {
+        if (d.initializer && ts.isIdentifier(d.name)) declare(d.name.text, d.initializer);
+      }
+    }
+  }
+  return facts;
+}
+
+/**
+ * Every function that reaches one of `seeds`, transitively.
+ *
+ * A fixpoint: keep adding any declaration that reaches something already reached, until a round adds
+ * nothing. It terminates because `reached` only grows and is bounded by the graph, so a call CYCLE —
+ * routine in these services — is fine. A re-export is followed as an alias, bounded so a re-export
+ * cycle cannot hang either.
+ */
+function functionsReaching(graph: Map<string, ModuleFacts>, seeds: readonly FnKey[]): Set<FnKey> {
+  const alias = (key: FnKey): FnKey => {
+    for (let hop = 0; hop < 10; hop++) {
+      const [file, name] = key.split("#");
+      const next = graph.get(file)?.reexports.get(name);
+      if (next === undefined) return key;
+      key = next;
+    }
+    return key;
+  };
+  const reached = new Set<FnKey>(seeds.map(alias));
+  for (const seed of seeds) reached.add(seed);
+
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const [file, facts] of graph) {
+      for (const [name, callees] of facts.calls) {
+        const key = fnKey(file, name);
+        if (reached.has(key)) continue;
+        for (const callee of callees) {
+          const [receiver, member] = callee.includes(".") ? callee.split(".") : [callee, null];
+          if (member === null && facts.calls.has(callee) && reached.has(fnKey(file, callee))) {
+            reached.add(key); grew = true; break;             // a sibling in this same module
+          }
+          const imported = facts.imports.get(receiver);
+          if (imported === undefined) continue;
+          const [target, exported] = imported.split("#");
+          const wanted = fnKey(target, member ?? exported);    // `X.f()` on `import * as X`
+          if (reached.has(wanted) || reached.has(alias(wanted))) { reached.add(key); grew = true; break; }
+        }
+      }
+    }
+  }
+  return reached;
+}
+
+// ---------------------------------------------------------------------------------------------
+// ROUTES
+// ---------------------------------------------------------------------------------------------
+
+const MUTATING_METHODS: readonly string[] = ["POST", "PUT", "PATCH", "DELETE"];
+
+// ---------------------------------------------------------------------------------------------
+// CLIENT REQUEST SITES
+// ---------------------------------------------------------------------------------------------
+
+type RequestSite = { file: string; line: number; url: string; method: string };
+
+
+/** The client tree: everything under `src/` that is not a route handler or a service. */
+const clientFiles = (): string[] =>
+  [...srcFiles(".tsx"), ...srcFiles(".ts")]
+    .filter((f) => !f.startsWith("src/app/api/") && !f.startsWith("src/server/"))
+    .sort();
+
+/**
+ * Every request this file issues, split into the ones whose URL could be read and the ones whose
+ * could not.
+ *
+ * A ROUTED site is ANY `CallExpression` whose first argument folds to a URL beginning `/api/` — the
+ * callee name is deliberately not part of the test. `fetch` and `api()` are not the only two ways a
+ * request leaves this app: `customers/[id]/page.tsx` wraps them in a local `call(path, init)` for
+ * in-flight de-duplication, and a name-keyed detector would have to know about that wrapper and
+ * about every future one. Anchoring on the URL covers a new wrapper the day it is written.
+ *
+ * An OPAQUE site is one this sweep cannot route: a call to `fetch` or `api`, or any call whose init
+ * names a `method`, whose URL did not fold. Reported rather than skipped — a print built on a
+ * prop-supplied path would otherwise be invisible to every check here.
+ */
+function requestSites(file: string, src = read(file)): { routed: RequestSite[]; opaque: RequestSite[] } {
+  const sf = parseSource(file, src);
+  const consts = urlConstants(sf);
+
+  const routed: RequestSite[] = [];
+  const opaque: RequestSite[] = [];
+  const walk = (n: ts.Node): void => {
+    if (ts.isCallExpression(n)) {
+      const callee = ts.isIdentifier(n.expression) ? n.expression.text : null;
+      const url = foldUrl(n.arguments[0], consts);
+      const method = methodOf(n.arguments[1]);
+      const line = sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
+      if (url !== null && url.startsWith("/api/")) routed.push({ file, line, url, method });
+      else if (callee === "fetch" || callee === "api" || namesAMethod(n.arguments[1])) {
+        opaque.push({ file, line, url: "", method });
+      }
+    }
+    ts.forEachChild(n, walk);
+  };
+  ts.forEachChild(sf, walk);
+  return { routed, opaque };
+}
+
+const isMutating = (site: RequestSite): boolean =>
+  MUTATING_METHODS.includes(site.method) || site.method === "UNKNOWN";
+
+
+// ---------------------------------------------------------------------------------------------
+// THE GATE, PROVED PER CONTROL
+// ---------------------------------------------------------------------------------------------
+
+/**
+ * Which of this file's bindings carry the unsaved-edit answer, and how often each name is used.
+ *
+ * THE REASON THIS EXISTS. A file-scoped "does it call a gate primitive" is not a census of controls:
+ * `InvoiceDetail.tsx` calls `useUnsavedPresent()` ONCE and feeds it to three separate gates — finalize,
+ * recalculate and print. Delete the unsaved branch out of the recalculate gate alone and the file
+ * still calls the primitive, so a file-scoped rule stays green while a replace goes ungated. So the
+ * answer is TAINTED forward instead: the binding of a `useUnsavedPresent(...)` result is a seed, and
+ * any `const` whose initializer mentions a tainted name is tainted too. `recalcGate` is tainted only
+ * while it still reads `unsavedLines`, which makes that exact deletion red by name.
+ *
+ * THE SECOND HALF IS THE REFUSAL SITE, and the first version of this shipped without it. Tainting
+ * proves the gate still ASKS the guard; it says nothing about whether any control still READS the
+ * gate. A reviewer disconnected the cert print from its gate — `disabled={printGate.disabled ||
+ * printing || unsavedReadings}` reduced to `disabled={printGate.disabled || printing}` — and this
+ * sweep stayed green, because `unsavedReadings` was still computed and still mentioned in the
+ * button's `title`. A `uses >= 2` floor is satisfied by a tooltip. So a claimed name must also
+ * appear where a control is actually REFUSED: inside a `disabled={…}` attribute, or in an `if`
+ * condition (an early return refuses too). That is syntax, needs no renderer, and reds the moment a
+ * button stops consulting the gate it is claimed to be gated by.
+ *
+ * THE TAINT IS BY NAME, with no scope analysis, and that is a stated limitation rather than an
+ * oversight. Two components in one file that both declare `printGate` share one verdict here, and a
+ * PROP named like a tainted binding would taint the declaration that reads it. Both directions
+ * over-approximate coverage, so this is the one part of the sweep that does not fail closed — which
+ * is why a `gate` verdict names the binding explicitly instead of being inferred: a reviewer reading
+ * the entry can see which control is being claimed, and the pinned (file, route) census means a new
+ * control cannot arrive under an existing claim.
+ */
+function gateBindings(file: string, src = read(file)):
+{ tainted: Set<string>; uses: Map<string, number>; refusals: Set<string> } {
+  const sf = parseSource(file, src);
+  const decls: { name: string; init: ts.Expression }[] = [];
+  const collect = (n: ts.Node): void => {
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer) {
+      decls.push({ name: n.name.text, init: n.initializer });
+    }
+    ts.forEachChild(n, collect);
+  };
+  ts.forEachChild(sf, collect);
+
+  const tainted = new Set<string>();
+  const mentions = (node: ts.Node, pred: (n: ts.Node) => boolean): boolean => {
+    let hit = false;
+    const walk = (n: ts.Node): void => { if (pred(n)) hit = true; ts.forEachChild(n, walk); };
+    walk(node);
+    return hit;
+  };
+  // THREE taint sources, not one. `useUnsavedPresent` answers page-wide; `useUnsavedInScope` and its
+  // pure predicate `unsavedPresentInScope` answer about ONE named region, which is what #293/#294
+  // needed — the page-wide question would have refused those two controls over sections their write
+  // provably cannot touch. A gate derived from any of the three is derived from the registry, which
+  // is the property this proves; leaving the scoped pair out would have read the two new refusals as
+  // ungated and pushed them back onto the exemption list.
+  const UNSAVED_SOURCES = ["useUnsavedPresent", "useUnsavedInScope", "unsavedPresentInScope"];
+  for (const d of decls) {
+    if (mentions(d.init, (n) => ts.isCallExpression(n) && ts.isIdentifier(n.expression)
+      && UNSAVED_SOURCES.includes(n.expression.text))) tainted.add(d.name);
+  }
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (const d of decls) {
+      if (tainted.has(d.name)) continue;
+      if (mentions(d.init, (n) => ts.isIdentifier(n) && tainted.has(n.text))) { tainted.add(d.name); grew = true; }
+    }
+  }
+
+  const uses = new Map<string, number>();
+  const count = (n: ts.Node): void => {
+    if (ts.isIdentifier(n)) uses.set(n.text, (uses.get(n.text) ?? 0) + 1);
+    ts.forEachChild(n, count);
+  };
+  ts.forEachChild(sf, count);
+
+  // Names read where a control is REFUSED. `disabled={…}` is how every gate on this tree reaches its
+  // button, and a `disabled:` property how one reaches an ActionMenu item (the menu renders it as the
+  // menuitem's attribute; PR 6); an `if` condition is included because an early return refuses just
+  // as effectively, and leaving it out would push a correct file onto the exemption list.
+  const refusals = new Set<string>();
+  const namesIn = (node: ts.Node): void => {
+    const walk = (n: ts.Node): void => {
+      if (ts.isIdentifier(n)) refusals.add(n.text);
+      ts.forEachChild(n, walk);
+    };
+    walk(node);
+  };
+  const findRefusals = (n: ts.Node): void => {
+    if (ts.isJsxAttribute(n) && ts.isIdentifier(n.name) && n.name.text === "disabled" && n.initializer) {
+      namesIn(n.initializer);
+    } else if (ts.isPropertyAssignment(n) && ts.isIdentifier(n.name) && n.name.text === "disabled") {
+      // An ActionMenu item (PR 6: the invoice page's Recalculate lines) refuses through its
+      // `disabled:` property, which the menu renders as the menuitem's `disabled=`. By name, as
+      // the taint is: a `disabled:` property of any object literal counts (a gate literal's
+      // `disabled: moneyDisabled` included), which over-approximates coverage the way the taint's
+      // own two directions do; the per-control mutation is what proves a menu item's gate.
+      namesIn(n.initializer);
+    } else if (ts.isIfStatement(n)) namesIn(n.expression);
+    ts.forEachChild(n, findRefusals);
+  };
+  ts.forEachChild(sf, findRefusals);
+
+  return { tainted, uses, refusals };
+}
+
+/** Does this file ask before discarding — as a CALL, never as an import or a mention (#188)? The
+ *  file-scope half of the ask proof; `asksBeforeRequest` is what ties it to one control. */
+const callsConfirmDiscard = (file: string): boolean =>
+  callsBareIdentifier(read(file), "confirmDiscard", file) || awaitsAskDiscard(read(file), file);
+
+/** An `askDiscard(` call counts only AWAITED: it resolves to a Promise, and `if (!askDiscard(…))`
+ *  is a truthy Promise that never refuses while TypeScript and eslint both accept it. */
+function awaitsAskDiscard(src: string, file: string): boolean {
+  const sf = ts.createSourceFile(file, src, ts.ScriptTarget.Latest, true, file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  let hit = false;
+  const walk = (n: ts.Node): void => {
+    if (isAwaitedAskDiscard(n)) hit = true;
+    ts.forEachChild(n, walk);
+  };
+  walk(sf);
+  return hit;
+}
+const isAwaitedAskDiscard = (n: ts.Node): boolean =>
+  ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === "askDiscard"
+  && n.parent !== undefined && ts.isAwaitExpression(n.parent);
+
+const FN_LIKE = (n: ts.Node): boolean =>
+  ts.isFunctionDeclaration(n) || ts.isFunctionExpression(n) || ts.isArrowFunction(n)
+  || ts.isMethodDeclaration(n);
+
+/**
+ * The function-like nodes whose LINE RANGE covers `line` (1-based), innermost FIRST.
+ *
+ * A chain rather than the innermost one, because the innermost is routinely anonymous and is not
+ * the control: every mutation on this tree goes through `applyMutation(() => api(...))`, so the
+ * node containing the request is that callback, while the thing a click reaches is the named
+ * function around it (`resplit`, `reverseAction`). Lines rather than positions because a request
+ * site is recorded by line, and a one-line `const f = () => api(...)` starts its arrow after the
+ * line's first character.
+ */
+function enclosingFns(sf: ts.SourceFile, line: number): ts.Node[] {
+  const chain: ts.Node[] = [];
+  const lineOf = (pos: number): number => sf.getLineAndCharacterOfPosition(pos).line + 1;
+  const walk = (n: ts.Node): void => {
+    if (lineOf(n.getStart(sf)) <= line && line <= lineOf(n.getEnd())) {
+      if (FN_LIKE(n)) chain.unshift(n);
+      ts.forEachChild(n, walk);
+    }
+  };
+  ts.forEachChild(sf, walk);
+  return chain;
+}
+
+/** The name a function-like node is reachable by — its own, or the const it is assigned to. */
+function fnName(n: ts.Node): string | undefined {
+  if (ts.isFunctionDeclaration(n) && n.name) return n.name.text;
+  const p = n.parent as ts.Node | undefined;
+  if (p && ts.isVariableDeclaration(p) && ts.isIdentifier(p.name)) return p.name.text;
+  return undefined;
+}
+
+const mentionsAsk = (node: ts.Node): boolean => {
+  let hit = false;
+  const walk = (n: ts.Node): void => {
+    // `askDiscard` is the modal form of the same ask (src/lib/use-unsaved-section.ts, ruling 5 of
+    // 2026-10-30): AWAITED before the request, it proves the control exactly as confirmDiscard
+    // does; un-awaited it is a truthy Promise that never refuses, so it does not count.
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === "confirmDiscard") hit = true;
+    if (isAwaitedAskDiscard(n)) hit = true;
+    ts.forEachChild(n, walk);
+  };
+  walk(node);
+  return hit;
+};
+
+/**
+ * Every scope helper, and the sites that REGISTER a scope versus the sites that ASK about one.
+ *
+ * **The hole this closes, found by mutation.** A scoped gate has two ends: a section registers
+ * `scope={serialsScope(line.id)}` and a control asks `unsavedPresentInScope(serialsScope(line.id))`.
+ * The gate proof above only sees the ASKING end — it checks that a binding still reads the registry
+ * and still refuses a control. Delete the `scope` prop from the registration and every one of those
+ * checks stays green while the predicate matches nothing, answers false forever, and the refusal
+ * silently stops refusing. That is a guard that has been switched off without a single test noticing,
+ * which is precisely the defect class this file exists for.
+ *
+ * The two ends cannot drift on the STRING — both call the same helper out of `unsaved-guard.ts` —
+ * so the only thing left to prove is that both ends still EXIST. Deriving the helper list from the
+ * leaf's own exports rather than listing it here means a third scope cannot be added with only one
+ * end wired.
+ */
+function scopeHelperSites(): Map<string, { registers: number; queries: number }> {
+  const leaf = read("src/lib/unsaved-guard.ts");
+  const helpers = [...leaf.matchAll(/^export const (\w*Scope) = /gm)].map((m) => m[1]);
+  const out = new Map(helpers.map((h) => [h, { registers: 0, queries: 0 }]));
+  const ASKS = ["unsavedPresentInScope", "useUnsavedInScope"];
+  const REGISTERS = ["useUnsavedSection"];
+  for (const file of clientFiles()) {
+    const sf = parseSource(file);
+    const walk = (n: ts.Node): void => {
+      if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && out.has(n.expression.text)) {
+        const entry = out.get(n.expression.text) as { registers: number; queries: number };
+        let a: ts.Node | undefined = n.parent;
+        while (a) {
+          if (ts.isJsxAttribute(a) && ts.isIdentifier(a.name) && a.name.text === "scope") { entry.registers += 1; break; }
+          if (ts.isCallExpression(a) && ts.isIdentifier(a.expression)) {
+            if (REGISTERS.includes(a.expression.text)) { entry.registers += 1; break; }
+            if (ASKS.includes(a.expression.text)) { entry.queries += 1; break; }
+          }
+          a = a.parent;
+        }
+      }
+      ts.forEachChild(n, walk);
+    };
+    ts.forEachChild(sf, walk);
+  }
+  return out;
+}
+
+/**
+ * Does the control that issues THIS route's request ask first? Proved per control, not per file.
+ *
+ * **Why the file-scoped version had to go (#294).** `ShipmentDetail.tsx` already calls
+ * `confirmDiscard()` inside `reverseAction`, so "does this file ask anywhere" was TRUE for every
+ * control in it — including remove-order, which asked nothing. Marking remove-order
+ * `{ asks: true }` would have gone green with zero production change: a test blessing a
+ * no-op, which is this repo's most-refiled defect. The gate half has been per-control since #277 for
+ * the mirror-image reason (one `useUnsavedPresent()` answer feeding three gates); this closes the
+ * other half.
+ *
+ * TWO accepted shapes, because the two real call sites differ and both are legitimate:
+ *   (a) the function that issues the request asks itself — `reverseAction`, through an awaited
+ *       `askDiscard`;
+ *   (b) it is only ever REACHED through an ask — `resplit` is called once, from `askResplit`, so
+ *       the ask sits in the function beside the one that issues the request.
+ * Shape (b) demands EVERY local reference be guarded, not merely one: a second unguarded caller is
+ * exactly the hole this is here to find.
+ *
+ * Fails CLOSED throughout — no matching request site, an anonymous enclosing function, or a
+ * reference this cannot attribute all report unproved, because "cannot tell" must never read as
+ * "guarded".
+ */
+function asksBeforeRequest(file: string, route: string, src = read(file)): string | null {
+  const sf = parseSource(file, src);
+  const sites = requestSites(file, src).routed
+    .filter((site) => isMutating(site) && urlMatchesRoute(site.url, route));
+  if (sites.length === 0) return "no mutating request to this route to attribute an ask to";
+
+  for (const site of sites) {
+    const chain = enclosingFns(sf, site.line);
+    // The CONTROL is the innermost NAMED function around the request, not the innermost function:
+    // the innermost is `applyMutation`'s anonymous callback on every mutation in this tree.
+    const idx = chain.findIndex((n) => fnName(n) !== undefined);
+    if (idx === -1) return `${site.url} (line ${site.line}) sits in no named function to attribute`;
+    const fn = chain[idx];
+    const name = fnName(fn) as string;
+    // A capitalised name is a COMPONENT by this tree's convention, which means the request is issued
+    // straight from JSX with no named control between. Shape (b) cannot apply (nothing calls a
+    // component locally) and shape (a) would collapse back to file scope — `mentionsAsk` on a whole
+    // component is true if ANY handler in it asks, which is the laxity #294 exposed. Fail closed.
+    if (/^[A-Z]/.test(name)) {
+      return `${site.url} is issued directly inside the component ${name}, with no named control ` +
+        `to attribute an ask to`;
+    }
+    if (mentionsAsk(fn)) continue;                                  // shape (a)
+
+    // Shape (b): every reference to it outside its own body must sit under an ask. Both counts are
+    // kept, because "no reference is unguarded" and "there is no reference" are the same number and
+    // opposite answers — collapsing them would pass a function nothing calls, which is a control
+    // that cannot be reached at all rather than one that is guarded.
+    const refs: number[] = [];
+    const unguarded: number[] = [];
+    const visit = (n: ts.Node): void => {
+      if (ts.isIdentifier(n) && n.text === name
+        && !(n.getStart(sf) >= fn.getStart(sf) && n.getEnd() <= fn.getEnd())
+        && !(n.parent && ts.isVariableDeclaration(n.parent) && n.parent.name === n)
+        && !(n.parent && ts.isFunctionDeclaration(n.parent) && n.parent.name === n)
+        && !(n.parent && ts.isImportSpecifier(n.parent))) {
+        const line = sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
+        refs.push(line);
+        let holder: ts.Node | undefined = n.parent;
+        while (holder && !FN_LIKE(holder) && !ts.isJsxAttribute(holder)) holder = holder.parent;
+        if (!holder || !mentionsAsk(holder)) unguarded.push(line);
+      }
+      ts.forEachChild(n, visit);
+    };
+    ts.forEachChild(sf, visit);
+    if (refs.length === 0) return `nothing calls ${name}, so no ask can reach ${site.url}`;
+    if (unguarded.length > 0) return `${name} is reached unguarded at line(s) ${unguarded.join(", ")}`;
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------------------------
+// THE SEEDS
+// ---------------------------------------------------------------------------------------------
+
+/** The one function that files permanent paper. Its uniqueness is asserted, not assumed. */
+const ARCHIVE_SEED: FnKey = "src/server/documents.ts#storeDocument";
+
+/** The Prisma writes that would create a `StoredDocument` outside `storeDocument`. If one of these
+ *  ever appears in a second file, the archival half has silently narrowed and this sweep says so. */
+const STORED_DOCUMENT_WRITE = /\bstoredDocument\.(create|createMany|createManyAndReturn|upsert)\b/;
+
+/**
+ * Exported service functions that REPLACE a row set a client may be holding as an unsaved overlay,
+ * where the operator's own click is NOT that write. Seeded by hand — see the header — and kept
+ * complete by `REPLACE_CANDIDATES` below.
+ */
+const REPLACE_SEEDS: Map<FnKey, string> = new Map([
+  ["src/server/invoices.ts#recalculateInvoice",
+    "Rebuilds every derived invoice line from the order, so a typed-but-unsaved line in the invoice "
+    + "grid is discarded as an orphan."],
+  ["src/server/order-loads.ts#resplitLoads",
+    "Recomputes the whole load set from the part's caps and writes it, taking no rows from the "
+    + "caller — so a pending load quantity, weight, addition or removal is replaced rather than "
+    + "saved. That 'rewrites a collection it did not receive' test is what separates it from "
+    + "`replaceLoads`, the Loads grid's own Save, which reaches the same private `applyLoads`."],
+  ["src/server/shippers.ts#reverseShipper",
+    "Creates the negative-of-everything reversal shipment and reopens the order, and the page "
+    + "navigates to the reversal — so any unsaved line, container or serial grid on the shipment "
+    + "being reversed is gone. NOT rediscoverable by the tripwire: it un-ships by clearing "
+    + "`lineComplete`, a flag flip with no delete in it (residual 3 in the header)."],
+  ["src/server/order-edit.ts#removeLine",
+    "Hard-deletes every `OrderSerial` of the line, which is exactly the row set `SerialsSection` "
+    + "holds in a registered `useBulkGrid` overlay while the operator types into it."],
+  ["src/server/shippers.ts#removeOrderFromShipper",
+    "Deletes that order's shipper lines, containers and serials — the three grids the shipment page "
+    + "mounts for it."],
+  ["src/server/invoices.ts#finalizeInvoice",
+    "FREEZES rather than deletes, and is the third kind of hazard: a finalized invoice's line grid "
+    + "goes read-only, so an overlay held over it becomes permanently unsavable — the same lost work "
+    + "by a different route, and the reason `finalizeGate` exists. Seeded by hand because the "
+    + "tripwire below looks for destroyers and a status write is not one."],
+  ["src/server/practice-reset.ts#resetPracticeData",
+    "Truncates the practice database and re-seeds the demo baseline. Every row any editor on screen "
+    + "is holding an overlay over ceases to exist."],
+]);
+
+/**
+ * A verdict for every dangerous (client file, route) pair. This IS the census the hand list was.
+ *
+ * `gate` names a binding this file must still be computing FROM `useUnsavedPresent()` AND still
+ * refusing a control with — so both deleting the gate's unsaved branch and disconnecting the button
+ * from the gate red, even when the file keeps other gates. The gate may read the page-wide
+ * `useUnsavedPresent` or the SCOPED `useUnsavedInScope`/`unsavedPresentInScope`, which is what lets a
+ * control that destroys one region refuse on that region alone. `asks` is proved per control too
+ * since #294 — `asksBeforeRequest` ties the ask to the function that issues THIS
+ * request, because the file-scoped version was already true for every control in a file where one
+ * unrelated handler asked. `allowed` is an exemption whose reason must open by naming which of THREE
+ * claims it makes: NOTHING TO GUARD (the page holds no editor), GUARDED OTHERWISE (it is protected
+ * by something this sweep cannot prove), or NOT GUARDED — a real gap, recorded rather than fixed.
+ * The third is the dangerous one, so it costs more: it must cite an issue, and how many may exist at
+ * once is pinned, which makes a fourth a decision rather than one line of prose.
+ */
+type Verdict = { gate: string } | { asks: true } | { allowed: string };
+const CONTROL_VERDICTS: Map<string, Verdict> = new Map([
+  ["src/app/certs/[id]/CertDetail.tsx :: /api/certs/{}/print",
+    { gate: "unsavedReadings" }],
+  ["src/app/invoicing/[id]/InvoiceDetail.tsx :: /api/invoices/{}/finalize",
+    { gate: "finalizeGate" }],
+  ["src/app/invoicing/[id]/InvoiceDetail.tsx :: /api/invoices/{}/print",
+    { gate: "printGate" }],
+  ["src/app/invoicing/[id]/InvoiceDetail.tsx :: /api/invoices/{}/recalculate",
+    { gate: "recalcGate" }],
+  ["src/app/orders/[id]/DocumentsSection.tsx :: /api/orders/{}/traveler",
+    { gate: "printGate" }],
+  ["src/app/shipping/[id]/ShipmentDetail.tsx :: /api/shippers/{}/print",
+    { gate: "printGate" }],
+  ["src/app/orders/[id]/LoadsSection.tsx :: /api/orders/{}/loads/resplit",
+    { asks: true }],
+  ["src/app/shipping/[id]/ShipmentDetail.tsx :: /api/shippers/{}/reverse",
+    { asks: true }],
+
+  // ---- exemptions ----
+  ["src/app/quotes/[id]/QuoteDetail.tsx :: /api/quotes/{}/print",
+    { allowed:
+      "ARCHIVES, GUARDED OTHERWISE. `printGate` refuses on the page-local `dirty` (`const dirty =`, "
+      + "the header patch or the lines) that this file also registers with the guard, as two sections "
+      + "since PR 3 (the two `useUnsavedSection` calls beside `breakDraftStarted`), rather than reading "
+      + "the registry back. The whole quote editor is this one file, so the local flag sees what the "
+      + "registry would — with one deliberate exception recorded at those calls: `dirty` excludes a "
+      + "typed-but-unadded price break, because an unadded break is in neither the server state nor "
+      + "the printed lines. Converting this to the primitive would re-litigate that ruling." }],
+  ["src/app/receivables/statements/Statements.tsx :: /api/receivables/statements",
+    { allowed:
+      "ARCHIVES, NOTHING TO GUARD. Every control on the statements page is a filter (asOf, "
+      + "combineFamily, assessFinanceCharges, customer); there is no explicit-save editor on it, so a "
+      + "gate would be constant false. This reason fails OPEN the day an editor is added here — the "
+      + "backstop is that such an editor must register, which unsaved-registration-sweep enforces." }],
+  ["src/app/receivables/statements/Statements.tsx :: /api/receivables/statements/divisions",
+    { allowed: "ARCHIVES, NOTHING TO GUARD — the per-division run of the same page; see the entry "
+      + "for /api/receivables/statements above." }],
+  ["src/app/receivables/statements/Statements.tsx :: /api/receivables/statements/run",
+    { allowed: "ARCHIVES, NOTHING TO GUARD — the run-for-everyone form of the same page; see the "
+      + "entry for /api/receivables/statements above." }],
+  ["src/app/invoicing/InvoicingList.tsx :: /api/invoices/{}/print",
+    { allowed:
+      "ARCHIVES, NOTHING TO GUARD. Print selected (#591) prints each ticked invoice from server state. "
+      + "The only other control on the Invoicing list that writes is Create invoices; there is no "
+      + "explicit-save editor on it, so a gate would be constant false. This "
+      + "reason fails OPEN the day an editor is added here — the backstop is that such an editor must "
+      + "register, which unsaved-registration-sweep enforces." }],
+  ["src/app/practice/PracticeResetControl.tsx :: /api/practice/reset",
+    { allowed:
+      "REPLACES, GUARDED OTHERWISE. Its own page holds no editor, and its `askConfirm` states "
+      + "the whole consequence — everything entered in the practice copy is replaced with "
+      + "the sample baseline — which is a stronger warning than the shared prompt's. The route is "
+      + "refused outright on a non-practice database, so this can never reach production rows." }],
+  // Both of these were NOT GUARDED exemptions until #293/#294 were fixed. Their gates are SCOPED —
+  // `unsavedPresentInScope`, not `useUnsavedPresent` — because each control destroys one region and
+  // the page-wide answer would refuse it over sections its write cannot touch.
+  ["src/app/orders/[id]/LinesSection.tsx :: /api/orders/{}/lines/{}",
+    { gate: "lineSerialsUnsaved" }],
+  ["src/app/shipping/[id]/ShipmentDetail.tsx :: /api/shippers/{}/orders/{}",
+    { gate: "panelUnsaved" }],
+]);
+
+/**
+ * Client files holding a mutating request whose URL cannot be read at all, because the path arrives
+ * as a prop or a parameter. Each reason must say where the path comes from — that is what makes
+ * "this cannot be archival" checkable by a reader rather than merely asserted.
+ */
+const OPAQUE_URL_ALLOWED: Map<string, string> = new Map([
+  ["src/app/customers/[id]/page.tsx",
+    "The address and contact writes go through a local `call(path, init)` that de-duplicates "
+    + "in-flight requests, and its own `api(path, init)` is the one unroutable site; the paths it is "
+    + "handed are literal `/api/customers/...` strings in this same file, which this sweep routes "
+    + "separately. The page's other writes call `api()` with a literal path directly."],
+  ["src/components/AttachmentsSection.tsx",
+    "Deletes one attachment at `${basePath}/${att.id}` — a path built from an owner-supplied prop, so "
+    + "it folds no further. An attachment is a stored FILE, never printed paper: no attachment route "
+    + "reaches `storeDocument`, which the derived archival route set above independently shows."],
+  ["src/components/PasteGrid.tsx",
+    "Posts pasted rows to an `endpoint` prop, supplied by its three consumers — `ReferenceTable`, "
+    + "the parts list and the customers list, each a `.../paste` bulk importer. It creates rows; it "
+    + "prints and replaces nothing."],
+]);
+
+// ---------------------------------------------------------------------------------------------
+// THE DISCOVERY TRIPWIRE
+// ---------------------------------------------------------------------------------------------
+
+const RAW_EXEC = new Set(["$executeRaw", "$executeRawUnsafe", "$queryRawUnsafe"]);
+/** The raw-exec name a tag names, whether written `db.$executeRaw` or bare. */
+const rawTagName = (tag: ts.Expression): string | null =>
+  ts.isPropertyAccessExpression(tag) ? tag.name.text : (ts.isIdentifier(tag) ? tag.text : null);
+const RAW_DESTRUCTIVE = /\b(TRUNCATE|DELETE\s+FROM|UPDATE)\b/i;
+
+/**
+ * Every `src/server` function that destroys rows WHOLESALE — the candidates the replace census must
+ * classify.
+ *
+ * THE UNIVERSE IS "DESTROYS", NOT "DELETES AND RE-CREATES", and that widening is the whole value.
+ * The obvious rule — a `deleteMany` paired with a `createMany` on the same model — reads as precise
+ * and is the wrong shape: it finds the replaces that put something back and misses every destroyer
+ * that does not, which is where two live gaps were sitting (`removeLine` deletes a line's serials,
+ * `removeOrderFromShipper` deletes three grids' rows, neither creates anything). Three arms:
+ * `deleteMany` on any delegate; an `updateMany` whose DATA clause writes `deletedAt`, which is how
+ * the soft-deletable models are cleared; and a raw `$executeRaw*` whose SQL is destructive, without
+ * which the practice reset's `TRUNCATE` — the largest replace in the tree — is invisible.
+ *
+ * The soft-delete arm reads the `data` clause specifically. Matching `deletedAt` anywhere in the
+ * call swept in every `claimLive*` helper in the tree, whose WHERE clause names it: ten candidates
+ * that destroy nothing, and a tripwire whose failures are mostly noise is one that gets loosened.
+ *
+ * WHAT IT STILL CANNOT SEE, enumerated because each is a destroyer that would arrive with no
+ * candidate: a LOOP of single-row `.delete()` calls (counting bare `delete` would flag every
+ * one-row removal in the tree, which is the noise trade above, and no loop-delete exists here
+ * today — measured); a delegate HOISTED out of its receiver (`const rows = tx.orderSerial; await
+ * rows.deleteMany(…)`, which breaks the `receiver.model.op` shape this reads); and a destroy that
+ * lives in a callee while the create lives in the caller. The first two are empty on this tree; the
+ * third is why a candidate's ROUTES are pinned rather than only its name.
+ */
+function replaceCandidates(): Map<FnKey, string> {
+  const found = new Map<FnKey, string>();
+  for (const file of srcFiles(".ts").filter((f) => f.startsWith("src/server/"))) {
+    const sf = parseSource(file);
+    const consider = (name: string, body: ts.Node): void => {
+      const reasons = new Set<string>();
+      const walk = (n: ts.Node): void => {
+        // A tagged template FIRST, because it is the majority shape: six of the seven raw sites in
+        // `src/server` are `` db.$executeRaw`…` `` and only one is a call, so an arm that reads only
+        // `ts.isCallExpression` misses almost all of them — it missed `reseedSingletons`'s whole-table
+        // UPDATE, which is a destroyer reached by the practice reset (reviewer-found, mutation-proved).
+        if (ts.isTaggedTemplateExpression(n) && RAW_DESTRUCTIVE.test(n.getText(sf))
+          && RAW_EXEC.has(rawTagName(n.tag) ?? "")) reasons.add("raw destructive SQL");
+        if (ts.isCallExpression(n)) {
+          if (ts.isIdentifier(n.expression) && RAW_EXEC.has(n.expression.text)
+            && RAW_DESTRUCTIVE.test(n.getText(sf))) reasons.add("raw destructive SQL");
+          if (ts.isPropertyAccessExpression(n.expression)) {
+            const op = n.expression.name.text;
+            const recv = n.expression.expression;
+            if (RAW_EXEC.has(op) && RAW_DESTRUCTIVE.test(n.getText(sf))) reasons.add("raw destructive SQL");
+            if (ts.isPropertyAccessExpression(recv) && ts.isIdentifier(recv.name)) {
+              const model = recv.name.text;
+              if (op === "deleteMany") reasons.add(`deleteMany ${model}`);
+              if (op === "updateMany") {
+                const arg = n.arguments[0];
+                const data = arg && ts.isObjectLiteralExpression(arg)
+                  ? arg.properties.find((p) => !!p.name && ts.isIdentifier(p.name) && p.name.text === "data")
+                  : undefined;
+                if (data && /deletedAt/.test(data.getText(sf))) reasons.add(`soft-delete sweep ${model}`);
+              }
+            }
+          }
+        }
+        ts.forEachChild(n, walk);
+      };
+      walk(body);
+      if (reasons.size > 0) found.set(fnKey(file, name), [...reasons].sort().join("; "));
+    };
+    for (const stmt of sf.statements) {
+      if (ts.isFunctionDeclaration(stmt) && stmt.name && stmt.body) consider(stmt.name.text, stmt.body);
+      else if (ts.isVariableStatement(stmt)) {
+        for (const d of stmt.declarationList.declarations) {
+          if (d.initializer && ts.isIdentifier(d.name)) consider(d.name.text, d.initializer);
+        }
+      }
+    }
+  }
+  return found;
+}
+
+/**
+ * Every discovered destroyer, with a written verdict AND the routes that reach it.
+ *
+ * The route list is not decoration: `applyLoads` is one function reached by two entry points with
+ * OPPOSITE verdicts — `replaceLoads` is the Loads grid's own Save, `resplitLoads` is a hazard — so a
+ * verdict keyed on the function alone can record only one of them, and a THIRD caller would inherit
+ * whichever was written, silently. Pinning the routes makes that caller red by name.
+ */
+const REPLACE_CANDIDATES: Map<FnKey, { verdict: string; routes: string[] }> = new Map([
+  ["src/server/cert-results.ts#replaceReadings",
+    { verdict: "NOT A HAZARD — the readings grid's own Save; the click IS the replace.",
+      routes: ["/api/certs/{}/results"] }],
+  ["src/server/invoices.ts#replaceInvoiceLines",
+    { verdict: "NOT A HAZARD — the invoice lines grid's own Save; the click IS the replace.",
+      routes: ["/api/invoices/{}/lines"] }],
+  ["src/server/invoices.ts#recalculateInvoice",
+    { verdict: "HAZARD — seeded.", routes: ["/api/invoices/{}/recalculate"] }],
+  ["src/server/order-edit.ts#removeLine",
+    { verdict: "HAZARD — seeded.", routes: ["/api/orders/{}/lines/{}"] }],
+  ["src/server/order-edit.ts#replaceContainers",
+    { verdict: "NOT A HAZARD — the Containers grid's own Save; the click IS the replace.",
+      routes: ["/api/orders/{}/containers"] }],
+  ["src/server/order-edit.ts#replaceSerials",
+    { verdict: "NOT A HAZARD — the Serials grid's own Save; the click IS the replace.",
+      routes: ["/api/orders/{}/lines/{}/serials"] }],
+  ["src/server/order-edit.ts#replaceCharges",
+    { verdict: "NOT A HAZARD — the Charges grid's own Save; the click IS the replace.",
+      routes: ["/api/orders/{}/charges"] }],
+  ["src/server/order-loads.ts#applyLoads",
+    { verdict: "NOT A HAZARD ITSELF — a module-private helper reached by `replaceLoads` (the Loads "
+      + "grid's own Save) and by `resplitLoads`, which is seeded as a hazard. The hazard is the "
+      + "caller, which is why both its routes are pinned here.",
+      routes: ["/api/orders/{}/loads", "/api/orders/{}/loads/resplit"] }],
+  ["src/server/process-document.ts#saveProcessDocument",
+    { verdict: "NOT A HAZARD — the atomic process editor's own Save submits the complete ordered "
+      + "document. It claims the part and every old/new code before choosing a working revision, "
+      + "validates the baseline, every row's value and the server-owned keys, preserves locked "
+      + "order/snapshot history, and writes only the submitted revision's steps and parameter rows "
+      + "that differ from the claim's read (#658) inside the audited serializable transaction.",
+      routes: ["/api/parts/{}/process/document"] }],
+  ["src/server/part-process-steps.ts#replaceStepParameters",
+    { verdict: "NOT A HAZARD ITSELF — a helper `saveProcessDocument` calls once per changed kept step "
+      + "(#658) to rewrite that step's own parameter rows from the rows the editor just submitted; the "
+      + "click IS the replace. Reached only through the process-document PUT, which is pinned here so a "
+      + "second caller cannot arrive in silence.",
+      routes: ["/api/parts/{}/process/document"] }],
+  ["src/server/part-process-steps.ts#claimPart",
+    { verdict: "NOT A HAZARD — #319's row-version UPDATE sets id to itself on the selected part "
+      + "before choosing a revision. It changes no business field or updatedAt and replaces no "
+      + "rows. Keep the raw-UPDATE detector broad and classify this exact helper and its callers.",
+      routes: ["/api/orders", "/api/parts/{}/process/recipe-number", "/api/parts/{}/process/document"] }],
+  ["src/server/practice-seed.ts#reseedSingletons",
+    { verdict: "HAZARD via its caller — it truncates and re-seeds the by-construction singletons and "
+      + "the eight Standard templates as part of `resetPracticeData`, which is seeded. Surfaced only "
+      + "once the raw-SQL arm learned to read a tagged template.",
+      routes: ["/api/practice/reset"] }],
+  ["src/server/practice-reset.ts#truncateAllTables",
+    { verdict: "HAZARD via its caller — the truncate behind `resetPracticeData`, which is seeded.",
+      routes: ["/api/practice/reset"] }],
+  ["src/server/quotes.ts#applyQuoteLines",
+    { verdict: "NOT A HAZARD — the quote form's own Save; the click IS the replace.",
+      routes: ["/api/quotes/{}"] }],
+  ["src/server/quotes.ts#deleteQuote",
+    { verdict: "NOT A HAZARD — deleting the quote is the one action QuoteDetail deliberately allows "
+      + "while the form is dirty (:436-438): the operator is discarding the very work the guard "
+      + "would be protecting.",
+      routes: ["/api/quotes/{}"] }],
+  ["src/server/recipe-catalog-claim.ts#claimRecipeCodes",
+    { verdict: "NOT A HAZARD — #319's sorted row-version claims set each selected code's id to "
+      + "itself, serializing snapshot capture with catalog edits without changing business "
+      + "metadata or replacing rows. Catalog edits and first order capture are its pinned callers.",
+      routes: ["/api/admin/step-codes/{}", "/api/orders", "/api/parts/{}/process/document"] }],
+  ["src/server/roles.ts#updateRole",
+    { verdict: "NOT A HAZARD — writes the permission matrix the admin form just submitted "
+      + "(#648 part 1 folded setRolePermissions's replace into the one audited role write).",
+      routes: ["/api/admin/roles/{}"] }],
+  ["src/server/sessions.ts#createSession",
+    { verdict: "NOT A HAZARD — signing in deletes the user's own sessions that expired over a day "
+      + "ago (ruling R27, #718); no editor holds an overlay over session rows, and the login page "
+      + "has no editor of its own.",
+      routes: ["/api/auth/login"] }],
+  ["src/server/sessions.ts#destroySession",
+    { verdict: "NOT A HAZARD — signing out; no editor holds an overlay over session rows, and the "
+      + "sign-out path consults the guard itself (Shell.tsx).",
+      routes: ["/api/auth/logout"] }],
+  ["src/server/shippers.ts#removeOrderFromShipper",
+    { verdict: "HAZARD — seeded.", routes: ["/api/shippers/{}/orders/{}"] }],
+  ["src/server/shippers.ts#replaceShipperLines",
+    { verdict: "NOT A HAZARD — the shipment panel's Lines Save; the click IS the replace.",
+      routes: ["/api/shippers/{}/orders/{}/lines"] }],
+  ["src/server/shippers.ts#replaceShipperContainers",
+    { verdict: "NOT A HAZARD — the shipment panel's Containers Save; the click IS the replace.",
+      routes: ["/api/shippers/{}/orders/{}/containers"] }],
+  ["src/server/shippers.ts#replaceShipperSerials",
+    { verdict: "NOT A HAZARD — the shipment panel's Serials Save; the click IS the replace.",
+      routes: ["/api/shippers/{}/orders/{}/serials"] }],
+  ["src/server/surcharges.ts#setSurchargeStepCodes",
+    { verdict: "NOT A HAZARD — writes the step-code set the surcharge form just submitted.",
+      routes: ["/api/admin/surcharges/{}/step-codes"] }],
+  ["src/server/users.ts#writeUser",
+    { verdict: "NOT A HAZARD — rewrites a user's overrides and sessions from the admin form being "
+      + "saved; no editor overlays either.",
+      routes: ["/api/admin/users/{}"] }],
+]);
+
+// ---------------------------------------------------------------------------------------------
+
+describe("#277 — every control that archives paper or replaces rows carries a verdict", () => {
+  const routes = srcFiles(".ts").filter((f) => /^src\/app\/api\/.*\/route\.ts$/.test(f));
+  // The graph spans the SERVICES, every `.ts` under `src/app/api` (fifteen shared helper modules
+  // already live beside the route files, and a handler extracted into one must not break the walk)
+  // and `src/lib` (the client-safe leaves several routes delegate to).
+  const graph = new Map<string, ModuleFacts>(
+    srcFiles(".ts")
+      .filter((f) => f.startsWith("src/server/") || f.startsWith("src/app/api/") || f.startsWith("src/lib/"))
+      .map((f) => [f, moduleFacts(f)]),
+  );
+
+  /** Route patterns whose mutating handler reaches one of `seeds`. */
+  const routesReaching = (seeds: readonly FnKey[]): string[] => {
+    const reached = functionsReaching(graph, seeds);
+    return [...new Set(routes
+      .filter((f) => MUTATING_METHODS.some((m) => reached.has(fnKey(f, m))))
+      .map(routePattern))].sort();
+  };
+
+  const dangerousRoutes = [...new Set([
+    ...routesReaching([ARCHIVE_SEED]),
+    ...routesReaching([...REPLACE_SEEDS.keys()]),
+  ])].sort();
+
+  const allRouted: RequestSite[] = [];
+  const allOpaque: RequestSite[] = [];
+  for (const file of clientFiles()) {
+    const { routed, opaque } = requestSites(file);
+    allRouted.push(...routed);
+    allOpaque.push(...opaque);
+  }
+
+  /**
+   * The dangerous (file, route) pairs, derived. The client method is deliberately IGNORED here:
+   * moving a print behind a one-argument helper (`postDoc(url)`) makes the site read as a GET, and
+   * a method-filtered join would drop it out of the census with nothing to show for it. Matching on
+   * the URL alone attributes it either way; the cost on this tree is zero extra pairs.
+   */
+  const dangerousPairs = [...new Set(allRouted.flatMap((s) =>
+    dangerousRoutes.filter((p) => urlMatchesRoute(s.url, p)).map((p) => `${s.file} :: ${p}`)))].sort();
+
+  it("finds enough source to be a real census, not a vacuous pass", () => {
+    // Each floor is a failure this sweep could not otherwise report: "no files matched" and "all
+    // files clean" are the same green. The five VOLUME floors below sit well under their measured
+    // figures, so ordinary growth never trips them; the two KIND floors after them are deliberately
+    // tight — at today's 5 gates and 2 asks, removing either ask trips one, which is the point.
+    expect(routes.length, "API route files").toBeGreaterThan(100);
+    expect(graph.size, "modules in the call graph").toBeGreaterThan(250);
+    expect(clientFiles().length, "client sources").toBeGreaterThan(100);
+    expect(allRouted.filter(isMutating).length, "mutating client request sites").toBeGreaterThan(80);
+    expect(routesReaching([ARCHIVE_SEED]).length, "routes reaching storeDocument").toBeGreaterThanOrEqual(6);
+    expect(dangerousPairs.length, "dangerous (file, route) pairs").toBeGreaterThanOrEqual(12);
+    // The two proof checks below iterate the verdicts of their own kind, so a census that degenerated
+    // entirely into exemptions would leave both loops empty and both green. Converting a gate into an
+    // exemption already costs a written reason a reviewer can refuse — this makes it cost a floor too.
+    const kinds = [...CONTROL_VERDICTS.values()];
+    expect(kinds.filter((v) => "gate" in v).length, "controls proved by a named gate").toBeGreaterThanOrEqual(4);
+    expect(kinds.filter((v) => "asks" in v).length, "controls proved by an ask")
+      .toBeGreaterThanOrEqual(2);
+  });
+
+  it("derives the archival routes from storeDocument rather than from a list", () => {
+    const archival = routesReaching([ARCHIVE_SEED]);
+    // Anchors, not the whole set — the point of deriving is that the set may legitimately grow.
+    expect(archival).toContain("/api/orders/{}/traveler");
+    expect(archival).toContain("/api/certs/{}/print");
+    expect(archival).toContain("/api/invoices/{}/print");
+    expect(archival).toContain("/api/shippers/{}/print");
+    // The private-hop case, kept as an anchor because it is the edge a naive graph drops: the
+    // statements routes reach `storeDocument` through a module-private `printStatementInTx`.
+    expect(archival).toContain("/api/receivables/statements");
+    // And the negative direction — a route that merely IMPORTS a service module holding an archival
+    // function must not be swept in. Both of these import the very modules that print.
+    expect(archival).not.toContain("/api/invoices/{}/lines");
+    expect(archival).not.toContain("/api/orders/{}/loads");
+  });
+
+  it("keeps storeDocument the only writer of archived paper", () => {
+    // The archival half rests entirely on that seed. Left as a design-time grep it would narrow to
+    // nothing the day a batch print writes `storedDocument.createMany` directly — every assertion
+    // here is phrased over the seed's reachability, so all of them would stay green.
+    const writers = srcFiles(".ts").filter((f) => STORED_DOCUMENT_WRITE.test(read(f))).sort();
+    expect(writers).toEqual(["src/server/documents.ts"]);
+    // The pattern must NOT be global: a `/g` regex carries `lastIndex` between `.test()` calls, so
+    // every file after the first match would be searched from that offset and a genuine second writer
+    // would be skipped in silence. Asserting the FLAG is the only check that catches it — a reviewer
+    // added `g` and the two behavioural assertions below still passed, because the carried offset
+    // happens to answer `false` for a short string, which is what they expect anyway.
+    expect(STORED_DOCUMENT_WRITE.global, "a /g regex carries lastIndex between files").toBe(false);
+    expect(STORED_DOCUMENT_WRITE.test("await tx.storedDocument.createMany({})"), "still detects").toBe(true);
+    expect(STORED_DOCUMENT_WRITE.test("await tx.storedDocument.findMany({})"), "a read is not a write")
+      .toBe(false);
+    // A nested relation create writes the row without naming the delegate: `order.update({ data: {
+    // documents: { create: … } } })`. Empty on this tree, and asserted rather than assumed, because
+    // the archival half rests entirely on the delegate form being the only one.
+    const nested = srcFiles(".ts").filter((f) => /documents:\s*\{\s*create/.test(read(f))).sort();
+    expect(nested, "a StoredDocument created through a relation").toEqual([]);
+  });
+
+  it("pins which client file reaches which dangerous route", () => {
+    // THE ANTI-FAIL-OPEN COUNTERPART to the join guard below. Every check that follows is phrased
+    // over `dangerousPairs`, so a control that stops being SEEN — moved behind a helper the parser
+    // does not follow, or into a shared component with a prop-supplied path — empties its own row and
+    // takes its verdict with it, quietly. Pinning the set makes the disappearance the failure.
+    expect(dangerousPairs).toEqual([...CONTROL_VERDICTS.keys()].sort());
+  });
+
+  it("proves each refusing gate is still computed FROM the unsaved answer", () => {
+    // Per CONTROL, not per file. `InvoiceDetail.tsx` calls `useUnsavedPresent()` once and feeds three
+    // gates; deleting the unsaved branch out of one of them must red, and under a file-scoped rule it
+    // would not.
+    const broken: string[] = [];
+    for (const [key, verdict] of CONTROL_VERDICTS) {
+      if (!("gate" in verdict)) continue;
+      const [file] = key.split(" :: ");
+      const { tainted, refusals } = gateBindings(file);
+      if (!tainted.has(verdict.gate)) broken.push(`${key}: ${verdict.gate} no longer reads useUnsavedPresent()`);
+      else if (!refusals.has(verdict.gate)) broken.push(`${key}: ${verdict.gate} refuses no control`);
+    }
+    expect(broken).toEqual([]);
+  });
+
+  it("proves each asking gate asks on THE CONTROL that issues the request", () => {
+    // Per CONTROL since #294, and that is the whole point of the change. `ShipmentDetail.tsx` calls
+    // `confirmDiscard()` inside `reverseAction`, so the old file-scoped rule was already true for
+    // every control in that file — marking remove-order as an ask would have gone green with no
+    // production change at all. Now the ask has to reach the request: either in the same function,
+    // or through every reference to it.
+    const broken: string[] = [];
+    for (const [key, verdict] of CONTROL_VERDICTS) {
+      if (!("asks" in verdict)) continue;
+      const [file, route] = key.split(" :: ");
+      // Both halves. The file-scoped call check keeps #188's blind spot closed (an import left
+      // behind is not a call), and the per-control check ties that call to this request.
+      if (!callsConfirmDiscard(file)) { broken.push(`${key}: the file no longer asks`); continue; }
+      const why = asksBeforeRequest(file, route);
+      if (why) broken.push(`${key}: ${why}`);
+    }
+    expect(broken).toEqual([]);
+  });
+
+  it("keeps both ends of every scoped gate wired — a registration AND a question", () => {
+    // Found by mutation on this very PR: deleting `scope={serialsScope(line.id)}` from
+    // SerialsSection's SaveButton left every other assertion in this file green, while
+    // `unsavedPresentInScope` matched nothing, answered false forever, and #293's refusal quietly
+    // stopped refusing. The asking end is proved by the gate rule; this is the registering end.
+    const problems: string[] = [];
+    const sites = scopeHelperSites();
+    expect(sites.size, "scope helpers found in the leaf").toBeGreaterThan(0);
+    for (const [helper, { registers, queries }] of sites) {
+      if (registers === 0) problems.push(`${helper}: nothing REGISTERS this scope, so it can never match`);
+      if (queries === 0) problems.push(`${helper}: nothing ASKS about this scope, so registering it guards nothing`);
+    }
+    expect(problems).toEqual([]);
+  });
+
+  it("keeps every exemption a reason somebody wrote, and states which claim it makes", () => {
+    const problems: string[] = [];
+    for (const [key, verdict] of CONTROL_VERDICTS) {
+      if (!("allowed" in verdict)) continue;
+      if (verdict.allowed.trim().length <= 40) problems.push(`${key}: the reason is too short to be a reason`);
+      // Every exemption is one of exactly two claims, and conflating them is how an entry written to
+      // silence an over-match ends up blessing a real gap.
+      if (!/^(ARCHIVES|REPLACES), (GUARDED OTHERWISE|NOTHING TO GUARD|NOT GUARDED)/.test(verdict.allowed)) {
+        problems.push(`${key}: the reason must open by naming the claim it makes`);
+      }
+      // A NOT GUARDED entry says a real gap ships. It must name the issue that tracks it, or the
+      // exemption is just prose silencing the sweep — "a permanent amnesty rather than a check".
+      if (/^(ARCHIVES|REPLACES), NOT GUARDED/.test(verdict.allowed) && !/#\d+/.test(verdict.allowed)) {
+        problems.push(`${key}: a NOT GUARDED reason must cite the issue tracking the gap`);
+      }
+      // AND the other two claims must be TRUE OF THE FILE. Without this, a per-control gate proof can
+      // be switched off by rewriting its verdict as a plausible sentence — a reviewer did exactly
+      // that to CertDetail's print and the sweep stayed green. If the file is still computing a gate
+      // from `useUnsavedPresent()` and still refusing a control with it, then "guarded by something
+      // this sweep cannot prove" and "nothing here to guard" are both false, and the honest verdict
+      // is the gate. NOT GUARDED is deliberately exempt: `ShipmentDetail` genuinely has working gates
+      // on its OTHER controls, which is the whole point of #294.
+      if (/^(ARCHIVES|REPLACES), (GUARDED OTHERWISE|NOTHING TO GUARD)/.test(verdict.allowed)) {
+        const [file] = key.split(" :: ");
+        const { tainted, refusals } = gateBindings(file);
+        const proven = [...tainted].filter((name) => refusals.has(name));
+        if (proven.length > 0) {
+          problems.push(`${key}: ${proven.join(", ")} already refuses from useUnsavedPresent — claim the gate`);
+        }
+      }
+    }
+    expect(problems).toEqual([]);
+    // Pinned, not floored, and now at ZERO: the two this sweep originally found (#293 removeLine,
+    // #294 removeOrderFromShipper) both carry real scoped gates since the registry learned to name a
+    // region. A pin rather than a floor means re-introducing one is a decision somebody makes rather
+    // than a line of prose somebody adds — and it fails in BOTH directions, so a future gap cannot be
+    // absorbed silently and a fixed one cannot leave a stale exemption behind.
+    const notGuarded = [...CONTROL_VERDICTS.values()]
+      .filter((v) => "allowed" in v && /^(ARCHIVES|REPLACES), NOT GUARDED/.test(v.allowed));
+    expect(notGuarded.length, "known-unguarded controls").toBe(0);
+  });
+
+  it("keeps the client-to-route join intact — every mutating request resolves to a real route", () => {
+    // Both halves depend on a URL matching a route pattern, and a join that silently stops matching
+    // turns every check above green: routes lose their callers and nothing is flagged. So the join is
+    // asserted over EVERY mutating request in the app rather than only the dangerous ones — if URL
+    // normalisation drifts, this reds by name long before a gate goes missing.
+    const patterns = routes.map(routePattern);
+    const unmatched = allRouted.filter(isMutating)
+      .filter((s) => !patterns.some((p) => urlMatchesRoute(s.url, p)))
+      .map((s) => `${s.file}:${s.line} ${s.method} ${s.url}`);
+    expect(unmatched).toEqual([]);
+  });
+
+  it("writes down every mutating request whose URL it cannot read", () => {
+    // A path arriving as a prop is a request this sweep cannot route, so it cannot say whether the
+    // request is dangerous. An exemption with a reason is the fail-CLOSED answer; skipping it is how
+    // a print built on a prop-supplied path would be invisible to every check here.
+    const opaqueFiles = [...new Set(allOpaque.filter(isMutating).map((s) => s.file))]
+      .filter((f) => f !== "src/lib/fetcher.ts")       // the `api()` helper itself — it IS the wrapper
+      .sort();
+    expect(opaqueFiles).toEqual([...OPAQUE_URL_ALLOWED.keys()].sort());
+    for (const [file, reason] of OPAQUE_URL_ALLOWED) {
+      expect(reason.trim().length, `${file}: the reason is too short to be a reason`).toBeGreaterThan(40);
+    }
+  });
+
+  it("classifies every wholesale destroyer in src/server, with the routes that reach it", () => {
+    const candidates = replaceCandidates();
+    expect(candidates.size, "discovered destroyers").toBeGreaterThanOrEqual(15);
+    expect([...candidates.keys()].sort(), "unclassified or vanished destroyer")
+      .toEqual([...REPLACE_CANDIDATES.keys()].sort());
+    const routeDrift = [...REPLACE_CANDIDATES]
+      .map(([key, { routes: pinned }]) => {
+        const actual = routesReaching([key]);
+        return actual.join(",") === [...pinned].sort().join(",")
+          ? null : `${key}: reaches ${actual.join(", ") || "(none)"}, pinned ${pinned.join(", ")}`;
+      })
+      .filter((x): x is string => x !== null);
+    expect(routeDrift).toEqual([]);
+    // Every seeded hazard must be reachable, or the seed names a function that no longer exists.
+    for (const seed of REPLACE_SEEDS.keys()) {
+      expect(routesReaching([seed]).length, `${seed} reaches no route`).toBeGreaterThan(0);
+    }
+  });
+
+  it("has no local import specifier the graph could not resolve", () => {
+    // Every unresolved local specifier is a lost edge, and a lost edge is fail-OPEN: a dangerous
+    // route reached through it stops being detected with no failure of its own.
+    const lost = [...graph]
+      .flatMap(([file, facts]) => facts.unresolved.map((spec) => `${file}: ${spec}`))
+      .sort();
+    expect(lost).toEqual([]);
+  });
+
+  it("reads a method off every route, so an unrecognised export cannot hide a handler", () => {
+    // A route file whose graph holds none of the six method names is one this sweep would never
+    // classify — it drops out of both halves silently. Next calls only these exports, so what this
+    // really catches is a parse or a walk that stopped seeing declarations.
+    const methodless = routes
+      .filter((f) => {
+        const facts = graph.get(f);
+        return !HTTP_METHODS.some((m) => facts?.calls.has(m) || facts?.reexports.has(m));
+      })
+      .sort();
+    expect(methodless).toEqual([]);
+  });
+});
+
+describe("#277 — the detectors themselves, on sources written to break them", () => {
+  // None of the rules above can be trusted from a green run: each passes both when the code is safe
+  // and when the detector has gone blind. These exercise the rules directly, which is the only place
+  // that difference shows.
+
+  const firstCall = <T>(src: string, pick: (n: ts.CallExpression) => T): T | undefined => {
+    const sf = parseSource("candidate.tsx", src);
+    let out: T | undefined;
+    const walk = (n: ts.Node): void => {
+      if (ts.isCallExpression(n) && out === undefined) out = pick(n);
+      ts.forEachChild(n, walk);
+    };
+    ts.forEachChild(sf, walk);
+    return out;
+  };
+
+  it("reads a URL from every literal shape, folds a hoisted one, and refuses the rest", () => {
+    const url = (src: string, consts = new Map<string, string>()): string | null | undefined =>
+      firstCall(src, (n) => foldUrl(n.arguments[0], consts));
+    expect(url(`fetch("/api/x");`)).toBe("/api/x");
+    expect(url("fetch(`/api/x`);")).toBe("/api/x");
+    expect(url("fetch(`/api/orders/${id}/traveler`);")).toBe("/api/orders/*/traveler");
+    // The shape that broke the first draft of this file: a trailing interpolation carrying a query.
+    expect(url("fetch(`/api/orders/${id}/traveler${query}`);")).toBe("/api/orders/*/traveler*");
+    // The two evasions folding exists for.
+    expect(url(`fetch(path, { method: "POST" });`, new Map([["path", "/api/certs/*/print"]])))
+      .toBe("/api/certs/*/print");
+    expect(url(`fetch("/api/certs/" + id + "/print");`)).toBe("/api/certs/*/print");
+    // Genuinely unreadable — reported rather than guessed at.
+    expect(url(`fetch(path);`)).toBe(null);
+    expect(url(`fetch(pick(a, b));`)).toBe(null);
+  });
+
+  it("treats an unreadable HTTP method as mutating, never as a read", () => {
+    const method = (src: string): string | undefined => firstCall(src, (n) => methodOf(n.arguments[1]));
+    expect(method(`fetch("/api/x");`), "no init is a read").toBe("GET");
+    expect(method(`fetch("/api/x", { method: "POST" });`)).toBe("POST");
+    expect(method(`fetch("/api/x", { "method": "DELETE" });`), "a quoted key").toBe("DELETE");
+    expect(method(`fetch("/api/x", { headers: {} });`), "an init with no method").toBe("GET");
+    for (const src of [
+      `fetch("/api/x", { ...init });`,
+      `fetch("/api/x", { method });`,
+      `fetch("/api/x", { method: verb });`,
+      `fetch("/api/x", { method: hard ? "PUT" : "POST" });`,
+      `fetch("/api/x", init);`,
+    ]) expect(method(src), src).toBe("UNKNOWN");
+    expect(isMutating({ file: "x", line: 1, url: "/api/x", method: "UNKNOWN" })).toBe(true);
+    expect(isMutating({ file: "x", line: 1, url: "/api/x", method: "GET" })).toBe(false);
+  });
+
+  it("folds a hoisted URL, but refuses a name declared twice with different values", () => {
+    const one = requestSites("candidate.tsx",
+      `function a() { const path = "/api/certs/x/print"; return fetch(path, { method: "POST" }); }`);
+    expect(one.routed.map((s) => s.url), "a single declaration folds").toEqual(["/api/certs/x/print"]);
+    expect(one.opaque).toEqual([]);
+    // The same name meaning two different things: whichever came last would win, and the call sites
+    // would be attributed to a route one of them never calls. Unreadable is the fail-CLOSED answer —
+    // both land in the opaque bucket, where they need an exemption somebody writes.
+    const two = requestSites("candidate.tsx", [
+      `function a() { const path = "/api/certs/x/print"; return fetch(path, { method: "POST" }); }`,
+      `function b() { const path = "/api/quotes/y"; return fetch(path, { method: "DELETE" }); }`,
+    ].join("\n"));
+    expect(two.routed).toEqual([]);
+    expect(two.opaque.length, "both sites become unroutable, not just the second").toBe(2);
+    // Re-declaring the SAME value is not ambiguity — a constant repeated in two components is common
+    // and reads identically either way.
+    const same = requestSites("candidate.tsx", [
+      `function a() { const path = "/api/certs/x/print"; return fetch(path, { method: "POST" }); }`,
+      `function b() { const path = "/api/certs/x/print"; return fetch(path, { method: "DELETE" }); }`,
+    ].join("\n"));
+    expect(same.routed.length).toBe(2);
+    expect(same.opaque).toEqual([]);
+  });
+
+  it("calls an init a request only when it names a method, not when it merely spreads", () => {
+    // `namesAMethod` is what widens the opaque bucket past `fetch`/`api` to a local wrapper. Made any
+    // looser it fires on the object-merge idiom: `next.set(id, { ...next.get(id), ...patch })` was
+    // reported as an unroutable request in three files.
+    const named = (src: string): boolean | undefined => firstCall(src, (n) => namesAMethod(n.arguments[1]));
+    expect(named(`send("/x", { method: "POST" });`)).toBe(true);
+    expect(named(`send(url, { method: verb, body });`)).toBe(true);
+    expect(named(`next.set(id, { ...prev, ...patch });`), "an object merge").toBe(false);
+    expect(named(`send("/x", { headers: {} });`)).toBe(false);
+  });
+
+  it("matches a client URL to a route pattern, holes and query strings included", () => {
+    expect(urlMatchesRoute("/api/certs/*/print", "/api/certs/{}/print")).toBe(true);
+    expect(urlMatchesRoute("/api/orders/*/traveler*", "/api/orders/{}/traveler")).toBe(true);
+    expect(urlMatchesRoute("/api/shippers/*/print?*", "/api/shippers/{}/print")).toBe(true);
+    // A hole standing where a literal segment is: over-matched deliberately, because claiming more
+    // routes for a call site is what keeps a dangerous one inside the census.
+    expect(urlMatchesRoute("/api/*/statements", "/api/receivables/statements")).toBe(true);
+    // What must NOT match: a different depth, a different literal, a prefix, a hole spanning a slash.
+    expect(urlMatchesRoute("/api/certs/*/print", "/api/certs/{}")).toBe(false);
+    expect(urlMatchesRoute("/api/certs/*/print", "/api/quotes/{}/print")).toBe(false);
+    expect(urlMatchesRoute("/api/receivables/statements", "/api/receivables/statements/run")).toBe(false);
+    expect(urlMatchesRoute("/api/*", "/api/receivables/statements")).toBe(false);
+  });
+
+  it("follows a call through an import, a private hop, a barrel and a point-free handler", () => {
+    // The four edges the real tree needs, on a synthetic graph so the shapes are visible. A miss on
+    // any is fail-OPEN — a dangerous route that stops being detected.
+    const facts = (calls: [string, string[]][], imports: [string, string][] = [],
+      reexports: [string, string][] = []): ModuleFacts => ({
+      imports: new Map(imports), reexports: new Map(reexports),
+      calls: new Map(calls.map(([k, v]) => [k, new Set(v)])), unresolved: [],
+    });
+    const graph = new Map<string, ModuleFacts>([
+      ["doc.ts", facts([])],
+      ["svc.ts", facts([["printThing", ["printThingInTx"]], ["printThingInTx", ["store"]]],
+        [["store", "doc.ts#store"]])],
+      ["barrel.ts", facts([], [], [["printThing", "svc.ts#printThing"]])],
+      ["route.ts", facts([["POST", ["handle", "printThing"]]], [["printThing", "barrel.ts#printThing"]])],
+      ["other.ts", facts([["POST", ["handle", "listThings"]]], [["listThings", "svc.ts#listThings"]])],
+    ]);
+    const reached = functionsReaching(graph, ["doc.ts#store"]);
+    expect(reached.has("svc.ts#printThingInTx"), "the private hop").toBe(true);
+    expect(reached.has("svc.ts#printThing"), "the exported entry").toBe(true);
+    expect(reached.has("route.ts#POST"), "through the barrel, point-free").toBe(true);
+    expect(reached.has("other.ts#POST"), "a route importing the module but not the function").toBe(false);
+  });
+
+  it("collects an identifier passed as an argument, which is what makes point-free reachable", () => {
+    // `export const POST = handle(printCert)` never syntactically calls `printCert`. This calls the
+    // REAL `moduleFacts` — an earlier version re-implemented the walk inline and stayed green with
+    // the production line deleted, which is the same class of defect as a comment that describes
+    // code it does not run.
+    const facts = moduleFacts("src/app/api/x/route.ts", `export const POST = handle(printCert);`);
+    expect([...(facts.calls.get("POST") ?? [])].sort()).toEqual(["handle", "printCert"]);
+    // And a property call on a namespace import is recorded as `receiver.member`, which is how the
+    // fixpoint follows `import * as X`.
+    const ns = moduleFacts("src/app/api/y/route.ts", `export const POST = () => X.printCert();`);
+    expect([...(ns.calls.get("POST") ?? [])]).toContain("X.printCert");
+  });
+
+  it("terminates on a call cycle and on a re-export cycle", () => {
+    const facts = (calls: [string, string[]][], imports: [string, string][] = [],
+      reexports: [string, string][] = []): ModuleFacts => ({
+      imports: new Map(imports), reexports: new Map(reexports),
+      calls: new Map(calls.map(([k, v]) => [k, new Set(v)])), unresolved: [],
+    });
+    const cyclic = new Map<string, ModuleFacts>([
+      ["a.ts", facts([["f", ["g", "store"]], ["g", ["f"]]], [["store", "doc.ts#store"]])],
+      ["b.ts", facts([], [], [["x", "c.ts#x"]])],
+      ["c.ts", facts([], [], [["x", "b.ts#x"]])],
+    ]);
+    const reached = functionsReaching(cyclic, ["doc.ts#store"]);
+    expect(reached.has("a.ts#f")).toBe(true);
+    expect(reached.has("a.ts#g"), "reached through the cycle").toBe(true);
+    expect(reached.has("b.ts#x"), "a re-export cycle resolves to nothing, and does not hang").toBe(false);
+  });
+
+  it("taints a gate only while it still reads the unsaved answer", () => {
+    // The mutation the per-control rule exists to catch, on the real file: `recalcGate` must stop
+    // being tainted the moment it stops reading `unsavedLines`, even though the file keeps calling
+    // `useUnsavedPresent()` for its other two gates.
+    const live = gateBindings("src/app/invoicing/[id]/InvoiceDetail.tsx");
+    for (const name of ["unsavedLines", "finalizeGate", "recalcGate", "printGate"]) {
+      expect(live.tainted.has(name), `${name} should be tainted today`).toBe(true);
+    }
+    // And a file that gates on a flag of its own, without the primitive, must NOT read as covered —
+    // this is the divergence QuoteDetail's exemption is written about.
+    const local = gateBindings("src/app/quotes/[id]/QuoteDetail.tsx");
+    // Both halves, because the negative alone holds for any string in a file that never calls the
+    // primitive — it distinguished nothing. The pair says: this gate EXISTS and refuses a control,
+    // and it is still not derived from the registry, which is exactly what its exemption claims.
+    expect(local.refusals.has("printGate"), "the gate refuses a control").toBe(true);
+    expect(local.tainted.has("printGate"), "but not from useUnsavedPresent").toBe(false);
+  });
+
+  it("detects the asking gate as a CALL, never as an import or a mention", () => {
+    const asks = (src: string): boolean => callsBareIdentifier(src, "confirmDiscard", "x.tsx");
+    expect(asks(`if (!confirmDiscard()) return;`)).toBe(true);
+    // The blind spot #188 names, re-found in this repo by mutation twice: an import left behind after
+    // the call was deleted must NOT read as covered.
+    expect(asks(`import { confirmDiscard } from "@/lib/use-unsaved-section";`)).toBe(false);
+    expect(asks(`// guarded by confirmDiscard() above`), "a comment").toBe(false);
+    expect(asks(`const hint = "confirmDiscard()";`), "a string").toBe(false);
+    expect(asks(`<p>confirmDiscard()</p>`), "JSX text").toBe(false);
+    expect(asks(`onLeave={confirmDiscard}`), "a reference, never called").toBe(false);
+  });
+
+  it("finds all three destroy shapes and no unrelated write", () => {
+    // Exercised through the real tree, because the shapes are what the services actually write.
+    const found = replaceCandidates();
+    expect(found.has("src/server/invoices.ts#recalculateInvoice"), "deleteMany").toBe(true);
+    expect(found.has("src/server/quotes.ts#applyQuoteLines"), "updateMany stamping deletedAt").toBe(true);
+    expect(found.has("src/server/practice-reset.ts#truncateAllTables"), "raw destructive SQL").toBe(true);
+    // The destroyer that puts nothing back — the shape a delete-and-re-create rule misses, and where
+    // two live gaps were sitting.
+    expect(found.has("src/server/order-edit.ts#removeLine"), "a destroy with no create").toBe(true);
+    expect(found.has("src/server/shippers.ts#removeOrderFromShipper")).toBe(true);
+    // A pure create is not a destroyer, and neither is a claim helper whose WHERE clause merely names
+    // `deletedAt` — the noise that made the first version of this arm unusable.
+    expect(found.has("src/server/documents.ts#storeDocument"), "a pure create").toBe(false);
+    expect(found.has("src/server/parts.ts#claimLive"), "a live-row claim").toBe(false);
+  });
+
+  it("resolves `@/` as the only path alias, so no import shape is silently a package", () => {
+    // `resolveLocalModule` answers `null` for any non-relative specifier that is not `@/`, treating it
+    // as a package. That is only safe while `@/` is the only alias.
+    const tsconfig = JSON.parse(read("tsconfig.json").replace(/^\s*\/\/.*$/gm, "")) as
+      { compilerOptions: { paths: Record<string, string[]> } };
+    expect(Object.keys(tsconfig.compilerOptions.paths)).toEqual(["@/*"]);
+  });
+});

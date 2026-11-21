@@ -1,0 +1,63 @@
+import { NextResponse } from "next/server";
+import { handle, requireUser, HttpError } from "@/server/http";
+import { mustCan, mustDo } from "@/server/permissions";
+import { applyPayment, discountOffer, invoiceOpenBalanceById, openInvoicesForPayer, paymentCandidates } from "@/server/applications";
+
+/**
+ * Peeks at a raw POST body for a WRITE_OFF line, before `applyPayment`'s own zod parse. Only
+ * needs to recognize the same `lines`/`type` shape the `APPLY` schema (applications.ts) already
+ * requires — any body that reaches a WRITE_OFF line inside `applyPaymentInTx` must already match
+ * this shape, so a loose type-guard here never lets a real write-off through ungated. A body that
+ * DOESN'T match still reaches `applyPayment`, which reports its own 400 via zod.
+ */
+function hasWriteOffLine(body: unknown): boolean {
+  if (typeof body !== "object" || body === null || Array.isArray(body)) return false;
+  const lines = (body as Record<string, unknown>).lines;
+  if (!Array.isArray(lines)) return false;
+  return lines.some((line) => typeof line === "object" && line !== null && (line as Record<string, unknown>).type === "WRITE_OFF");
+}
+
+// GET /api/receivables/applications — three read shapes over the same `receivables.view` gate, the
+// `/api/invoices` `?candidates=1` precedent (one route, switched by which params are present):
+//   - `?customerId=` — the payer's (and, when it has a parent/children, its family's) open
+//     finalized invoices (Task 13's batch-apply screen: which invoices are even pickable).
+//   - `?customerId=&paymentId=` — those same rows, each with its live open balance and this
+//     payment's `discount` for it, from one read (#613): what the Apply panel opens on, where it
+//     sent the first shape and then the third once per row.
+//   - `?paymentId=&invoiceId=` — one candidate's live open balance plus the early-pay discount
+//     offer for THIS payment settling it. `discount` is `DiscountOffer` (applications.ts), NOT a
+//     bare number: since #155 arm 2 it carries WHY the figure is zero, and — for the one blocker an
+//     operator can act on — the two figures the apply grid's hint is built from. The panel prefills
+//     a DISCOUNT line only when `discount.amount > 0`.
+export const GET = handle(async (req) => {
+  mustCan(requireUser(), "receivables", "view");
+  const url = new URL(req.url);
+  const customerId = url.searchParams.get("customerId");
+  const paymentId = url.searchParams.get("paymentId") ?? "";
+  if (customerId && paymentId) return NextResponse.json(await paymentCandidates(paymentId, customerId));
+  if (customerId) return NextResponse.json(await openInvoicesForPayer(customerId));
+
+  const invoiceId = url.searchParams.get("invoiceId") ?? "";
+  if (!paymentId || !invoiceId) throw new HttpError(400, "paymentId and invoiceId are required");
+  const [open, discount] = await Promise.all([
+    invoiceOpenBalanceById(invoiceId), discountOffer(paymentId, invoiceId),
+  ]);
+  return NextResponse.json({ open, discount });
+});
+
+// POST /api/receivables/applications — apply a payment across one or more invoices in ONE sorted
+// claim (Task 7, P5B §4.1). Applying cash is the spec's named dangerous action `apply_payments`
+// (#211, owner ruling 2026-08-25 — declared since 5B, enforced from here on): `receivables.create`
+// alone records payments and batches but does not move cash onto invoices. A body carrying ANY
+// WRITE_OFF line additionally requires the `write_off` special action (spec §9, Task 16). Gate
+// order: mustCan(create) → mustDo(apply_payments) → parse → conditional mustDo(write_off) →
+// delegate.
+export const POST = handle(async (req) => {
+  const user = requireUser();
+  mustCan(user, "receivables", "create");
+  mustDo(user, "apply_payments");
+  const body: unknown = await req.json();
+  if (hasWriteOffLine(body)) mustDo(user, "write_off");
+  await applyPayment(body);
+  return NextResponse.json({ ok: true });
+});

@@ -1,0 +1,743 @@
+import { Prisma } from "../../prisma/generated/prisma/client";
+import { prisma } from "./db";
+import { withDbErrors, retryAllocation } from "./db-errors";
+import { HttpError } from "./errors";
+import { auditedCreate } from "./audit";
+import { allocateNumber, getSetting } from "./settings";
+import { currentActor } from "./context";
+import { getBillingConfig } from "./billing-config";
+import {
+  salesJournal, cashJournal, reverseLines, readinessGaps, CONFIG_ACCOUNT_MEMOS,
+  type JournalLine, type ReadinessGap, type ReadinessInput,
+} from "./gl-mapping";
+import { formatDateOnly } from "../lib/business-days";
+import { GL_EXPORT_COLUMNS, type PostingSourceType } from "../lib/gl-constants";
+import { invoiceDocumentNumber } from "../lib/invoice-constants";
+import { renderPdf } from "./pdf/render";
+import { buildPostingRegister, type PostingRegisterData } from "./pdf/posting-register";
+
+// -------------------------------------------------------------------------------------------
+// Task 6 (P5C §4.3): the per-event GL-export DELTA engine. A close's export is not a full dump
+// of the period — it is the DIFFERENCE between the events that should be posted for the period
+// end `E` and what has already been posted (`GlPosting`, glDate <= E). Each event maps to a
+// self-balancing set of journal lines keyed on the 2-part `${sourceType}:${sourceId}` (an
+// invoice/credit id, a payment id, an application id — never a position or display field, so a
+// correction reverses ONE event without disturbing another). Both the live side (event dates) and
+// the prior side (glDate) are bounded STRICTLY to the period's OWN month `[monthStart, monthEnd]` —
+// NOT cumulatively `<= E`. The period lock guarantees a closed month's events can't change, so a
+// month-bounded delta is exact; and it is the ONLY bound that survives exporting months out of
+// order — a cumulative `<= E` would let a later month's export vacuum an earlier month's events
+// under the later glDate, after which the earlier month's export re-posts them (double-booked).
+//
+//   NEW      = a live in-scope event with no live prior posting   -> post   (isReversal:false)
+//   REVERSED = a net-posted event no longer live-in-scope         -> reverse (isReversal:true)
+//   UNCHANGED (live AND already posted) -> nothing, which is what makes a re-run an empty no-op.
+//
+// An event in BOTH maps is compared by its NET journal (`sameNet`): an amount change under a reopen
+// (unlock, edit, re-finalize within the month) reverses the prior net and re-posts the current one,
+// and so does a revenue line whose frozen account changed. A line whose account is read from live
+// configuration at each export (A/R, sales tax, a payment type's cash account, discount, write-off:
+// `CONFIG_ACCOUNT_MEMOS`) is compared by its memo, not its account, so a configuration change alone
+// leaves an unchanged event alone (owner ruling R25, #705). Once an event's amounts do change, its
+// reversal carries the prior lines' accounts and its post the current ones.
+//
+// The batch and its postings are written under a Serializable `$transaction`, wrapped in
+// `withDbErrors`, through `auditedCreate` (the 5A/5B print-bracket shape). Money is integer cents.
+// The posting-register PDF (Task 7, `pdf/posting-register.ts`) is rendered from the SAME emitted
+// `lines` the CSV and the postings come from, and stored alongside the CSV on the same batch row —
+// `renderPdf` is async and does no DB I/O, so building it before `tx.glExportBatch.create` stays
+// safely inside the Serializable transaction.
+// -------------------------------------------------------------------------------------------
+
+const cents = (n: number): number => Math.round(n * 100);
+
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+/** "July 2026" — the posting register's own header label; `period.month` is 1-based. */
+function periodLabelOf(year: number, month: number): string {
+  return `${MONTH_NAMES[month - 1]} ${year}`;
+}
+
+export type ExportedPosting = {
+  sourceType: string; sourceId: string; glAccountId: string | null;
+  debit: number; credit: number; side: string; isReversal: boolean;
+};
+
+export type ExportedBatch = {
+  batchId: string;
+  exportNumber: number;
+  periodEnd: string;
+  postings: ExportedPosting[];
+  file: Buffer;
+};
+
+type Tx = Prisma.TransactionClient;
+
+/** The delta window: the period's OWN month, `[monthStart, monthEnd]` inclusive for the @db.Date
+ *  payment/application/glDate scopes; `nextStart` is the EXCLUSIVE upper bound `[monthStart, nextStart)`
+ *  the finalized-invoice scope needs (owner ruling 8 — invoices count by `finalizedAt`, a `DateTime`
+ *  with a time-of-day, so a same-day timestamp is only in-month under a half-open interval). Both the
+ *  live event dates and the prior glDate are bounded to this month — never cumulatively `<= E` — so an
+ *  out-of-order export can neither vacuum an earlier month's events nor double-post them (see header). */
+type MonthBounds = { monthStart: Date; monthEnd: Date; nextStart: Date };
+
+/** month is 1-based: `Date.UTC(year, month-1, 1)` is the 1st, `Date.UTC(year, month, 0)` the last day,
+ *  `Date.UTC(year, month, 1)` the 1st of the NEXT month. */
+function monthBoundsOf(year: number, month: number): MonthBounds {
+  return {
+    monthStart: new Date(Date.UTC(year, month - 1, 1)),
+    monthEnd: new Date(Date.UTC(year, month, 0)),
+    nextStart: new Date(Date.UTC(year, month, 1)),
+  };
+}
+
+/** `periodEnd` is the last day of its month at UTC midnight (a @db.Date round-trip); the readiness
+ *  routes hand it in directly, so recover the 1st of the SAME month (and the 1st of the next) for the
+ *  delta window. */
+function monthBoundsFromEnd(periodEnd: Date): MonthBounds {
+  return {
+    monthStart: new Date(Date.UTC(periodEnd.getUTCFullYear(), periodEnd.getUTCMonth(), 1)),
+    monthEnd: periodEnd,
+    nextStart: new Date(Date.UTC(periodEnd.getUTCFullYear(), periodEnd.getUTCMonth() + 1, 1)),
+  };
+}
+
+/**
+ * Emit the delta batch for a CLOSED period (§4.3). Refuses a reopened period (it must be re-closed
+ * first) and refuses on any readiness gap (§7). Allocates the export number under the tx, writes the
+ * `GlExportBatch` + one `GlPosting` per emitted line through `auditedCreate`, and renders the CSV.
+ */
+export async function exportClose(closePeriodId: string): Promise<ExportedBatch> {
+  // `retryAllocation` (#115). The Σdebit = Σcredit backstop and the readiness refusal are both INSIDE
+  // the transaction, so they re-run per attempt — a retry recomputes the delta from a fresh snapshot
+  // and re-proves the batch balances rather than persisting a figure computed under the aborted one.
+  // Both refusals are `HttpError`s, which are not retryable, so a genuine unbalanced batch or
+  // readiness gap still fails on the first attempt instead of being re-attempted ten times.
+  return withDbErrors({ entity: "GL export" }, () => retryAllocation(() => prisma.$transaction(async (tx) => {
+    const period = await tx.closePeriod.findFirst({ where: { id: closePeriodId } });
+    if (!period) throw new HttpError(404, "Close period not found");
+    if (period.status !== "CLOSED") {
+      throw new HttpError(409, "Reopened periods must be re-closed before export");
+    }
+    // period.month is 1-based; Date.UTC(year, month, 0) is day 0 of the NEXT month = this month's
+    // last day, and Date.UTC(year, month-1, 1) is the 1st — the same reading close-periods.ts
+    // monthBounds and every A/R @db.Date round-trip use. The delta scopes to this window, not `<= E`.
+    const bounds = monthBoundsOf(period.year, period.month);
+    const periodEnd = bounds.monthEnd;
+
+    const { lines } = await exportDelta(tx, period.year, period.month, bounds);
+
+    // Balance backstop (§7): a batch that does not net to zero must NEVER persist, even if a readiness
+    // case is ever missed. Sum debit and credit over the emitted lines in integer cents and refuse on
+    // any difference — every event's line set is self-balancing, so the whole batch must be too.
+    const debitCents = lines.reduce((s, l) => s + cents(l.debit), 0);
+    const creditCents = lines.reduce((s, l) => s + cents(l.credit), 0);
+    if (debitCents !== creditCents) {
+      throw new HttpError(500,
+        `GL export batch is unbalanced (debit ${debitCents} != credit ${creditCents} cents) — refusing to persist`);
+    }
+
+    // #90: an empty delta is a no-op, and recording one used to burn a permanent export number and
+    // persist an indistinguishable empty batch row (header-only CSV, empty register PDF) per click.
+    // Refuse BEFORE `allocateNumber`, so "consumes no number when the save fails" holds and the
+    // batch list stays a list of exports that actually moved something.
+    if (lines.length === 0) {
+      throw new HttpError(400, "Nothing to export — this period has no unexported postings");
+    }
+
+    const exportNumber = await allocateNumber("gl_export_batch_number_next", tx);
+    const fileName = `gl-${period.year}-${String(period.month).padStart(2, "0")}.csv`;
+    const periodEndStr = formatDateOnly(periodEnd);
+    // SUMMARY journal (ruling 9): the exported FILE and the register are one line per (account, side),
+    // the per-event `lines` collapsed and summed. The per-event `GlPosting` rows below stay UN-summarized
+    // (the ERP-side detail + delta driver). Aggregation preserves Σdebit=Σcredit, so the backstop above
+    // still guarantees the summary balances.
+    const summaryLines = aggregateLines(lines);
+    const file = renderCsv(summaryLines, periodEndStr);
+    // The posting register renders from the SAME aggregated summary the CSV does (§4.3/§4.4) — two
+    // sub-registers, SALES then CASH, in the first-occurrence order aggregation preserves.
+    // `renderPdf` is async and does no DB I/O, so building the buffer before `glExportBatch.create`
+    // stays safely inside the Serializable tx (task brief, `pdf/render.ts`'s own contract).
+    const registerData: PostingRegisterData = {
+      periodLabel: periodLabelOf(period.year, period.month),
+      periodEnd: periodEndStr,
+      exportNumber,
+      lines: summaryLines.map((l) => ({ side: l.side, glAccountName: l.glAccountName, debit: l.debit, credit: l.credit, memo: l.memo })),
+    };
+    const register = new Uint8Array(await renderPdf(buildPostingRegister(registerData)));
+
+    const batch = await auditedCreate(
+      "glExportBatch",
+      {
+        exportNumber, closePeriodId, periodEnd, fileName, postingCount: lines.length,
+        // #93: the audit row carries the emitted SUMMARY journal — the same aggregated
+        // (account, side) lines the CSV and register print, bounded by 2 × chart size, never by
+        // transaction volume. `glAccountName` is the frozen account-number string the CSV itself
+        // prints. The per-event lines live on `GlPosting`; the file/register BYTES stay out of
+        // the audit row entirely.
+        summary: summaryLines.map((l) => ({
+          side: l.side, account: l.glAccountName, debit: l.debit, credit: l.credit,
+        })),
+      },
+      () => tx.glExportBatch.create({
+        data: {
+          exportNumber, closePeriodId, periodEnd, fileName,
+          emittedById: currentActor().id, // mirror closePeriod's closedById (append-only provenance)
+          file: new Uint8Array(file), register,
+          postings: {
+            create: lines.map((l) => ({
+              sourceType: l.sourceType, sourceId: l.sourceId, glDate: periodEnd,
+              // Empty glAccountId only ever arises from a hard-deleted account (SetNull); real
+              // events always carry a live id. Store null, never "", so the FK holds.
+              glAccountId: l.glAccountId === "" ? null : l.glAccountId,
+              glAccountName: l.glAccountName, memo: l.memo,
+              debit: l.debit, credit: l.credit, side: l.side, isReversal: l.isReversal,
+            })),
+          },
+        },
+        // #707: nothing of the postings is read back. Prisma sends the nested create as one
+        // multi-row INSERT (tests/gl-export-statements.test.ts), and the answer below is built from
+        // the `lines` that INSERT was built from.
+        select: { id: true },
+      }),
+      { tx },
+    );
+
+    return {
+      batchId: batch.id,
+      exportNumber,
+      periodEnd: periodEndStr,
+      postings: lines.map((l) => ({
+        sourceType: l.sourceType, sourceId: l.sourceId, glAccountId: l.glAccountId === "" ? null : l.glAccountId,
+        // The stored columns hold cents; the answer holds what they hold.
+        debit: cents(l.debit) / 100, credit: cents(l.credit) / 100, side: l.side, isReversal: l.isReversal,
+      })),
+      file,
+    };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable })));
+}
+
+/** The batch a CLOSED period's export would emit, and how many already-exported events it reverses
+ *  (changed ones, reversed and posted again, and ones no longer in the month, reversed alone). One
+ *  code path for the export, which writes `lines`, and for the Close screen's warning before it
+ *  (`pendingReversals`, owner ruling R25), so the count and the export cannot disagree. Refuses on
+ *  any readiness gap, naming the month (#709): a row other than the selected one is exported from
+ *  the same screen, under the selected month's readiness list. */
+async function exportDelta(tx: Tx, year: number, month: number, bounds: MonthBounds): Promise<{ lines: JournalLine[]; reversedEvents: number }> {
+  const gaps = await resolveReadiness(tx, bounds);
+  if (gaps.length > 0) {
+    const label = periodLabelOf(year, month);
+    throw new HttpError(409, gaps.length === 1
+      ? `Cannot export ${label}: 1 GL account gap must be resolved first. Pick ${label} above to see it.`
+      : `Cannot export ${label}: ${gaps.length} GL account gaps must be resolved first. Pick ${label} above to see them.`);
+  }
+
+  // Both maps keyed on the IDENTICAL 2-part `${sourceType}:${sourceId}`. `buildPriorNet` drops
+  // net-zero groups (already-reversed events), so `.has(key)` == "has a live prior posting".
+  const currentByKey = await buildCurrentJournal(tx, bounds);
+  const priorByKey = await buildPriorNet(tx, bounds);
+
+  const lines: JournalLine[] = [];
+  let reversedEvents = 0;
+  for (const [key, cur] of currentByKey) {
+    const prior = priorByKey.get(key);
+    if (!prior) {
+      lines.push(...cur); // new event -> post
+    } else if (!sameNet(cur, prior)) {
+      // CHANGED event — same key in both, but a reopen + edit + re-finalize WITHIN the recognition
+      // month kept the id while moving the amounts or a frozen revenue account (finalizedAt stays
+      // in-month, glDate stays this period, so both `.has(key)`). Membership alone would emit nothing
+      // and leave QBO holding the stale entry. Reverse the prior net and re-post the current — the
+      // pair nets to exactly the delta, and each side is self-balancing so the batch stays balanced.
+      // A config-sourced account that changed is not a change on its own (`netSig`, R25).
+      lines.push(...reverseLines(prior), ...cur);
+      reversedEvents++;
+    }
+    // else: unchanged -> nothing (the true no-op re-run)
+  }
+  for (const [key, prior] of priorByKey) {
+    if (!currentByKey.has(key)) { lines.push(...reverseLines(prior)); reversedEvents++; } // net-posted, no longer live -> reverse
+  }
+  return { lines, reversedEvents };
+}
+
+/** How many already-exported events Export to GL would reverse for a CLOSED period, read before the
+ *  export so the Close screen can ask first (owner ruling R25, #705). A display read: nothing is
+ *  persisted and nothing is locked, at REPEATABLE READ as the screen's other reads are (ruling 10,
+ *  `readinessForExport`), so an open screen never aborts a posting. The export itself recomputes the
+ *  delta inside its own Serializable transaction and decides what it emits; this is a snapshot. It
+ *  refuses as the export does: a missing or reopened period, and a readiness gap in the #709
+ *  sentence, so the screen shows that refusal without asking anything. */
+export async function pendingReversals(closePeriodId: string): Promise<{ reversals: number }> {
+  return withDbErrors({ entity: "GL export" }, () => prisma.$transaction(async (tx) => {
+    const period = await tx.closePeriod.findFirst({ where: { id: closePeriodId } });
+    if (!period) throw new HttpError(404, "Close period not found");
+    if (period.status !== "CLOSED") throw new HttpError(409, "Reopened periods must be re-closed before export");
+    const { reversedEvents } = await exportDelta(tx, period.year, period.month, monthBoundsOf(period.year, period.month));
+    return { reversals: reversedEvents };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead }));
+}
+
+/** The 2-part event key — an invoice/credit/payment/application id under its source type. */
+function keyOf(sourceType: PostingSourceType | string, sourceId: string): string {
+  return `${sourceType}:${sourceId}`;
+}
+
+/** Keep only the non-zero lines of an event's balanced set (a $0 invoice has only a $0 A/R line;
+ *  dropping it keeps the delta clean and the re-run a true no-op). */
+function nonZero(lines: JournalLine[]): JournalLine[] {
+  return lines.filter((l) => cents(l.debit) !== 0 || cents(l.credit) !== 0);
+}
+
+/** Net a line set to `(side, key) -> (debit - credit)` cents, dropping zero nets. A revenue line's key
+ *  is its frozen account: the live `glAccountId` when present, else the frozen `glAccountName` (a
+ *  SetNull line), the same key `aggregateLines`/`buildPriorNet` collapse on. A line whose account is
+ *  read from live configuration (`CONFIG_ACCOUNT_MEMOS`: A/R, sales tax, cash receipt, discount,
+ *  write-off) is keyed by its memo instead, so a configuration change alone compares equal (owner
+ *  ruling R25, #705). Each memo is on at most one line of an event, so no two lines share a key
+ *  they should not. A current set and a reconstructed prior net are comparable regardless of how
+ *  many raw lines each carried. */
+function netSig(lines: JournalLine[]): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const l of lines) {
+    const acct = CONFIG_ACCOUNT_MEMOS.has(l.memo) ? `memo:${l.memo}` : l.glAccountId !== "" ? l.glAccountId : l.glAccountName;
+    const k = `${l.side}|${acct}`;
+    m.set(k, (m.get(k) ?? 0) + cents(l.debit) - cents(l.credit));
+  }
+  for (const [k, v] of m) if (v === 0) m.delete(k);
+  return m;
+}
+
+/** Do two event line sets post the identical net journal? Used to tell an UNCHANGED re-exported event
+ *  (emit nothing) from one edited under a reopen (reverse the old, post the new). */
+function sameNet(a: JournalLine[], b: JournalLine[]): boolean {
+  const ma = netSig(a), mb = netSig(b);
+  if (ma.size !== mb.size) return false;
+  for (const [k, v] of ma) if (mb.get(k) !== v) return false;
+  return true;
+}
+
+/**
+ * SUMMARY aggregation (owner ruling 9): collapse the per-event journal `lines` into ONE line per
+ * `(account, side)` for the EXPORTED FILE and the posting register — so 30 invoices become one A/R
+ * line + one revenue line per account, not 60 rows. The per-event `GlPosting` rows stay
+ * UN-aggregated (the ERP-side detail + the delta driver, §4.3); only what the bookkeeper imports is
+ * summarized.
+ *
+ * **NETTED to a single signed column, owner ruling 2026-08-16 (issue #91).** Each group's debits and
+ * credits net in integer cents and the larger side wins, the other left zero. This used to sum the
+ * two columns SEPARATELY, so a month holding an invoice and a credit memo emitted one `A/R` row
+ * carrying BOTH `150.00` debit and `30.00` credit. Balance-preserving and literally ruling-9
+ * compliant, but a QuickBooks journal line conventionally carries a single amount — a row meant to
+ * net to 120 could import as 150. Netting is the same arithmetic `buildPriorNet` already applies to
+ * the prior-posting side, so the two halves of the delta now agree on shape as well as on keys.
+ *
+ * A group netting to EXACTLY zero is DROPPED rather than emitted. `renderCsv`'s `money()` renders a
+ * zero as `""`, so keeping it would emit a row with neither column populated — a journal line
+ * carrying no amount, which is precisely the malformed row this ruling exists to prevent. Balance is
+ * unaffected (a zero contributes to neither side), and nothing is lost: the per-event ledger still
+ * holds every posting.
+ *
+ * Balance is preserved either way — this only re-groups the same debits and credits, so Σdebit and
+ * Σcredit are unchanged, and `exportClose`'s Σdebit = Σcredit backstop runs on the PRE-aggregation
+ * per-event lines regardless. First-occurrence order is kept (Map insertion order), so the SALES
+ * lines still precede the CASH lines the register's side filter relies on. The account key is the
+ * live `glAccountId` when present, else the frozen `glAccountName` (a SetNull reversal of a
+ * hard-deleted account). The representative `memo` (and the unused
+ * `sourceType`/`sourceId`/`isReversal`) are the group's first line's — the file and register render
+ * none of the latter three, and within one `(account, side)` the memo is uniform in practice
+ * ("A/R" / "Revenue" / "Cash receipt" / …).
+ */
+function aggregateLines(lines: JournalLine[]): JournalLine[] {
+  const repByKey = new Map<string, JournalLine>();
+  const netByKey = new Map<string, number>();
+  for (const l of lines) {
+    const acct = l.glAccountId !== "" ? l.glAccountId : l.glAccountName;
+    const key = `${l.side}|${acct}`;
+    netByKey.set(key, (netByKey.get(key) ?? 0) + cents(l.debit) - cents(l.credit));
+    if (!repByKey.has(key)) repByKey.set(key, { ...l }); // first occurrence keeps the order + memo
+  }
+  const out: JournalLine[] = [];
+  for (const [key, rep] of repByKey) {
+    const net = netByKey.get(key)!;
+    if (net === 0) continue; // nets out entirely — emitting it would be an amount-less row
+    out.push({ ...rep, debit: net > 0 ? net / 100 : 0, credit: net < 0 ? -net / 100 : 0 });
+  }
+  return out;
+}
+
+/**
+ * The CURRENT in-scope journal, keyed by event (§4.3): finalized invoices/credits (by `finalizedAt`
+ * in-month, ruling 8) → `salesJournal`; posted non-void payments (receivedDate in-month) → one PAYMENT
+ * `cashJournal`; live DISCOUNT/WRITE_OFF applications (appliedDate in-month) → one `cashJournal` each.
+ * Revenue comes from the
+ * invoice's own line snapshots grouped by `glAccountId` (TAX lines excluded — the tax line's account
+ * is the plant default, matching the readiness gate); A/R, tax, discount, write-off and cash accounts
+ * come from the plant config / payment type. Sales amounts pass through SIGNED, exactly as stored
+ * (#216) — `salesJournal` places each by its own sign, so a CREDIT's stored-negative money reverses
+ * the entry and a mixed-sign invoice posts contra lines instead of unbalancing. Payment/application
+ * amounts stay magnitudes: their services refuse a non-positive amount at entry, so `Math.abs`
+ * there is inert normalization, not direction logic.
+ */
+async function buildCurrentJournal(tx: Tx, bounds: MonthBounds): Promise<Map<string, JournalLine[]>> {
+  const { monthStart, monthEnd, nextStart } = bounds;
+  const config = await getBillingConfig(tx);
+  const out = new Map<string, JournalLine[]>();
+
+  // Names for the config-provided accounts (readiness guarantees the referenced ones are set).
+  const configIds = [config.arGlAccountId, config.salesTaxGlAccountId, config.discountGlAccountId, config.writeOffGlAccountId]
+    .filter((id): id is string => id !== null);
+  const accts = configIds.length
+    ? await tx.glAccount.findMany({ where: { id: { in: configIds } }, select: { id: true, name: true } })
+    : [];
+  const nameById = new Map(accts.map((a) => [a.id, a.name]));
+  const arName = config.arGlAccountId ? (nameById.get(config.arGlAccountId) ?? "") : "";
+
+  // Sales side — invoices and credits, scoped by `finalizedAt` (ruling 8), half-open `[start, next)`.
+  const invoices = await tx.invoice.findMany({
+    where: { status: "FINALIZED", deletedAt: null, finalizedAt: { gte: monthStart, lt: nextStart } },
+    select: {
+      id: true, kind: true, total: true, taxTotal: true,
+      lines: { select: { kind: true, glAccountId: true, glAccountName: true, amount: true } },
+    },
+  });
+  for (const inv of invoices) {
+    // Group the non-TAX lines by their snapshot glAccountId; sum magnitudes.
+    const byAccount = new Map<string, { glAccountName: string; amountCents: number }>();
+    for (const l of inv.lines) {
+      if (l.kind === "TAX") continue; // the tax credit comes from config below, not the TAX line
+      if (l.glAccountId === null) {
+        // A $0 header line (PART) posts nothing; ANY other null-GL line is a dropped credit that
+        // `resolveReadiness` was supposed to refuse the whole export on. Never silently `continue`
+        // past it (that credits nothing yet still debits A/R the full total = an unbalanced batch) —
+        // fail LOUDLY so a future readiness escape surfaces here, not in the ledger.
+        if (cents(l.amount.toNumber()) === 0) continue;
+        throw new HttpError(500,
+          "GL export: an in-scope invoice line has no GL account — readiness should have refused this export");
+      }
+      const prev = byAccount.get(l.glAccountId);
+      // SIGNED, in integer cents (#216): a negative adjustment line nets against its account's
+      // other lines here, and a residual negative sum reaches `salesJournal` intact — its signed
+      // placement posts the contra side. The old `Math.abs` credited the gross while A/R debited
+      // the netted total, an unbalanced batch the backstop 500'd on with a clean readiness list.
+      const amtCents = cents(l.amount.toNumber());
+      if (prev) prev.amountCents += amtCents;
+      else byAccount.set(l.glAccountId, { glAccountName: l.glAccountName, amountCents: amtCents });
+    }
+    const lines = salesJournal({
+      kind: inv.kind,
+      invoiceId: inv.id,
+      total: inv.total.toNumber(),
+      arGlAccountId: config.arGlAccountId ?? "",
+      arGlAccountName: arName,
+      taxTotal: inv.taxTotal.toNumber(),
+      taxGlAccountId: config.salesTaxGlAccountId,
+      taxGlAccountName: config.salesTaxGlAccountId ? (nameById.get(config.salesTaxGlAccountId) ?? "") : "",
+      revenue: [...byAccount.entries()].map(([glAccountId, v]) => ({
+        glAccountId, glAccountName: v.glAccountName, amount: v.amountCents / 100,
+      })),
+    });
+    const nz = nonZero(lines);
+    if (nz.length) out.set(keyOf(inv.kind, inv.id), nz);
+  }
+
+  // Cash side — one PAYMENT event per posted, non-void payment.
+  const payments = await tx.payment.findMany({
+    where: {
+      deletedAt: null, receivedDate: { gte: monthStart, lte: monthEnd },
+      batch: { status: "POSTED", deletedAt: null },
+    },
+    select: {
+      id: true, amount: true,
+      paymentType: { select: { glAccountId: true, glAccount: { select: { name: true } } } },
+    },
+  });
+  for (const p of payments) {
+    const lines = cashJournal({
+      kind: "PAYMENT",
+      sourceId: p.id,
+      amount: Math.abs(p.amount.toNumber()),
+      debitGlAccountId: p.paymentType.glAccountId ?? "",
+      debitGlAccountName: p.paymentType.glAccount?.name ?? "",
+      arGlAccountId: config.arGlAccountId ?? "",
+      arGlAccountName: arName,
+    });
+    const nz = nonZero(lines);
+    if (nz.length) out.set(keyOf("PAYMENT", p.id), nz);
+  }
+
+  // Cash side — one event per live DISCOUNT / WRITE_OFF application.
+  const apps = await tx.application.findMany({
+    where: { deletedAt: null, appliedDate: { gte: monthStart, lte: monthEnd }, type: { in: ["DISCOUNT", "WRITE_OFF"] } },
+    select: { id: true, amount: true, type: true },
+  });
+  for (const a of apps) {
+    const isDiscount = a.type === "DISCOUNT";
+    const debitGlAccountId = (isDiscount ? config.discountGlAccountId : config.writeOffGlAccountId) ?? "";
+    const lines = cashJournal({
+      kind: isDiscount ? "DISCOUNT" : "WRITE_OFF",
+      sourceId: a.id,
+      amount: Math.abs(a.amount.toNumber()),
+      debitGlAccountId,
+      debitGlAccountName: debitGlAccountId ? (nameById.get(debitGlAccountId) ?? "") : "",
+      arGlAccountId: config.arGlAccountId ?? "",
+      arGlAccountName: arName,
+    });
+    const nz = nonZero(lines);
+    if (nz.length) out.set(keyOf(a.type, a.id), nz);
+  }
+
+  return out;
+}
+
+/**
+ * The NET prior postings (§4.3): every `GlPosting` with glDate in THIS period's month, grouped by the SAME 2-part
+ * `${sourceType}:${sourceId}`, then netted within a group by `(glAccountId, side, memo)` so an
+ * original post and its later reversal cancel. A group whose lines ALL net to zero is dropped (it was
+ * fully reversed), so a key's PRESENCE means "has a live prior posting" — the exact complement the
+ * delta needs. The reconstructed `JournalLine[]` carries the row's `memo` and `glAccountName` so a
+ * reversal reproduces the original line verbatim.
+ */
+async function buildPriorNet(tx: Tx, bounds: MonthBounds): Promise<Map<string, JournalLine[]>> {
+  const rows = await tx.glPosting.findMany({
+    where: { glDate: { gte: bounds.monthStart, lte: bounds.monthEnd } },
+    select: {
+      sourceType: true, sourceId: true, glAccountId: true, glAccountName: true,
+      debit: true, credit: true, side: true, memo: true,
+    },
+  });
+
+  type Agg = { glAccountId: string; glAccountName: string; side: string; memo: string; netCents: number };
+  const groups = new Map<string, Map<string, Agg>>();
+  for (const r of rows) {
+    const gkey = keyOf(r.sourceType, r.sourceId);
+    let sub = groups.get(gkey);
+    if (!sub) { sub = new Map(); groups.set(gkey, sub); }
+    const glId = r.glAccountId ?? "";
+    const lkey = `${glId}|${r.side}|${r.memo}`;
+    const agg = sub.get(lkey) ?? { glAccountId: glId, glAccountName: r.glAccountName, side: r.side, memo: r.memo, netCents: 0 };
+    agg.netCents += cents(r.debit.toNumber()) - cents(r.credit.toNumber());
+    sub.set(lkey, agg);
+  }
+
+  const out = new Map<string, JournalLine[]>();
+  for (const [gkey, sub] of groups) {
+    const [sourceType, sourceId] = splitKey(gkey);
+    const lines: JournalLine[] = [];
+    for (const agg of sub.values()) {
+      if (agg.netCents === 0) continue; // this line was reversed out
+      lines.push({
+        side: agg.side as JournalLine["side"],
+        glAccountId: agg.glAccountId,
+        glAccountName: agg.glAccountName,
+        debit: agg.netCents > 0 ? agg.netCents / 100 : 0,
+        credit: agg.netCents < 0 ? -agg.netCents / 100 : 0,
+        memo: agg.memo,
+        sourceType: sourceType as JournalLine["sourceType"],
+        sourceId,
+        isReversal: false,
+      });
+    }
+    if (lines.length) out.set(gkey, lines); // a fully-reversed group drops out
+  }
+  return out;
+}
+
+/** Split a `${sourceType}:${sourceId}` key. `sourceType` never contains a colon (it is one of the
+ *  fixed enum values); the id is a cuid. Split on the FIRST colon so a colon in an id can't confuse it. */
+function splitKey(k: string): [string, string] {
+  const i = k.indexOf(":");
+  return [k.slice(0, i), k.slice(i + 1)];
+}
+
+/**
+ * Assemble the `ReadinessInput` and name every account gap (§7), scoped to the SAME month window the
+ * delta posts (`bounds`), so the panel can never read a different period than the close does.
+ * `arGlAccountId`/discount/write-off/sales-tax/freight/other-charge come from the plant config;
+ * `hasTax` is true iff any in-scope finalized invoice has `taxTotal != 0` (its A/R debit includes the
+ * tax, so a missing tax account would unbalance the journal); `hasDiscount`/`hasWriteOff` reflect
+ * whether any such application is in scope.
+ *
+ * The rest is the crux (the two-lens review found the original scan too narrow): the export DROPS from
+ * the credit side EVERY non-TAX invoice line whose snapshot `glAccountId` is null, while still debiting
+ * A/R the full total — so EVERY such nonzero line (any kind, not just step-code/surcharge) MUST become
+ * a gap or the batch is short a credit. Each is attributed to its source: OPERATION -> its step code,
+ * SURCHARGE -> its surcharge, CERT -> the config cert step code (its GL rides in from there, never on a
+ * line FK), FREIGHT -> the freight plant default, CHARGE -> the other-charge plant default. A $0 header
+ * line (PART) posts nothing, so it is not a gap.
+ */
+async function resolveReadiness(tx: Tx, bounds: MonthBounds): Promise<ReadinessGap[]> {
+  const { monthStart, monthEnd, nextStart } = bounds;
+  const config = await getBillingConfig(tx);
+  // In scope by `finalizedAt` (ruling 8), half-open `[start, next)` — the SAME scope buildCurrentJournal posts.
+  const inScopeInvoice = { status: "FINALIZED" as const, deletedAt: null, finalizedAt: { gte: monthStart, lt: nextStart } };
+
+  const invoices = await tx.invoice.findMany({ where: inScopeInvoice, select: { taxTotal: true } });
+  const hasTax = invoices.some((i) => cents(i.taxTotal.toNumber()) !== 0);
+
+  const [discountCount, writeOffCount] = await Promise.all([
+    tx.application.count({ where: { deletedAt: null, type: "DISCOUNT", appliedDate: { gte: monthStart, lte: monthEnd } } }),
+    tx.application.count({ where: { deletedAt: null, type: "WRITE_OFF", appliedDate: { gte: monthStart, lte: monthEnd } } }),
+  ]);
+
+  // The cert charge's GL rides in from the config cert step code — it never lands on a line's
+  // `processStepCodeId` (invoices.ts) — so resolve it once to attribute a null-GL CERT line.
+  let certStep: { id: string; code: string; glAccountId: string | null } | null = null;
+  if (config.certChargeStepCodeId) {
+    const sc = await tx.processStepCode.findFirst({
+      where: { id: config.certChargeStepCodeId },
+      select: { id: true, code: true, glAccountId: true },
+    });
+    if (sc) certStep = sc;
+  }
+
+  // EVERY account-less non-TAX line the export would post a credit for (not just step-code/surcharge).
+  const prefix = await getSetting("invoice_number_prefix", tx);
+  const badLines = await tx.invoiceLine.findMany({
+    where: { glAccountId: null, kind: { not: "TAX" }, invoice: inScopeInvoice },
+    select: {
+      kind: true, amount: true,
+      // The SOURCE's own account comes back too (review round 2): a source that already has one is
+      // not a config gap, and saying it is sends the operator to a screen with nothing to fix.
+      processStepCodeId: true, processStepCode: { select: { code: true, glAccountId: true } },
+      surchargeId: true, surcharge: { select: { name: true, glAccountId: true } },
+      // #89: the owning paper — the gap that is the frozen line itself rather than any config.
+      invoiceId: true,
+      invoice: { select: { kind: true, creditNumber: true, order: { select: { orderNumber: true } } } },
+    },
+  });
+  const stepCodesMissingGl = new Map<string, { id: string; code: string }>();
+  const surchargesMissingGl = new Map<string, { id: string; name: string }>();
+  const invoicesMissingGl = new Map<string, { id: string; label: string }>();
+  let hasFreight = false, hasCharge = false, hasCert = false, hasUnattributedLine = false;
+  for (const l of badLines) {
+    if (cents(l.amount.toNumber()) === 0) continue; // $0 header (PART) — posts nothing
+    // EVERY frozen null-GL line names its owning invoice (#89, widened in review round 1). The
+    // source-side gaps below say what to CONFIGURE, which repairs the NEXT invoice; only re-raising
+    // this paper repairs the snapshot `buildCurrentJournal` actually reads (§5.4). Attributing only
+    // FREIGHT/CHARGE left two milder versions of the same dead end: an OPERATION/SURCHARGE/CERT line
+    // frozen null whose step code or surcharge ALREADY has an account sent the operator to a screen
+    // with nothing to fix, and a CERT line whose configured cert step code row is gone recorded no
+    // gap at all — readiness clean, export 500. One unconditional attribution closes both.
+    invoicesMissingGl.set(l.invoiceId, {
+      id: l.invoiceId,
+      label: invoiceDocumentNumber(
+        l.invoice.kind, l.invoice.creditNumber, l.invoice.order.orderNumber, prefix),
+    });
+    // ...and a source-side gap ONLY where that source is genuinely unconfigured (review round 2).
+    // The line's null is frozen paper; the step code or surcharge behind it may well have been given
+    // an account since, and naming it then is a false statement about a screen with nothing to fix.
+    if (l.processStepCodeId) {
+      if (l.processStepCode?.glAccountId === null) {
+        stepCodesMissingGl.set(l.processStepCodeId, { id: l.processStepCodeId, code: l.processStepCode.code });
+      }
+    } else if (l.surchargeId) {
+      if (l.surcharge?.glAccountId === null) {
+        surchargesMissingGl.set(l.surchargeId, { id: l.surchargeId, name: l.surcharge.name });
+      }
+    } else if (l.kind === "CERT") {
+      hasCert = true; // when the cert step code is unset, `readinessGaps` names the missing config
+      // else attribute to that step code — but again only if it is the thing actually missing.
+      if (certStep && certStep.glAccountId === null) {
+        stepCodesMissingGl.set(certStep.id, { id: certStep.id, code: certStep.code });
+      }
+    } else if (l.kind === "FREIGHT") {
+      hasFreight = true;
+    } else if (l.kind === "CHARGE") {
+      hasCharge = true;
+    } else {
+      hasUnattributedLine = true; // orphaned OPERATION (step code SetNull) — still MUST surface a gap
+    }
+  }
+
+  // Payment types with no GL account among in-scope posted, non-void payments.
+  const payments = await tx.payment.findMany({
+    where: {
+      deletedAt: null, receivedDate: { gte: monthStart, lte: monthEnd },
+      batch: { status: "POSTED", deletedAt: null },
+    },
+    select: { paymentType: { select: { id: true, name: true, glAccountId: true } } },
+  });
+  const paymentTypesMissingGl = new Map<string, { id: string; name: string }>();
+  for (const p of payments) {
+    if (p.paymentType.glAccountId === null) {
+      paymentTypesMissingGl.set(p.paymentType.id, { id: p.paymentType.id, name: p.paymentType.name });
+    }
+  }
+
+  const input: ReadinessInput = {
+    arGlAccountId: config.arGlAccountId,
+    discountGlAccountId: config.discountGlAccountId,
+    writeOffGlAccountId: config.writeOffGlAccountId,
+    salesTaxGlAccountId: config.salesTaxGlAccountId,
+    freightGlAccountId: config.freightGlAccountId,
+    otherChargeGlAccountId: config.otherChargeGlAccountId,
+    certChargeStepCodeId: config.certChargeStepCodeId,
+    hasDiscount: discountCount > 0,
+    hasWriteOff: writeOffCount > 0,
+    hasTax,
+    hasFreight,
+    hasCharge,
+    hasCert,
+    invoicesMissingGl: [...invoicesMissingGl.values()],
+    stepCodesMissingGl: [...stepCodesMissingGl.values()],
+    surchargesMissingGl: [...surchargesMissingGl.values()],
+    paymentTypesMissingGl: [...paymentTypesMissingGl.values()],
+    hasUnattributedLine,
+  };
+  return readinessGaps(input);
+}
+
+/** The readiness gap list the UI's export panel and disabled-count read — the SAME month window
+ *  `exportClose` refuses on, so the panel and the refusal can never disagree (§7). A display read
+ *  at REPEATABLE READ (ruling 10, 2026-10-22 review, #630; the `agingReport` precedent): one
+ *  consistent snapshot of `resolveReadiness`'s several reads, deliberately not an SSI participant,
+ *  so an open Close screen cannot abort an overlapping posting with a spurious 409 (the postings do
+ *  not retry 40001). `exportClose`'s own `resolveReadiness` call stays inside its Serializable
+ *  transaction: that one refuses, and the refusal is the enforcement. tests/gl-export.test.ts pins
+ *  the level. */
+export async function readinessForExport(periodEnd: Date): Promise<ReadinessGap[]> {
+  const bounds = monthBoundsFromEnd(periodEnd);
+  return withDbErrors({ entity: "GL export readiness" }, () => prisma.$transaction(
+    (tx) => resolveReadiness(tx, bounds),
+    { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead },
+  ));
+}
+
+/** One CSV row per line handed in: date, account, debit, credit, memo. `exportClose` hands it the
+ *  aggregated SUMMARY lines (one per account per side, ruling 9), not the per-event lines. */
+function renderCsv(lines: JournalLine[], dateStr: string): Buffer {
+  const esc = (v: string): string => (/[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+  const money = (n: number): string => (cents(n) === 0 ? "" : n.toFixed(2));
+  const rows = [GL_EXPORT_COLUMNS.join(",")];
+  for (const l of lines) {
+    rows.push([dateStr, esc(l.glAccountName), money(l.debit), money(l.credit), esc(l.memo)].join(","));
+  }
+  return Buffer.from(rows.join("\n") + "\n", "utf8");
+}
+
+/** The stored CSV bytes for the file route. 404 if the batch is gone. */
+export async function getExportBatchFile(batchId: string): Promise<{ bytes: Buffer; fileName: string; contentType: string }> {
+  const batch = await prisma.glExportBatch.findFirst({
+    where: { id: batchId }, select: { file: true, fileName: true, fileContentType: true },
+  });
+  if (!batch) throw new HttpError(404, "Export batch not found");
+  return { bytes: Buffer.from(batch.file), fileName: batch.fileName, contentType: batch.fileContentType };
+}
+
+/** The stored register bytes for the register route, plus a derived download filename
+ *  (`gl-register-<YYYY>-<MM>.pdf`, from the batch's OWN `periodEnd` — the same year/month the CSV's
+ *  `fileName` uses) so its `inline` disposition names itself, matching every other inline-PDF route
+ *  (certs/invoices/statements/traveler all pass `inline; filename="..."`) — fix round 1, Task 7
+ *  review. 404 if the batch is gone. */
+export async function getExportBatchRegister(batchId: string): Promise<{ bytes: Buffer; fileName: string; contentType: string }> {
+  const batch = await prisma.glExportBatch.findFirst({
+    where: { id: batchId }, select: { register: true, registerContentType: true, periodEnd: true },
+  });
+  if (!batch) throw new HttpError(404, "Export batch not found");
+  const fileName = `gl-register-${batch.periodEnd.getUTCFullYear()}-${String(batch.periodEnd.getUTCMonth() + 1).padStart(2, "0")}.pdf`;
+  return { bytes: Buffer.from(batch.register), fileName, contentType: batch.registerContentType };
+}

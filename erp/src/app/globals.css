@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+/* Light-only BY DECISION (#212): the create-next-app scaffold shipped an OS-dark-preference
+ * media block here that flipped body text to #ededed under components that are all hardcoded
+ * light (bg-white cards, zero dark: variants), so a dark-preferring OS rendered most text at
+ * ~1.2:1 on white. Dark-mode support, if ever wanted, arrives as themed components — never as a
+ * root color flip. No --font-sans/--font-mono override either (#225): the scaffold mapped them
+ * to Geist variables nothing defines (the next/font loading was removed), which made every
+ * font-mono utility an invalid declaration that silently fell back to Arial; without the
+ * override, Tailwind's own stacks apply to the utilities. Both commitments are pinned by
+ * tests/globals-css.test.ts, whose detectors this comment must not quote (the board-search-scan
+ * precedent: describe the anti-pattern in prose, never verbatim). */
+:root {
+  --background: #f3f5f6;
+  --foreground: #20333f;
+}
+
+/* The redesign's colour tokens (2026-10-30; docs/execution/2026-10-30-figma-redesign/design-system.md
+ * §7). The Figma file defines no variables of its own, so these names are the app's, by use, and
+ * tests/theme-tokens.test.ts pins each value: a changed hex is a decision, never a drift. Refusals
+ * keep Tailwind's red (owner ruling 2 of 2026-10-30), so no red token is declared here. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-ink-900: #14232d;
+  --color-ink-800: #20333f;
+  --color-ink-700: #2b3d48;
+  --color-ink-500: #647680;
+  --color-ink-300: #a8bac4;
+  --color-ink-200: #c6d2d8;
+  --color-surface-0: #ffffff;
+  --color-surface-50: #f3f5f6;
+  --color-line: #dce3e6;
+  --color-accent-600: #ad430d;
+  --color-accent-400: #f78c43;
+  --color-accent-50: #fff0e5;
+  --color-accent-25: #fff6ef;
+  --color-link-700: #2c617b;
+  --color-link-50: #eaf2f7;
+  --color-success-700: #27694e;
+  --color-success-50: #eaf5ef;
+  --color-danger-600: #a53732;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Keep disabled actions muted above layered utilities; semantic options retain their highlight. */
+button:disabled:not([role="option"]) {
+  color: var(--color-slate-400);
+  background-color: transparent;
+  border-color: var(--color-slate-300);
+  text-decoration-line: none;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+/* A box a refusal names carries aria-invalid (owner ruling R13), and a marked box shows a red
+ * border on every screen (owner answer 2026-10-29), the order hub's Lines boxes included. */
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+  border-color: var(--color-red-600);
+}

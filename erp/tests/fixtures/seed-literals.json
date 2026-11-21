@@ -1,0 +1,2077 @@
+{
+  "TRAVELER": {
+    "sections": [
+      {
+        "key": "header",
+        "visible": true,
+        "fields": [
+          {
+            "key": "customer_name",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "received_from",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "company_name",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "company_address",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "company_phone",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "order_number",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "load_number",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "barcode",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "lines",
+        "visible": true,
+        "fields": [
+          {
+            "key": "line_qty",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "line_part",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "line_each_weight",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "line_weight",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "quantities",
+        "visible": true,
+        "fields": [
+          {
+            "key": "order_qty",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "load_qty",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "container",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "container_qty",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "tare_weight",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "gross_weight",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "process",
+        "visible": true,
+        "fields": [
+          {
+            "key": "process",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "material",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "process_id",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "inspections",
+        "visible": true,
+        "fields": [
+          {
+            "key": "inspections_title",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "inspection_code",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "inspection_scale",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "inspection_min",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "inspection_max",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "inspection_qty",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "inspection_location",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "steps",
+        "visible": true,
+        "fields": [
+          {
+            "key": "steps_title",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "step_position",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "step_code",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "step_instruction",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "step_values",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "step_eq",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "step_op",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "step_date",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "footer",
+        "visible": true,
+        "fields": [
+          {
+            "key": "results",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "tempered_results",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "final_inspection",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "pass",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "fail",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "tested_by",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "tested_date",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "ok_to_ship",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "ship_date",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      }
+    ],
+    "formats": {
+      "thousandsSeparator": true
+    },
+    "fonts": {
+      "family": "Roboto",
+      "baseSize": 8,
+      "headingSize": 12,
+      "smallSize": 6.5
+    },
+    "textBlocks": {},
+    "logo": null,
+    "pageFooter": false
+  },
+  "SHIPPER": {
+    "sections": [
+      {
+        "key": "header",
+        "visible": true,
+        "fields": [
+          {
+            "key": "company_name",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "title",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "order_no",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "ship_date",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "company_address",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "company_phone",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "parties",
+        "visible": true,
+        "fields": [
+          {
+            "key": "sold_to",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "ship_to",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "field_strip",
+        "visible": true,
+        "fields": [
+          {
+            "key": "po_number",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "packing_list_no",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "customer_job_no",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "route",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "carrier",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "lines",
+        "visible": true,
+        "fields": [
+          {
+            "key": "line_qty",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "line_part",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "line_pounds",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "containers",
+        "visible": true,
+        "fields": [
+          {
+            "key": "container_type",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "container_count",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "cust_cont_id",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "serials",
+        "visible": true,
+        "fields": [
+          {
+            "key": "serials",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "liability",
+        "visible": true,
+        "fields": []
+      },
+      {
+        "key": "totals",
+        "visible": true,
+        "fields": [
+          {
+            "key": "shipped_complete",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "total_qty",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "total_weight",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "tear_off",
+        "visible": true,
+        "fields": [
+          {
+            "key": "tear_order_no",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "tear_shipped_complete",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "tear_total_qty",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "tear_total_weight",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "received_by",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "received_date",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "tear_sold_to",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "shipped_on",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      }
+    ],
+    "formats": {
+      "thousandsSeparator": true,
+      "dateFormat": "M/D/YYYY"
+    },
+    "fonts": {
+      "family": "Roboto",
+      "baseSize": 8,
+      "headingSize": 16,
+      "smallSize": 5.5
+    },
+    "textBlocks": {
+      "shipper_liability_text": "Sample liability statement for template tests: sample wording for template tests only sample wording for template tests only sample wording for template tests only sample wording pl. SAMPLE NOTICE FOR TEMPLATE TESTS: SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY.\n\nSAMPLE CLOSING PARAGRAPH FOR TEMPLATE TESTS: SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY."
+    },
+    "logo": null,
+    "pageFooter": false
+  },
+  "MOS_SHIPPER": {
+    "sections": [
+      {
+        "key": "header",
+        "visible": true,
+        "fields": [
+          {
+            "key": "company_name",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "title",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "order_no",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "ship_date",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "company_address",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "company_phone",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "parties",
+        "visible": true,
+        "fields": [
+          {
+            "key": "sold_to",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "ship_to",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "field_strip",
+        "visible": true,
+        "fields": [
+          {
+            "key": "po_number",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "packing_list_no",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "customer_job_no",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "route",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "carrier",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "lines",
+        "visible": true,
+        "fields": [
+          {
+            "key": "line_qty",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "line_part",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "line_pounds",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "containers",
+        "visible": true,
+        "fields": [
+          {
+            "key": "container_type",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "container_count",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "cust_cont_id",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "serials",
+        "visible": true,
+        "fields": [
+          {
+            "key": "serials",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "liability",
+        "visible": true,
+        "fields": []
+      },
+      {
+        "key": "totals",
+        "visible": true,
+        "fields": [
+          {
+            "key": "shipped_complete",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "total_qty",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "total_weight",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "tear_off",
+        "visible": true,
+        "fields": [
+          {
+            "key": "tear_order_no",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "tear_shipped_complete",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "tear_total_qty",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "tear_total_weight",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "received_by",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "received_date",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "tear_sold_to",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "shipped_on",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      }
+    ],
+    "formats": {
+      "thousandsSeparator": true,
+      "dateFormat": "M/D/YYYY"
+    },
+    "fonts": {
+      "family": "Roboto",
+      "baseSize": 8,
+      "headingSize": 16,
+      "smallSize": 5.5
+    },
+    "textBlocks": {
+      "shipper_liability_text": "Sample liability statement for template tests: sample wording for template tests only sample wording for template tests only sample wording for template tests only sample wording pl. SAMPLE NOTICE FOR TEMPLATE TESTS: SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY.\n\nSAMPLE CLOSING PARAGRAPH FOR TEMPLATE TESTS: SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY SAMPLE WORDING FOR TEMPLATE TESTS ONLY."
+    },
+    "logo": null,
+    "pageFooter": false
+  },
+  "BOL": {
+    "sections": [
+      {
+        "key": "header",
+        "visible": true,
+        "fields": [
+          {
+            "key": "original_label",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "title",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "pro_number",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "bol_number",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "consignee_ref",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "scac_code",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "carrier",
+        "visible": true,
+        "fields": [
+          {
+            "key": "carrier_name",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "received",
+        "visible": true,
+        "fields": [
+          {
+            "key": "ship_from",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "consigned",
+        "visible": true,
+        "fields": [
+          {
+            "key": "consigned_to",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "destination",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "destination_state",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "destination_zip",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "trv",
+        "visible": true,
+        "fields": [
+          {
+            "key": "trv_no",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "delivering_carrier",
+        "visible": true,
+        "fields": [
+          {
+            "key": "delivering_carrier",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "vehicle_initials",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "vehicle_no",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "freight",
+        "visible": true,
+        "fields": [
+          {
+            "key": "package_count",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "freight_description",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "freight_weight",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "freight_class",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "check_column",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "collect_checkbox",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "bottom",
+        "visible": true,
+        "fields": [
+          {
+            "key": "shipper_per",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "agent_per",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "po_address",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      }
+    ],
+    "formats": {
+      "thousandsSeparator": true,
+      "dateFormat": "MMM - DD - YYYY"
+    },
+    "fonts": {
+      "family": "Roboto",
+      "baseSize": 7,
+      "headingSize": 15,
+      "smallSize": 5.5
+    },
+    "textBlocks": {
+      "bol_received_text": "RECEIVED, subject to individually determined rates of contracts that have been agreed upon in writing between the carrier and shipper. If applicable, otherwise to the rates, classifications and rules that have been established by the carrier and are available to the shipper, on request;",
+      "bol_property_text": "the property described below, in apparent good order, except as noted (contents and condition of contents of packages unknown), marked, consigned, and destined as indicated below, which said carrier (the word carrier being understood throughout the contract as meaning any person or corporation in possession of the property under the contract), agree to carry to its usual place of delivery at said destination, if on its route, otherwise to deliver to another carrier on the route to said destination. It is mutually agreed, as to each carrier of all or any of said property over all or any portion of said route to destination, and as to each party at any time interested in all or any said property, that every service to be performed here under shall be subject to all the terms and conditions of the Uniform Domestic Straight Bill of Lading set forth (I) in Official, Southern, Western and Illinois Freight Classification in effect on the date hereof, if this is a rail or a rail-water shipment, or (2) in the applicable motor carrier classification or tariff if this is a motor carrier shipment.",
+      "bol_certifies_text": "Shipper hereby certifies that he is familiar with all the terms and conditions of the said bill of lading, set forth in the classification of tariff which governs the transportation of this shipment, and the said terms and conditions are hereby agreed to by the shipper and accepted for himself and his assigns.",
+      "bol_section_7_text": "Subject to Section 7 of Conditions of applicable bill of lading, if this shipment is to be delivered to the consignee without recourse on the consignor, the consignor shall sign the following statement.",
+      "bol_no_delivery_text": "The carrier shall not make delivery of this shipment without payment of freight and all other lawful charges.",
+      "bol_imprint_text": "†Shipper's imprint in lieu of stamps, not a part of Bill of Lading approved by the Interstate Comerce Commission.",
+      "bol_water_note": "* If the shipment moves between two ports by a carrier by water, the law requires that the bill of lading state whether it is carrier's or shipper's weight.",
+      "bol_value_note": "NOTE - Where the rate is dependent on value, shippers are required to state specifically in writing the agreed or declared value of the property.",
+      "bol_declared_value_text": "The agreed or declared value of the property is hereby specifically stated by the shipper to be not exceeding",
+      "bol_liability_note": "Liability Limitation for loss or damage on this shipment may be applicable. See 49 U.S.C. § 14706(c)(1)(A) and (B).",
+      "bol_fibre_note": "†The fibre boxes used for this shipment conform to the specifications set forth in the box marker's certificate thereon, and all other requirements of the Consolidated Freight Classification."
+    },
+    "logo": null,
+    "pageFooter": false
+  },
+  "CERT": {
+    "sections": [
+      {
+        "key": "header",
+        "visible": true,
+        "fields": [
+          {
+            "key": "company_name",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "title",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "order_no",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "print_date",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "entry_date",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "parties",
+        "visible": true,
+        "fields": [
+          {
+            "key": "to",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "po_number",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "packing_list_no",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "material",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "parts",
+        "visible": true,
+        "fields": [
+          {
+            "key": "part_qty",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "part_identity",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "part_pounds",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "statement",
+        "visible": true,
+        "fields": []
+      },
+      {
+        "key": "requirements",
+        "visible": true,
+        "fields": [
+          {
+            "key": "part_heading",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "spec_line",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "readings",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "serials",
+        "visible": true,
+        "fields": [
+          {
+            "key": "serials",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "freeform",
+        "visible": true,
+        "fields": [
+          {
+            "key": "freeform",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "signature",
+        "visible": true,
+        "fields": [
+          {
+            "key": "signature_mark",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "signer_name",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "signer_title",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "signer_company",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "footer",
+        "visible": true,
+        "fields": [
+          {
+            "key": "footer_address",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "footer_phone",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      }
+    ],
+    "formats": {
+      "thousandsSeparator": true,
+      "dateFormat": "MM/DD/YYYY"
+    },
+    "fonts": {
+      "family": "Roboto",
+      "baseSize": 9,
+      "headingSize": 19,
+      "smallSize": 7.5
+    },
+    "textBlocks": {
+      "cert_statement": "Sample certification statement for template tests: sample wording for template tests only sample wording for template tests only sample wording for template tests only sample wording for pl:"
+    },
+    "logo": null,
+    "pageFooter": false
+  },
+  "INVOICE": {
+    "sections": [
+      {
+        "key": "header",
+        "visible": true,
+        "fields": [
+          {
+            "key": "title",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "company_name",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "identity",
+        "visible": true,
+        "fields": [
+          {
+            "key": "invoice_no",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "invoice_date",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "terms",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "remit_to",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "parties",
+        "visible": true,
+        "fields": [
+          {
+            "key": "bill_to",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "ship_to",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "column_header",
+        "visible": true,
+        "fields": [
+          {
+            "key": "col_qty",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "col_info",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "col_each_weight",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "col_amount",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "order_strip",
+        "visible": true,
+        "fields": [
+          {
+            "key": "our_order_no",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "your_po",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "material",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "process",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "parts_heading",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "parts",
+        "visible": true,
+        "fields": [
+          {
+            "key": "part_qty",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "part_identity",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "part_each_weight",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "part_total_weight",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "price",
+        "visible": true,
+        "fields": [
+          {
+            "key": "price_heading",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "price_description",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "price_amount",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "quote_source",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "price_per",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "minimum_charge",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "setup_charge",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "totals",
+        "visible": true,
+        "fields": [
+          {
+            "key": "subtotal",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "surcharge_rows",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "charge_rows",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "cert_row",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "freight_row",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "tax_row",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "total",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "footer",
+        "visible": true,
+        "fields": [
+          {
+            "key": "footer_address",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "footer_contact",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "footer_phone",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      }
+    ],
+    "formats": {
+      "negativeStyle": "SIGN_AFTER_SYMBOL",
+      "priceDecimals": 2,
+      "thousandsSeparator": true,
+      "dateFormat": "MMMM D, YYYY"
+    },
+    "fonts": {
+      "family": "Roboto",
+      "baseSize": 9,
+      "headingSize": 20,
+      "smallSize": 7.5
+    },
+    "textBlocks": {},
+    "logo": null,
+    "pageFooter": false
+  },
+  "STATEMENT": {
+    "sections": [
+      {
+        "key": "header",
+        "visible": true,
+        "fields": [
+          {
+            "key": "title",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "company_name",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "identity",
+        "visible": true,
+        "fields": [
+          {
+            "key": "customer",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "statement_date",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "bill_to",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "remit_to",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "open_items",
+        "visible": true,
+        "fields": [
+          {
+            "key": "document_no",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "date",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "due_date",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "original",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "open",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "aging",
+        "visible": true,
+        "fields": [
+          {
+            "key": "aging_current",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "aging_1_30",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "aging_31_60",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "aging_61_90",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "aging_90_plus",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "aging_unapplied",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "aging_net",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "finance_charge",
+        "visible": true,
+        "fields": [
+          {
+            "key": "finance_charge",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "total",
+        "visible": true,
+        "fields": [
+          {
+            "key": "total_due",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      }
+    ],
+    "formats": {
+      "negativeStyle": "SIGN_AFTER_SYMBOL",
+      "priceDecimals": 2,
+      "thousandsSeparator": true,
+      "dateFormat": "MMMM D, YYYY"
+    },
+    "fonts": {
+      "family": "Roboto",
+      "baseSize": 9,
+      "headingSize": 20,
+      "smallSize": 9
+    },
+    "textBlocks": {},
+    "logo": null,
+    "pageFooter": false
+  },
+  "QUOTE": {
+    "sections": [
+      {
+        "key": "header",
+        "visible": true,
+        "fields": [
+          {
+            "key": "title",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "company_name",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "company_address",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "quote_number",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "parties",
+        "visible": true,
+        "fields": [
+          {
+            "key": "attn",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "bill_to",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "company_phone",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "effective",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "expires",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "terms",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "rfq_number",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "customer_phone",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "intro",
+        "visible": true,
+        "fields": []
+      },
+      {
+        "key": "column_header",
+        "visible": true,
+        "fields": [
+          {
+            "key": "col_qty",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "col_info",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "col_each_weight",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "col_amount",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "lines",
+        "visible": true,
+        "fields": [
+          {
+            "key": "line_qty",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "line_part",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "line_each_weight",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "line_total_lbs",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "material",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "price_heading",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "step_name",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "step_notes",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "price_amount",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "setup_charge",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "price_per",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "minimum_charge",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "breaks",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "closing",
+        "visible": true,
+        "fields": [
+          {
+            "key": "ending_statement",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "quote_notes",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "signer_name",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "signer_title",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      },
+      {
+        "key": "liability",
+        "visible": true,
+        "fields": []
+      }
+    ],
+    "formats": {
+      "priceDecimals": 4,
+      "thousandsSeparator": true,
+      "dateFormat": "MM/DD/YYYY"
+    },
+    "fonts": {
+      "family": "Roboto",
+      "baseSize": 9,
+      "headingSize": 20,
+      "smallSize": 6.5
+    },
+    "textBlocks": {
+      "quote_intro_text": "We are pleased to provide you with the following quotation:",
+      "quote_liability_text": ""
+    },
+    "logo": null,
+    "pageFooter": true
+  },
+  "CONTAINER_TAG": {
+    "sections": [
+      {
+        "key": "tag",
+        "visible": true,
+        "fields": [
+          {
+            "key": "order_number",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "customer",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "po_number",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "containers_total",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "received",
+            "visible": true,
+            "label": null,
+            "width": null
+          },
+          {
+            "key": "parts",
+            "visible": true,
+            "label": null,
+            "width": null
+          }
+        ]
+      }
+    ],
+    "formats": {
+      "labelSize": "4x3-landscape"
+    },
+    "fonts": {
+      "family": "Roboto",
+      "baseSize": 10,
+      "headingSize": 20,
+      "smallSize": 10
+    },
+    "textBlocks": {},
+    "logo": null,
+    "pageFooter": false,
+    "layout": null
+  }
+}

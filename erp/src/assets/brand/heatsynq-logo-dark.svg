@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 682 200" width="682" height="200">
+  <g fill="none" stroke-linecap="round" transform="translate(86 100) scale(0.30) translate(-255 -255)">
+    <circle cx="236" cy="236" r="140" stroke="#E8590C" stroke-width="48"/>
+    <path d="M326 326 L414 414" stroke="#1565C0" stroke-width="48"/>
+  </g>
+  <text x="176" y="131" font-family="Inter, 'Segoe UI', 'Helvetica Neue', 'DejaVu Sans', Arial, sans-serif" font-weight="700" font-size="86" letter-spacing="-2"><tspan fill="#ECEFF1">HeatSyn</tspan><tspan fill="#E8590C">Q</tspan></text>
+</svg>

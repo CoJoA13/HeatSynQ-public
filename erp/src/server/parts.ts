@@ -1,0 +1,423 @@
+import { z } from "zod";
+import { readWholeNumber, wholeNumberRefusal } from "../lib/whole-number-entry";
+import { LOAD_QTY } from "../lib/whole-number-boxes";
+import { Prisma } from "../../prisma/generated/prisma/client";
+import { prisma } from "./db";
+import { HttpError } from "./errors";
+import { withDbErrors } from "./db-errors";
+import { auditedCreate, auditedUpdate, auditedSoftDelete } from "./audit";
+import { assertRefExists } from "./reference-guards";
+import { getSetting } from "./settings";
+import { decimalBoxField } from "./decimal-field";
+import { EACH_WEIGHT, LOAD_WEIGHT } from "@/lib/part-boxes";
+import { parseRecords, isBlankRecord, overflowError } from "./tsv";
+import { readableMessage } from "./error-message";
+import { PART_PASTE_COLUMNS } from "../lib/part-constants";
+import { CERT_SCOPES, type CertScopeValue } from "../lib/cert-constants";
+import type { PasteResult } from "./paste";
+import type { Blocker } from "./reference-blockers";
+
+export type PartRow = {
+  id: string; customerId: string; customerCode: string; customerName: string;
+  partNumber: string; name: string; description: string;
+  /** Presentation vocabulary for the traveler's Process: slot / the invoice's create-time
+   *  snapshot (spec §5.7 ruling 4) — surfaced for data entry in Phase 7 Task 15. Nothing
+   *  resolves or validates against it; blank ("") prints nothing, exactly as today. */
+  processName: string;
+  materialId: string | null; materialName: string | null;
+  eachWeight: number; loadQty: number | null; loadWeight: number | null;
+  requestDaysOverride: number | null;
+  /** Certification chain (spec §6.1): null = inherit the customer's default, which in turn falls
+   *  back to the plant setting. Never resolved here — resolveCertSettings (certs.ts) walks the
+   *  chain; this is the part's own OWN override, or the absence of one. */
+  certRequired: boolean | null; certScope: CertScopeValue | null;
+  /** What a null `certRequired`/`certScope` would inherit RIGHT NOW — the customer's default,
+   *  else the plant setting (Task 17). Display-only companions: the part page's three-state
+   *  control labels its "Inherit" option with them, and order entry's untouched cert preview
+   *  composes `certRequired ?? inheritedCertRequired` per line client-side (the 2C-3 derive-at-
+   *  render convention) without needing a settings seam of its own. The authoritative save-time
+   *  resolution stays `resolveCertSettings` (certs.ts) — these never feed a write. */
+  inheritedCertRequired: boolean; inheritedCertScope: CertScopeValue;
+  serializationRequired: boolean;
+  active: boolean;
+  /** Whether the part's CURRENT (highest-numbered) process revision carries at least one step —
+   *  the same "orderable" check `lockCurrentRevision` performs at order-save time
+   *  (part-process-steps.ts), read here so order entry's lead-part picker can show it up front
+   *  (design spec §11) instead of only learning it after a pick. A part with no revision at all
+   *  is `false`, matching `lockCurrentRevision`'s own "claimed.length === 0" branch. */
+  hasProcessSteps: boolean;
+};
+
+const num = (d: Prisma.Decimal | null) => (d === null ? null : d.toNumber());
+
+// Kept in sync with prisma/schema.prisma's @db.Decimal declarations on Part.
+const FIELDS = {
+  partNumber: z.string().trim().min(1).max(60),
+  name: z.string().max(200).optional(),
+  description: z.string().max(4000).optional(),
+  // Phase 7 Task 15: the part's process name for the traveler's Process: slot / the invoice
+  // snapshot (spec §5.7 ruling 4). Optional display text, capped like `name`, defaulting "" at
+  // the DB level — the parts convention (required identifiers use .trim().min(1); optional
+  // display text uses .max(n) with no minimum). Nothing resolves or validates against it.
+  processName: z.string().max(200).optional(),
+  materialId: z.string().nullable().optional(),
+  eachWeight: decimalBoxField(EACH_WEIGHT.box, { required: true }),
+  loadQty: z.number().int().min(1).nullable().optional(),
+  loadWeight: decimalBoxField(LOAD_WEIGHT.box),
+  // Capped to match addBusinessDays' own guard (src/lib/business-days.ts, fix-wave finding 5) —
+  // this value feeds straight into its day-at-a-time loop as the lead part's own override.
+  requestDaysOverride: z.number().int().min(0).max(3650).nullable().optional(),
+  // Certification chain (spec §6.1): `null` (or an omitted key on create) means "inherit" — the
+  // resolver treats `null` and "not sent" identically. An explicit `false`/`true` is the part's
+  // own override and stays distinct from that inherited `null` end to end.
+  certRequired: z.boolean().nullable().optional(),
+  certScope: z.enum(CERT_SCOPES).nullable().optional(),
+  serializationRequired: z.boolean().optional(),
+  active: z.boolean().optional(),
+};
+const CREATE = z.object({ customerId: z.string().min(1), ...FIELDS }).strict();
+const UPDATE = z.object(FIELDS).partial().strict();   // no customerId — immutable by design
+
+const SELECT = {
+  id: true, customerId: true, partNumber: true, name: true, description: true, processName: true,
+  materialId: true, eachWeight: true, loadQty: true, loadWeight: true, requestDaysOverride: true,
+  certRequired: true, certScope: true,
+  serializationRequired: true, active: true,
+  customer: { select: { code: true, name: true, certRequiredDefault: true, certScopeDefault: true } },
+  material: { select: { name: true } },
+} as const;
+
+/** The two plant-level cert settings, read once per list/get call (not per row) so `toRow` can
+ *  compose each row's `inheritedCert*` companions without an N+1 on the settings table. */
+async function plantCertDefaults(): Promise<{ required: boolean; scope: CertScopeValue }> {
+  return {
+    required: await getSetting("cert_required_default"),
+    scope: (await getSetting("cert_scope_default")) as CertScopeValue,
+  };
+}
+
+type Raw = Prisma.PartGetPayload<{ select: typeof SELECT }>;
+function toRow(r: Raw, hasProcessSteps: boolean, plant: { required: boolean; scope: CertScopeValue }): PartRow {
+  const { customer, material, eachWeight, loadWeight, ...rest } = r;
+  return {
+    ...rest, customerCode: customer.code, customerName: customer.name,
+    materialName: material?.name ?? null,
+    eachWeight: eachWeight.toNumber(), loadWeight: num(loadWeight),
+    certScope: r.certScope as CertScopeValue | null,
+    inheritedCertRequired: customer.certRequiredDefault ?? plant.required,
+    inheritedCertScope: (customer.certScopeDefault as CertScopeValue | null) ?? plant.scope,
+    hasProcessSteps,
+  };
+}
+
+/**
+ * For each given part id, whether its current (highest-numbered) `PartProcessRevision` carries
+ * at least one step. ONE additional query for the whole batch — not N+1 — ordered so the FIRST
+ * row encountered per `partId` is that part's highest revision (mirrors `lockCurrentRevision`'s
+ * own `ORDER BY revisionNumber DESC LIMIT 1`, just read for many parts instead of one). A part
+ * with a lower, superseded revision that once had steps must still read false if its CURRENT
+ * revision has none — the same rule `lockCurrentRevision` enforces at save time.
+ */
+async function hasProcessStepsByPart(partIds: string[]): Promise<Map<string, boolean>> {
+  if (partIds.length === 0) return new Map();
+  const revisions = await prisma.partProcessRevision.findMany({
+    where: { partId: { in: partIds } },
+    orderBy: [{ partId: "asc" }, { revisionNumber: "desc" }],
+    select: { partId: true, _count: { select: { steps: true } } },
+  });
+  const result = new Map<string, boolean>();
+  for (const rev of revisions) {
+    if (!result.has(rev.partId)) result.set(rev.partId, rev._count.steps > 0);
+  }
+  return result;
+}
+
+/** `customerId` (#614) narrows the list to one customer's parts, on `Part`'s customerId index, so
+ *  the order hub and quote detail read that customer's rows and `hasProcessStepsByPart` reads
+ *  that customer's revisions, where both pages read the whole catalog and kept one customer's rows
+ *  in the browser. An id that names no customer lists nothing. */
+export async function listParts(opts?: { includeInactive?: boolean; search?: string; customerId?: string }): Promise<PartRow[]> {
+  const q = opts?.search?.trim();
+  const rows = await prisma.part.findMany({
+    where: {
+      deletedAt: null,
+      ...(opts?.customerId ? { customerId: opts.customerId } : {}),
+      ...(opts?.includeInactive ? {} : { active: true }),
+      ...(q ? { OR: [
+        { partNumber: { contains: q, mode: "insensitive" } },
+        { customer: { code: { contains: q, mode: "insensitive" } } },
+        { customer: { name: { contains: q, mode: "insensitive" } } },
+      ] } : {}),
+    },
+    select: SELECT,
+    orderBy: [{ customer: { code: "asc" } }, { partNumber: "asc" }],
+  });
+  const stepsByPart = await hasProcessStepsByPart(rows.map((r) => r.id));
+  const plant = await plantCertDefaults();
+  return rows.map((r) => toRow(r, stepsByPart.get(r.id) ?? false, plant));
+}
+
+export async function getPart(id: string): Promise<PartRow> {
+  const row = await prisma.part.findFirst({ where: { id, deletedAt: null }, select: SELECT });
+  if (!row) throw new HttpError(404, "Part not found");
+  const stepsByPart = await hasProcessStepsByPart([id]);
+  return toRow(row, stepsByPart.get(id) ?? false, await plantCertDefaults());
+}
+
+export async function createPart(input: Record<string, unknown>): Promise<{ id: string }> {
+  const data = CREATE.parse(input);
+
+  // Courtesy 400 for the ordinary case; the partial unique index is the real guard, and its
+  // P2002 maps through withDbErrors below for the race case. findFirst, never findUnique.
+  const dupe = await prisma.part.findFirst({
+    where: { customerId: data.customerId, partNumber: data.partNumber, deletedAt: null },
+    select: { id: true },
+  });
+  if (dupe) throw new HttpError(400, "A part with that part number already exists for that customer");
+
+  const row = await withDbErrors({ entity: "Part", conflictField: "part number" }, () =>
+    prisma.$transaction(async (tx) => {
+      const customer = await tx.customer.findFirst({
+        where: { id: data.customerId, deletedAt: null }, select: { id: true } });
+      if (!customer) throw new HttpError(400, "That customer does not exist");
+      if (data.materialId) await assertRefExists("material", data.materialId, tx);
+      return auditedCreate("part", data, () => tx.part.create({ data }), { tx });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }));
+  return { id: row.id };
+}
+
+/** Writes only if still live, one statement — the claimLiveAndUpdate precedent (customers.ts). */
+async function claimLive(tx: Prisma.TransactionClient, id: string, data: Prisma.PartUpdateManyMutationInput) {
+  const { count } = await tx.part.updateMany({ where: { id, deletedAt: null }, data });
+  if (count === 0) throw new HttpError(404, "Part not found");
+}
+
+export async function updatePart(id: string, input: Record<string, unknown>): Promise<void> {
+  if ("customerId" in input) {
+    throw new HttpError(400,
+      "A part cannot move to another customer — deactivate it and key a new part instead");
+  }
+  const data = UPDATE.parse(input);
+  const current = await prisma.part.findFirst({ where: { id, deletedAt: null }, select: { id: true } });
+  if (!current) throw new HttpError(404, "Part not found");
+
+  // Serializable only where a cross-row invariant exists: a materialId assignment, which pairs
+  // with deleteReference's blocker scan. (Pricing left Part entirely in Phase 5A — the "a LOT
+  // price row cannot carry breaks" rule now lives with the price row, in part-prices.ts.)
+  const iso = data.materialId != null
+    ? { isolationLevel: Prisma.TransactionIsolationLevel.Serializable } : undefined;
+
+  await withDbErrors({ entity: "Part", conflictField: "part number" }, () =>
+    prisma.$transaction(async (tx) => {
+      if (data.materialId) await assertRefExists("material", data.materialId, tx);
+      await auditedUpdate("part", id, () => claimLive(tx, id, data), { tx });
+    }, iso));
+}
+
+/**
+ * Every LIVE order carrying a line — lead or rider, `OrderLine` draws no distinction — whose
+ * `partId` is this part. The direct analogue of `customerPartBlockers` above, scoped to
+ * Order/OrderLine instead of Part/Customer, and named the same way `reference-links.ts`'s own
+ * `orderContainer -> containerType` entry already names an Order blocker elsewhere in the app:
+ * "#1042 · ACME", never a bare order number, since a number alone means nothing without knowing
+ * whose it is. A part referenced twice within the SAME order (two lines, same partId — the
+ * schema has no constraint against it) must still list that order once, hence the dedupe by
+ * order id rather than a bare row-per-line map.
+ */
+export async function partOrderBlockers(partId: string): Promise<Blocker[]> {
+  const lines = await prisma.orderLine.findMany({
+    where: { partId, order: { deletedAt: null } },
+    select: { order: { select: { id: true, orderNumber: true, customer: { select: { code: true } } } } },
+    orderBy: { order: { orderNumber: "asc" } },
+  });
+  const seen = new Set<string>();
+  const out: Blocker[] = [];
+  for (const { order } of lines) {
+    if (seen.has(order.id)) continue;
+    seen.add(order.id);
+    out.push({
+      entityLabel: "Order", name: `#${order.orderNumber} · ${order.customer.code}`,
+      id: order.id, href: `/orders/${order.id}`,
+    });
+  }
+  return out;
+}
+
+/**
+ * Every LIVE quote carrying a LIVE line whose `partId` is this part — the quote-side sibling of
+ * `partOrderBlockers` above (Task 7, Phase 6 spec §4.2/§7). A part-linked quote line reads its
+ * printed identity (number/name/description/material/each weight) live from the part, so a
+ * deleted part would hollow out a still-live agreement; §5.14 refuses instead. Liveness needs
+ * BOTH halves of the chain (line AND quote — the QUOTE_VIA_PRICE registry entry's rule, one
+ * level up): a deleted quote carries its lines away, but neither a from-the-grave line under a
+ * live-stamped quote nor a line edited out of a live quote may block. Status is deliberately NOT
+ * consulted — a CLOSED quote is still a live record whose lines still render from the part.
+ * Named the way a Quote names itself in every blocker list it appears in (the reference-links.ts
+ * registry entries): "Quote · #1006", linked to `/quotes/[id]`. Deduped per QUOTE (the
+ * `partOrderBlockers` rule) so this list never disagrees with deletePart's quote count below.
+ */
+export async function partQuoteBlockers(partId: string): Promise<Blocker[]> {
+  const lines = await prisma.quoteLine.findMany({
+    where: { partId, deletedAt: null, quote: { is: { deletedAt: null } } },
+    select: { quote: { select: { id: true, quoteNumber: true } } },
+    orderBy: { quote: { quoteNumber: "asc" } },
+  });
+  const seen = new Set<string>();
+  const out: Blocker[] = [];
+  for (const { quote } of lines) {
+    if (seen.has(quote.id)) continue;
+    seen.add(quote.id);
+    out.push({
+      entityLabel: "Quote", name: `Quote · #${quote.quoteNumber}`,
+      id: quote.id, href: `/quotes/${quote.id}`,
+    });
+  }
+  return out;
+}
+
+export async function deletePart(id: string, reason: string): Promise<void> {
+  const why = reason.trim();
+  if (!why) throw new HttpError(400, "A reason is required to delete a part");
+  const current = await prisma.part.findFirst({ where: { id, deletedAt: null }, select: { id: true } });
+  if (!current) throw new HttpError(404, "Part not found");
+
+  // F2: Serializable, pairing with addPartSpec/addPartInspection, which each read this part live
+  // ON tx (assertPartLive) under Serializable before adding a child. Without both
+  // sides sharing Serializable, a concurrent "add a child to this part" and "delete this part"
+  // can each pass their own pre-check (part still live there, cascade already snapshotted the
+  // child list here) before either commits — a child added mid-delete outlives its now-dead
+  // parent, breaking the invariant findBlockers-style scans over "live children of a live part"
+  // depend on. Postgres aborts whichever side would produce a result no serial ordering could,
+  // surfacing as P2034 and translated by withDbErrors into a 409 telling the caller to retry.
+  // The same Serializable sharing now also pairs this guard with createOrder/addLine (orders.ts),
+  // both of which resolve their lines' parts live, under Serializable, before writing.
+  await withDbErrors({ entity: "Part" }, () => prisma.$transaction(async (tx) => {
+    // Task 15: a part still doing work on a live order cannot be deleted out from under it — a
+    // voided order (deletedAt set) does not count, matching every other "voided blocks nothing"
+    // rule in this app (global constraints). Counting live ORDERS (not lines) is what
+    // `partOrderBlockers` above also dedupes to, so the refusal's count and the panel's list
+    // never disagree about how many rows are actually blocking.
+    const orders = await tx.order.count({ where: { deletedAt: null, lines: { some: { partId: id } } } });
+    if (orders > 0) throw new HttpError(400, `That part is used by ${orders} live order(s)`);
+
+    // Task 7 (Phase 6 spec §4.2/§7): live quote lines block too — same rule, quote-scoped. The
+    // count filters exactly what `partQuoteBlockers` lists (live line AND live quote, status
+    // ignored) and counts QUOTES, not lines, so refusal and panel never disagree. Runs inside
+    // this same Serializable transaction, SSI-pairing with createQuote/updateQuote/attachPart
+    // (quotes.ts), which each read their lines' parts live ON their own Serializable tx before
+    // writing `QuoteLine.partId` — the createOrder/addLine pairing above, one writer over.
+    const quotes = await tx.quote.count({
+      where: { deletedAt: null, lines: { some: { partId: id, deletedAt: null } } } });
+    if (quotes > 0) throw new HttpError(400, `That part is quoted on ${quotes} live quote(s)`);
+
+    // Fix-wave R3 finding 5: attachments join the cascade exactly like every other child —
+    // without this, a deleted part's attachment rows stayed live (deletedAt null) yet
+    // permanently unreachable behind the live-part guard every attachment operation requires
+    // (assertOwnerVisible, attachments.ts), and the parent's deletion never showed up in the
+    // attachment's own history.
+    // Phase 5A re-parented price breaks under PartPrice, so the part's PRICE ROWS are what
+    // cascade here now. Their breaks are deliberately left alone — the price row is gone from
+    // every live read, and soft-deleting children individually would write audit noise for rows
+    // nothing can reach (the same call deletePartPrice makes).
+    const [specs, inspections, prices, attachments] = await Promise.all([
+      tx.partSpecification.findMany({ where: { partId: id, deletedAt: null }, select: { id: true } }),
+      tx.partInspection.findMany({ where: { partId: id, deletedAt: null }, select: { id: true } }),
+      tx.partPrice.findMany({ where: { partId: id, deletedAt: null }, select: { id: true } }),
+      tx.partAttachment.findMany({ where: { partId: id, deletedAt: null }, select: { id: true } }),
+    ]);
+    for (const s of specs) await auditedSoftDelete("partSpecification", s.id, "parent part deleted", tx);
+    for (const i of inspections) await auditedSoftDelete("partInspection", i.id, "parent part deleted", tx);
+    for (const p of prices) await auditedSoftDelete("partPrice", p.id, "parent part deleted", tx);
+    for (const a of attachments) await auditedSoftDelete("partAttachment", a.id, "parent part deleted", tx);
+    await auditedSoftDelete("part", id, why, tx);
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }));
+}
+
+function parseBool(cell: string, column: string): boolean {
+  const v = cell.trim().toLowerCase();
+  if (["yes", "y", "true", "1"].includes(v)) return true;
+  if (["", "no", "n", "false", "0"].includes(v)) return false;
+  throw new HttpError(400, `${column} must be Yes or No`);
+}
+
+/**
+ * Creates every valid row and collects failures per row — the pasteCustomers precedent
+ * (customers.ts). Two cells resolve against other tables before createPart ever sees them:
+ * customerCode -> customerId and materialName -> materialId, both against LIVE rows only
+ * (findFirst, never findUnique — customer.code and material.name are both unique-among-live-rows
+ * partial indexes, so findUnique would silently accept a soft-deleted match).
+ */
+export async function pasteParts(text: string): Promise<PasteResult> {
+  const columns = [...PART_PASTE_COLUMNS];
+  const { records, error } = parseRecords(text);
+  const errors: PasteResult["errors"] = [];
+  let created = 0;
+
+  // Each distinct customer code and material name once, before the loop (G5-7), instead of a
+  // lookup of each per row: a 2,000-row paste naming one customer read it 2,000 times. Live rows
+  // only, the exact cell as typed (this lookup never trimmed). An unknown name is still refused
+  // per row below, in the same sentence. `createPart` keeps its own re-checks of both inside its
+  // Serializable transaction (the TOCTOU rule), so a customer or material soft-deleted while the
+  // paste runs is still refused, by that transaction's sentence ("That customer does not exist")
+  // rather than this one's; resolving up front widens that window from one row to the whole paste.
+  const cell = (fields: string[], column: (typeof PART_PASTE_COLUMNS)[number]) => fields[columns.indexOf(column)] ?? "";
+  const typed = records.filter((r) => !isBlankRecord(r.fields));
+  const codes = [...new Set(typed.map((r) => cell(r.fields, "customerCode")))];
+  const materialNames = [...new Set(typed.map((r) => cell(r.fields, "materialName")).filter((n) => n !== ""))];
+  const customerByCode = new Map((codes.length === 0 ? [] : await prisma.customer.findMany({
+    where: { code: { in: codes }, deletedAt: null }, select: { id: true, code: true },
+  })).map((c) => [c.code, c.id]));
+  const materialByName = new Map((materialNames.length === 0 ? [] : await prisma.material.findMany({
+    where: { name: { in: materialNames }, deletedAt: null }, select: { id: true, name: true },
+  })).map((m) => [m.name, m.id]));
+
+  for (const record of records) {
+    if (isBlankRecord(record.fields)) continue;
+    const overflow = overflowError(record.fields, columns);
+    if (overflow) { errors.push({ row: record.startLine, message: overflow }); continue; }
+    const row: Record<string, string> =
+      Object.fromEntries(columns.map((c, i) => [c, record.fields[i] ?? ""]));
+
+    try {
+      const customerId = customerByCode.get(row.customerCode);
+      if (customerId === undefined) throw new HttpError(400, `Customer "${row.customerCode}" does not exist`);
+
+      let materialId: string | undefined;
+      if (row.materialName !== "") {
+        materialId = materialByName.get(row.materialName);
+        if (materialId === undefined) throw new HttpError(400, `Material "${row.materialName}" does not exist`);
+      }
+
+      // z.number() has no string coercion, unlike decimalField below, so the cell is read here by
+      // the whole-number rule with Load quantity's box (ruling 19, G5-4): `1e2` is refused where
+      // `Number()` took it as 100, and a 0 is refused by the box's sentence, not the zod path.
+      let loadQty: number | undefined;
+      if (row.loadQty !== "") {
+        const refused = wholeNumberRefusal(row.loadQty, LOAD_QTY);
+        if (refused) throw new HttpError(400, refused);
+        const reading = readWholeNumber(row.loadQty, LOAD_QTY);
+        if (reading.ok) loadQty = reading.value;
+      }
+
+      const input: Record<string, unknown> = {
+        customerId,
+        partNumber: row.partNumber,
+        eachWeight: row.eachWeight,
+        serializationRequired: parseBool(row.serializationRequired, "Serialization"),
+      };
+      if (row.name !== "") input.name = row.name;
+      if (row.description !== "") input.description = row.description;
+      if (row.processName !== "") input.processName = row.processName;
+      if (materialId) input.materialId = materialId;
+      if (loadQty !== undefined) input.loadQty = loadQty;
+      if (row.loadWeight !== "") input.loadWeight = row.loadWeight;
+
+      await createPart(input);
+      created++;
+    } catch (err) {
+      errors.push({ row: record.startLine, message: readableMessage(err) });
+    }
+  }
+  if (error) errors.push({ row: error.line, message: error.message });
+  return { created, errors };
+}

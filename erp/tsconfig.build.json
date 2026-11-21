@@ -1,0 +1,30 @@
+{
+  // Next's project tsconfig (next.config.ts `typescript.tsconfigPath`, #209). `next build`
+  // type-checks it with the tsc CLI, and dev, typegen and the bundler's path-alias resolution
+  // (build/load-jsconfig.js) load it too. Change compilerOptions in tsconfig.json, not here: an
+  // override added here changes bundling, not just the build's type-check. The Docker build
+  // context is erp/ alone, so the tests that import ../ops cannot resolve there; this file checks
+  // the app and Next's generated route types. The full-project gate is still `npx tsc --noEmit`,
+  // which reads tsconfig.json.
+  //
+  // Keep `extends`: Next's writeConfigurationDefaults returns without writing when the file it
+  // was given extends another, so neither tsconfig is rewritten by build, dev or typegen. The
+  // cost: Next no longer adds a newly required include/compilerOptions entry by itself, so a
+  // future Next that needs one is edited by hand. `exclude` only narrows `include`; an import
+  // (src -> prisma/generated) still type-checks.
+  "extends": "./tsconfig.json",
+  "include": [
+    "next-env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "tests",
+    "e2e",
+    "scripts",
+    "prisma",
+    ".next/dev/types"
+  ]
+}

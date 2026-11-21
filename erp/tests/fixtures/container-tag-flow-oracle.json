@@ -1,0 +1,734 @@
+{
+ "one-tag": {
+  "pageSize": {
+   "width": 288,
+   "height": 216
+  },
+  "pageMargins": 14,
+  "defaultStyle": {
+   "font": "Roboto",
+   "fontSize": 10
+  },
+  "content": [
+   {
+    "stack": [
+     {
+      "text": "Order #92036",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 20
+     },
+     {
+      "text": "Acme Heat Treat",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 12,
+      "margin": [
+       0,
+       2,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "PO PO-5531",
+      "noWrap": true,
+      "margin": [
+       0,
+       4,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "Containers: 3",
+      "noWrap": true
+     },
+     {
+      "text": "Received 10/23/2026, 9:02 AM",
+      "noWrap": true
+     },
+     {
+      "text": "WIDGET-100 × 100",
+      "noWrap": true,
+      "margin": [
+       0,
+       6,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "GADGET-200 × 40",
+      "noWrap": true
+     }
+    ]
+   }
+  ]
+ },
+ "three-tags": {
+  "pageSize": {
+   "width": 288,
+   "height": 216
+  },
+  "pageMargins": 14,
+  "defaultStyle": {
+   "font": "Roboto",
+   "fontSize": 10
+  },
+  "content": [
+   {
+    "stack": [
+     {
+      "text": "Order #92036",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 20
+     },
+     {
+      "text": "Acme Heat Treat",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 12,
+      "margin": [
+       0,
+       2,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "PO PO-5531",
+      "noWrap": true,
+      "margin": [
+       0,
+       4,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "Containers: 3",
+      "noWrap": true
+     },
+     {
+      "text": "Received 10/23/2026, 9:02 AM",
+      "noWrap": true
+     },
+     {
+      "text": "WIDGET-100 × 100",
+      "noWrap": true,
+      "margin": [
+       0,
+       6,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "GADGET-200 × 40",
+      "noWrap": true
+     }
+    ]
+   },
+   {
+    "stack": [
+     {
+      "text": "Order #92036",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 20
+     },
+     {
+      "text": "Acme Heat Treat",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 12,
+      "margin": [
+       0,
+       2,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "PO PO-5531",
+      "noWrap": true,
+      "margin": [
+       0,
+       4,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "Containers: 3",
+      "noWrap": true
+     },
+     {
+      "text": "Received 10/23/2026, 9:02 AM",
+      "noWrap": true
+     },
+     {
+      "text": "WIDGET-100 × 100",
+      "noWrap": true,
+      "margin": [
+       0,
+       6,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "GADGET-200 × 40",
+      "noWrap": true
+     }
+    ],
+    "pageBreak": "before"
+   },
+   {
+    "stack": [
+     {
+      "text": "Order #92036",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 20
+     },
+     {
+      "text": "Acme Heat Treat",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 12,
+      "margin": [
+       0,
+       2,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "PO PO-5531",
+      "noWrap": true,
+      "margin": [
+       0,
+       4,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "Containers: 3",
+      "noWrap": true
+     },
+     {
+      "text": "Received 10/23/2026, 9:02 AM",
+      "noWrap": true
+     },
+     {
+      "text": "WIDGET-100 × 100",
+      "noWrap": true,
+      "margin": [
+       0,
+       6,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "GADGET-200 × 40",
+      "noWrap": true
+     }
+    ],
+    "pageBreak": "before"
+   }
+  ]
+ },
+ "blank-po": {
+  "pageSize": {
+   "width": 288,
+   "height": 216
+  },
+  "pageMargins": 14,
+  "defaultStyle": {
+   "font": "Roboto",
+   "fontSize": 10
+  },
+  "content": [
+   {
+    "stack": [
+     {
+      "text": "Order #92036",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 20
+     },
+     {
+      "text": "Acme Heat Treat",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 12,
+      "margin": [
+       0,
+       2,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "PO —",
+      "noWrap": true,
+      "margin": [
+       0,
+       4,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "Containers: 3",
+      "noWrap": true
+     },
+     {
+      "text": "Received 10/23/2026, 9:02 AM",
+      "noWrap": true
+     },
+     {
+      "text": "WIDGET-100 × 100",
+      "noWrap": true,
+      "margin": [
+       0,
+       6,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "GADGET-200 × 40",
+      "noWrap": true
+     }
+    ]
+   }
+  ]
+ },
+ "parts-0": {
+  "pageSize": {
+   "width": 288,
+   "height": 216
+  },
+  "pageMargins": 14,
+  "defaultStyle": {
+   "font": "Roboto",
+   "fontSize": 10
+  },
+  "content": [
+   {
+    "stack": [
+     {
+      "text": "Order #92036",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 20
+     },
+     {
+      "text": "Acme Heat Treat",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 12,
+      "margin": [
+       0,
+       2,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "PO PO-5531",
+      "noWrap": true,
+      "margin": [
+       0,
+       4,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "Containers: 3",
+      "noWrap": true
+     },
+     {
+      "text": "Received 10/23/2026, 9:02 AM",
+      "noWrap": true
+     }
+    ]
+   }
+  ]
+ },
+ "parts-6": {
+  "pageSize": {
+   "width": 288,
+   "height": 216
+  },
+  "pageMargins": 14,
+  "defaultStyle": {
+   "font": "Roboto",
+   "fontSize": 10
+  },
+  "content": [
+   {
+    "stack": [
+     {
+      "text": "Order #92036",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 20
+     },
+     {
+      "text": "Acme Heat Treat",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 12,
+      "margin": [
+       0,
+       2,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "PO PO-5531",
+      "noWrap": true,
+      "margin": [
+       0,
+       4,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "Containers: 3",
+      "noWrap": true
+     },
+     {
+      "text": "Received 10/23/2026, 9:02 AM",
+      "noWrap": true
+     },
+     {
+      "text": "PART-1 × 10",
+      "noWrap": true,
+      "margin": [
+       0,
+       6,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "PART-2 × 20",
+      "noWrap": true
+     },
+     {
+      "text": "PART-3 × 30",
+      "noWrap": true
+     },
+     {
+      "text": "PART-4 × 40",
+      "noWrap": true
+     },
+     {
+      "text": "PART-5 × 50",
+      "noWrap": true
+     },
+     {
+      "text": "PART-6 × 60",
+      "noWrap": true
+     }
+    ]
+   }
+  ]
+ },
+ "parts-7": {
+  "pageSize": {
+   "width": 288,
+   "height": 216
+  },
+  "pageMargins": 14,
+  "defaultStyle": {
+   "font": "Roboto",
+   "fontSize": 10
+  },
+  "content": [
+   {
+    "stack": [
+     {
+      "text": "Order #92036",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 20
+     },
+     {
+      "text": "Acme Heat Treat",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 12,
+      "margin": [
+       0,
+       2,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "PO PO-5531",
+      "noWrap": true,
+      "margin": [
+       0,
+       4,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "Containers: 3",
+      "noWrap": true
+     },
+     {
+      "text": "Received 10/23/2026, 9:02 AM",
+      "noWrap": true
+     },
+     {
+      "text": "PART-1 × 10",
+      "noWrap": true,
+      "margin": [
+       0,
+       6,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "PART-2 × 20",
+      "noWrap": true
+     },
+     {
+      "text": "PART-3 × 30",
+      "noWrap": true
+     },
+     {
+      "text": "PART-4 × 40",
+      "noWrap": true
+     },
+     {
+      "text": "PART-5 × 50",
+      "noWrap": true
+     },
+     {
+      "text": "PART-6 × 60",
+      "noWrap": true
+     },
+     {
+      "text": "and 1 more part",
+      "noWrap": true,
+      "italics": true
+     }
+    ]
+   }
+  ]
+ },
+ "long-customer": {
+  "pageSize": {
+   "width": 288,
+   "height": 216
+  },
+  "pageMargins": 14,
+  "defaultStyle": {
+   "font": "Roboto",
+   "fontSize": 10
+  },
+  "content": [
+   {
+    "stack": [
+     {
+      "text": "Order #92036",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 20
+     },
+     {
+      "text": "Northern Illinois Precision Gear and Spline Manufacturing Company, IncorporatedX",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 12,
+      "margin": [
+       0,
+       2,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "PO PO-5531",
+      "noWrap": true,
+      "margin": [
+       0,
+       4,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "Containers: 3",
+      "noWrap": true
+     },
+     {
+      "text": "Received 10/23/2026, 9:02 AM",
+      "noWrap": true
+     },
+     {
+      "text": "WIDGET-100 × 100",
+      "noWrap": true,
+      "margin": [
+       0,
+       6,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "GADGET-200 × 40",
+      "noWrap": true
+     }
+    ]
+   }
+  ]
+ },
+ "long-po": {
+  "pageSize": {
+   "width": 288,
+   "height": 216
+  },
+  "pageMargins": 14,
+  "defaultStyle": {
+   "font": "Roboto",
+   "fontSize": 10
+  },
+  "content": [
+   {
+    "stack": [
+     {
+      "text": "Order #92036",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 20
+     },
+     {
+      "text": "Acme Heat Treat",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 12,
+      "margin": [
+       0,
+       2,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "PO PO-999999999999999999999999999999999999999999999999999999999",
+      "noWrap": true,
+      "margin": [
+       0,
+       4,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "Containers: 3",
+      "noWrap": true
+     },
+     {
+      "text": "Received 10/23/2026, 9:02 AM",
+      "noWrap": true
+     },
+     {
+      "text": "WIDGET-100 × 100",
+      "noWrap": true,
+      "margin": [
+       0,
+       6,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "GADGET-200 × 40",
+      "noWrap": true
+     }
+    ]
+   }
+  ]
+ },
+ "line-breaks": {
+  "pageSize": {
+   "width": 288,
+   "height": 216
+  },
+  "pageMargins": 14,
+  "defaultStyle": {
+   "font": "Roboto",
+   "fontSize": 10
+  },
+  "content": [
+   {
+    "stack": [
+     {
+      "text": "Order #92036",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 20
+     },
+     {
+      "text": "Acme Heat Treat",
+      "noWrap": true,
+      "bold": true,
+      "fontSize": 12,
+      "margin": [
+       0,
+       2,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "PO PO-5531 REV-B",
+      "noWrap": true,
+      "margin": [
+       0,
+       4,
+       0,
+       0
+      ]
+     },
+     {
+      "text": "Containers: 3",
+      "noWrap": true
+     },
+     {
+      "text": "Received 10/23/2026, 9:02 AM",
+      "noWrap": true
+     },
+     {
+      "text": "WIDGET 100 × 100",
+      "noWrap": true,
+      "margin": [
+       0,
+       6,
+       0,
+       0
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}

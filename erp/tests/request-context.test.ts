@@ -1,0 +1,74 @@
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { prisma, truncateAll } from "./helpers/db";
+import { signInWith } from "./helpers/auth";
+import { GET as me } from "@/app/api/auth/me/route";
+
+describe("request context", () => {
+  beforeEach(async () => await truncateAll());
+
+  it("resolves the session exactly once per request", async () => {
+    const cookie = await signInWith(["admin.view"]);
+    // The slide is throttled (ruling R6, #609): a session just created is inside the window and
+    // writes nothing, so age its stored expiry past the 60 s cap first; this case counts the
+    // writes of a request that DOES slide, one and not two.
+    await prisma.session.updateMany({ data: { expiresAt: new Date(Date.now() + 480 * 60_000 - 61_000) } });
+    // Not vi.spyOn: Prisma 6.19's client Proxy reports a bogus
+    // `{ value: undefined }` own-property descriptor for model methods, so tinyspy's
+    // spyOn(...).mockRestore() writes that `undefined` back over the live method, permanently
+    // breaking every later call in the suite. A manual wrap/restore of the bound method
+    // sidesteps the descriptor entirely. `updateMany` since MR !242: the sliding-expiry write
+    // moved off `update` so a session row deleted mid-request answers null instead of a
+    // thrown P2025 (#218 review P2) — this counter follows the write it counts.
+    const originalUpdateMany = prisma.session.updateMany.bind(prisma.session);
+    const spy = vi.fn(originalUpdateMany);
+    prisma.session.updateMany = spy as unknown as typeof prisma.session.updateMany;
+    try {
+      const res = await me(new Request("http://t/api/auth/me", { headers: { cookie } }),
+                           { params: Promise.resolve({}) });
+      expect(res.status).toBe(200);
+      // One sliding-expiry write, not two.
+      expect(spy).toHaveBeenCalledTimes(1);
+    } finally {
+      prisma.session.updateMany = originalUpdateMany;
+    }
+  });
+
+  it("me returns effective permissions via the shared resolver", async () => {
+    const cookie = await signInWith(["admin.view"]);
+    const res = await me(new Request("http://t/api/auth/me", { headers: { cookie } }),
+                         { params: Promise.resolve({}) });
+    expect(await res.json()).toMatchObject({ username: "root", permissions: ["admin.view"] });
+  });
+
+  it("DENY override beats a role grant in the me payload", async () => {
+    const cookie = await signInWith(["admin.view"]);
+    const user = await prisma.user.findUniqueOrThrow({ where: { username: "root" } });
+    await prisma.userPermissionOverride.create({
+      data: { userId: user.id, permission: "admin.view", mode: "DENY" },
+    });
+    const res = await me(new Request("http://t/api/auth/me", { headers: { cookie } }),
+                         { params: Promise.resolve({}) });
+    expect((await res.json()).permissions).toEqual([]);
+  });
+
+  it("401s with no cookie", async () => {
+    const res = await me(new Request("http://t/api/auth/me"), { params: Promise.resolve({}) });
+    expect(res.status).toBe(401);
+  });
+
+  it("401s with an expired session cookie", async () => {
+    const cookie = await signInWith(["admin.view"]);
+    await prisma.session.updateMany({ data: { expiresAt: new Date(Date.now() - 1000) } });
+    const res = await me(new Request("http://t/api/auth/me", { headers: { cookie } }),
+                         { params: Promise.resolve({}) });
+    expect(res.status).toBe(401);
+  });
+
+  it("401s when the user was deactivated after signing in", async () => {
+    const cookie = await signInWith(["admin.view"]);
+    await prisma.user.updateMany({ data: { active: false } });
+    const res = await me(new Request("http://t/api/auth/me", { headers: { cookie } }),
+                         { params: Promise.resolve({}) });
+    expect(res.status).toBe(401);
+  });
+});

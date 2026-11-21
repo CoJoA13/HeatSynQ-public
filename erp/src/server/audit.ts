@@ -1,0 +1,856 @@
+import { prisma } from "./db";
+import { projectForPanel } from "../lib/audit-diff";
+import { currentActor } from "./context";
+import { HttpError } from "./errors";
+import { Prisma } from "../../prisma/generated/prisma/client";
+import { AUDIT_CHILDREN, auditChildrenOf } from "@/lib/audit-children";
+
+export type AuditableModel =
+  | "user" | "role" | "setting"
+  | "glAccount" | "material" | "inspectionScale" | "inspectionCode" | "containerType"
+  | "carrier" | "terms" | "paymentType" | "commentSnippet" | "specification"
+  | "processStepCode" | "customer" | "customerAddress" | "customerContact"
+  | "part" | "partSpecification" | "partInspection" | "partPrice" | "partPriceBreak"
+  | "partFieldDef" | "partFieldValue"
+  | "partProcessRevision"
+  | "order" | "partAttachment" | "orderAttachment" | "savedView" | "storedDocument"
+  | "cert" | "shipper"
+  | "surcharge" | "surchargeStepCode" | "customerSurcharge"
+  | "invoice" | "invoiceLine" | "billingConfig" | "setupState" | "updateHold"
+  | "receiptBatch" | "payment" | "application"
+  | "closePeriod" | "glExportBatch"
+  | "quote" | "endingStatement"
+  | "documentTemplate" | "documentTemplateVersion" | "customerTemplateAssignment";
+
+// Relations pulled into before/after snapshots so audit history reflects changes made through
+// associated tables (setRolePermissions, setUserOverrides) and not just scalar columns on the
+// model row itself. `undefined` means "no relations" — snapshot() falls back to a bare
+// findUnique for that model. These relations carry no sensitive fields (permission/mode keys
+// only), so redact() doesn't need new patterns to keep snapshots safe.
+// Exported for tests/certs-schema.test.ts's smoke test and tests/snapshot-order-sweep.test.ts's
+// list-relation orderBy sweep (issue #24): this map is typed `object | undefined`
+// per entry (Prisma's own `include` shape has no useful common supertype), so a wrong relation
+// name or `orderBy` field compiles cleanly and would otherwise only explode at the first
+// `audited*` call against that model, in whatever later task happens to be the first to touch it.
+export const SNAPSHOT_INCLUDE: Record<AuditableModel, object | undefined> = {
+  // Ordered AND projected onto stable fields — issue #24 + the MR !152 Codex round:
+  // setRolePermissions delete/recreates the rows, so scan order tracks insertion order (the
+  // orderBy) AND every re-save mints fresh generated ids (the select) — either alone leaves a
+  // same-set re-save rendering as a spurious diff under HistoryPanel's whole-key
+  // JSON.stringify. `permission` is unique within a role (@@unique([roleId, permission])), so
+  // it orders alone and IS the row's whole meaning.
+  role: { permissions: { select: { permission: true }, orderBy: { permission: "asc" } } },
+  // Same delete/recreate shape via setUserOverrides (the Group H recon find + the same Codex
+  // round); `permission` unique within a user, `mode` the only other meaning the row carries.
+  // The SNAPSHOT_SELECT.user entry below is the one user snapshots actually take (the
+  // signatureImage exclusion) — keep the two in step by hand.
+  user: { overrides: { select: { permission: true, mode: true }, orderBy: { permission: "asc" } } },
+  setting: undefined,
+  glAccount: undefined,
+  material: undefined,
+  inspectionScale: undefined,
+  inspectionCode: undefined,
+  containerType: undefined,
+  carrier: undefined,
+  terms: undefined,
+  paymentType: undefined,
+  commentSnippet: undefined,
+  specification: undefined,
+  // Suggested parameters are mutated through the parent (syncStepFields diffs the code's
+  // ProcessStepFieldDef rows by id: updates in place, creates, soft-deletes), not via a scalar
+  // column on ProcessStepCode itself — without this include, before/after snapshots would both
+  // omit `fields` and the diff would show no change for the exact operation most worth auditing.
+  // Live suggestions only, as the admin list shows them: a removed one leaves the image. Ordered —
+  // issue #24: `sort` matches the live read (listStepCodes, process-step-codes.ts); it is not
+  // unique within a code, so `id` breaks ties deterministically. Projected onto the columns that
+  // MEAN something (the MR !152 Codex round's class), so the diff reads as IDs, labels, types,
+  // units and order. The ID is one of them: a part row copied from a suggestion takes its ID as
+  // its key (spec 2026-09-26 §3.3), so removing a suggestion and adding an identical one in one
+  // save is a different parameter, and the history must show the ID change (Codex, #361).
+  processStepCode: {
+    fields: {
+      where: { deletedAt: null },
+      select: { id: true, label: true, type: true, unit: true, sort: true },
+      orderBy: [{ sort: "asc" }, { id: "asc" }],
+    },
+  },
+  // Addresses and contacts (Task 5/6) are audited as their own models, so the parent snapshot
+  // needs no relations.
+  customer: undefined,
+  customerAddress: undefined,
+  customerContact: undefined,
+  // Children are audited as their own models; the material rides along so a materialId change
+  // reads "Ductile iron", not a cuid (#14 item 2 — the partSpecification precedent below).
+  // Frozen history keeps the bare cuid: snapshots are frozen, no backfill.
+  part: { material: true, recipe: { select: { id: true, number: true, usedAt: true } } },
+  // history reads "ASTM A536", not a cuid
+  partSpecification: { specification: true },
+  partInspection: { inspectionCode: true, scale: true },
+  // A price row's breaks are edited through the row, so the row-level diff is only meaningful
+  // with them included (ordered — issue #24), and its step code is selected in so history reads
+  // "HT — Harden", not a cuid. Breaks are ALSO audited as their own model when edited directly.
+  // `threshold` is unique only among LIVE breaks (partial index) — a soft-deleted break's threshold
+  // can be re-added, so an unfiltered include can pull two breaks sharing one threshold into a
+  // snapshot (order becomes non-deterministic vs `threshold asc` alone) and surfaces a break the
+  // live UI (`getPartPrices`, `deletedAt: null`) never shows. Filtering to live rows makes
+  // `threshold` deterministic again and matches the live read.
+  partPrice: {
+    breaks: { where: { deletedAt: null }, orderBy: [{ threshold: "asc" }] },
+    processStepCode: { select: { code: true, name: true } },
+  },
+  partPriceBreak: undefined,
+  partFieldDef: undefined,
+  // history names the field the value belongs to
+  partFieldValue: { field: true },
+  // Steps and parameter rows are mutated through the parent revision (the process-document save
+  // wraps every step/row write in one auditedUpdate against the revision, spec §8) — the
+  // revision-level before/after diff is only meaningful with its steps (ordered), each step's live
+  // code (code/name — renames propagate, spec §3.3), and each step's own parameter rows (spec
+  // 2026-09-26 §3.1: label, type, unit and value are the row's own, keyed by the row's key).
+  // Scalar recipeId/recipeSnapshot are included by Prisma alongside this identity relation.
+  // The winning first-lock update records the capture atomically in its after image.
+  partProcessRevision: {
+    recipe: { select: { id: true, number: true, usedAt: true } },
+    steps: {
+      orderBy: { position: "asc" },
+      include: {
+        code: { select: { code: true, name: true } },
+        // Fix-wave Finding 4 (2026-08-02 final review): no orderBy here meant a snapshot's row
+        // order tracked Postgres's own scan order rather than being deterministic — two snapshots
+        // of otherwise-identical state could render as a spurious diff (HistoryPanel diffs whole
+        // keys via JSON.stringify, which is order-sensitive). Explicit ascending order makes two
+        // snapshots of the same row set always compare equal regardless of insertion history.
+        parameters: { orderBy: { position: "asc" }, select: { key: true, label: true, type: true, unit: true, value: true } },
+      },
+    },
+  },
+  // Order's children (lines/containers/serials/loads/charges) have no deletedAt of their own —
+  // editing them IS editing the order (design spec §4), audited as the order's own before/after
+  // diff, never as a separate entity. Every collection below is explicitly orderBy'd (issue #24:
+  // an unordered collection makes two snapshots of identical data compare as a spurious diff,
+  // since HistoryPanel's whole-key JSON.stringify comparison is order-sensitive) and each line's
+  // live part number / each container's live type name is pulled in so the diff reads "P-1002",
+  // not a cuid.
+  order: {
+    // `quoteLine` (Phase 6 Task 5): `OrderLine.quoteLineId` is written by createOrder/addLine/
+    // updateLine, and the scalar alone would diff as a bare cuid — the quote NUMBER rides along
+    // so a link/unlink/re-pick reads "Quote 1006 → 1008" in history (the same rule that pulls
+    // each line's live part number). Live join is safe: §5.14 refuses deleting a quote (or line)
+    // any order line references, so a stored link always resolves.
+    lines: {
+      orderBy: { position: "asc" },
+      include: {
+        part: { select: { partNumber: true } },
+        quoteLine: { select: { quote: { select: { quoteNumber: true } } } },
+      },
+    },
+    containers: { orderBy: { position: "asc" }, include: { type: { select: { name: true } } } },
+    // lineId is an opaque cuid — ordering by it made snapshot order arbitrary with respect to the
+    // order the operator actually entered lines in, so a later line insert could produce a
+    // spurious diff (issue #24's class of bug). Order by the line's own position instead, which
+    // agrees with DETAIL_INCLUDE.serials (orders.ts) and the create-path auditPayload below.
+    serials: { orderBy: [{ line: { position: "asc" } }, { position: "asc" }] },
+    loads: { orderBy: { loadNumber: "asc" } },
+    charges: { orderBy: { position: "asc" } },
+  },
+  // Attachments and saved views are audited as their own rows, not through a parent — no
+  // relations to include. `undefined` here just means "no relations"; SNAPSHOT_SELECT below (not
+  // this record) is what actually keeps fileData out of these three models' snapshots — see its
+  // own comment.
+  partAttachment: undefined,
+  orderAttachment: undefined,
+  savedView: undefined,
+  // Permanent, create-only (design spec §4: "no delete path at all") — snapshots are metadata
+  // only, fileData excluded the same way as the attachment tables (SNAPSHOT_SELECT below).
+  storedDocument: undefined,
+  // Cert and Shipper children have no deletedAt of their own — editing them IS editing the
+  // document (Phase 4 spec §4.1/§4.2), audited as its own before/after diff, never as a separate
+  // entity. That is the same call Order's children got, and it is what makes these includes
+  // load-bearing rather than decorative: without them, filling in every reading on a cert would
+  // diff as no change at all.
+  //
+  // Every collection below is explicitly orderBy'd — issue #24 applied from birth. HistoryPanel
+  // compares whole keys with JSON.stringify, which is order-sensitive, so an unordered collection
+  // makes two snapshots of identical data render as a spurious diff. Live code/scale/part names
+  // are selected in so the diff reads "Hardness", not a cuid.
+  cert: {
+    requirements: {
+      orderBy: { position: "asc" },
+      include: {
+        inspectionCode: { select: { name: true } },
+        scale: { select: { name: true } },
+        readings: { orderBy: { position: "asc" } },
+      },
+    },
+  },
+  // Task 8 review (2026-08-04, carried forward from Task 2): the original include here pulled
+  // `order: { select: { orderNumber: true } }` only — a diff on `Shipper.customerId`,
+  // `carrierId` or `shipToAddressId` rendered as a raw cuid, exactly the unreadable-history shape
+  // issue #24 exists to prevent. `customer`/`carrier`/`shipToAddress` are all selected directly on
+  // the SHIPPER itself (round 2 of the same review, 2026-08-04) — not read off `orders[].order`
+  // alone, because `ShipperOrder` has no `deletedAt` of its own (spec §4.2) and Task 9's
+  // `removeOrderFromShipper` hard-deletes the row. That same task's `removeOrderFromShipper` now
+  // also refuses to remove a shipment's LAST order (§4.2's "at least one line with qty > 0 across
+  // all its orders" enforced at the document level), so an order-less shipment isn't actually
+  // reachable through that path any more — this select stays anyway, as cheap defensive insurance
+  // against a raw cuid ever surfacing in a history diff.
+  shipper: {
+    customer: { select: { code: true, name: true } },
+    carrier: { select: { name: true } },
+    shipToAddress: { select: { name: true } },
+    orders: {
+      orderBy: { position: "asc" },
+      include: {
+        order: { select: { orderNumber: true, customer: { select: { code: true, name: true } } } },
+        lines: { orderBy: { position: "asc" }, include: { orderLine: { select: { position: true } } } },
+        containers: { orderBy: { position: "asc" } },
+        // ShipperSerial has no position of its own (a serial is either on the ticket or not),
+        // and `orderSerialId` stopped being a stable key when snapshot + release made it nullable
+        // (several released rows tie at null, and Postgres breaks the tie arbitrarily — an
+        // order-sensitive before/after diff then reports unchanged serials as modified). The
+        // snapshot column orders; `id` breaks a duplicate-serial tie deterministically.
+        serials: { orderBy: [{ serial: "asc" }, { id: "asc" }] },
+      },
+    },
+  },
+  // Phase 5A. A surcharge's include/exclude list is a replace-grid edited through the parent, so
+  // the parent's diff needs it; a customer's override row names the surcharge it refines. Every
+  // collection is explicitly orderBy'd — issue #24 applied at the point of writing.
+  surcharge: {
+    stepCodes: {
+      orderBy: { processStepCodeId: "asc" },
+      include: { processStepCode: { select: { code: true, name: true } } },
+    },
+    glAccount: { select: { name: true } },
+  },
+  surchargeStepCode: undefined,
+  customerSurcharge: { surcharge: { select: { name: true } } },
+  // Invoice lines have no deletedAt of their own — editing them IS editing the invoice (§5.5),
+  // audited as the invoice's own before/after diff. Live customer/order/step-code/GL names are
+  // selected in so the diff reads "ACME" and "4010", never a cuid.
+  invoice: {
+    customer: { select: { code: true, name: true } },
+    order: { select: { orderNumber: true } },
+    lines: {
+      orderBy: { position: "asc" },
+      include: {
+        processStepCode: { select: { code: true, name: true } },
+        glAccount: { select: { name: true } },
+      },
+    },
+  },
+  invoiceLine: undefined,
+  billingConfig: undefined,
+  // Phase 8B §7: two scalar facts, no relations — the billingConfig singleton precedent.
+  setupState: undefined,
+  // Release updates: scalars plus the heldById FK, no children — the setupState precedent.
+  updateHold: undefined,
+  // Phase 5B A/R. A batch's payments and a payment's applications are audited as their OWN models
+  // (receipts.ts/applications.ts wrap each in its own audited* call), so the parent snapshots pull
+  // in only the live reference name history would otherwise render as a cuid — the partInspection
+  // `{ inspectionCode: true }` precedent. A payment names its method; an application names the
+  // invoice it reduces by that invoice's order number (the 5A invoice FK-with-live-name pattern).
+  // Task 8 carry (progress.md deferred-minors, Task 2): a CREDIT-type application also names its
+  // SOURCE credit the same way, so a voided credit application's audit entry reads the credit's
+  // order number and credit number in history, not a bare `creditInvoiceId` cuid.
+  receiptBatch: undefined,
+  payment: { paymentType: true },
+  application: {
+    invoice: { select: { id: true, kind: true, creditNumber: true, order: { select: { orderNumber: true } } } },
+    creditInvoice: { select: { id: true, kind: true, creditNumber: true, order: { select: { orderNumber: true } } } },
+  },
+  closePeriod: undefined,
+  // Create-only model (#93): `exportClose` is its ONLY writer, and `auditedCreate` writes its
+  // `data` argument verbatim — it never calls `snapshot()`, so an include here is unreachable (a
+  // `{ postings: true }` entry sat inert for a phase). The create payload is self-contained by
+  // construction (the five scalars + the emitted summary journal); if an update/soft-delete path
+  // ever appears, SNAPSHOT_SELECT below already keeps the file/register bytes out of its snapshots.
+  glExportBatch: undefined,
+  // Phase 6. A quote's lines, price rows, and breaks are edited through the parent document
+  // (array-replace, the invoice-lines shape) — the quote-level diff is only meaningful with the
+  // whole tree included. Live rows only (the partPrice precedent: a soft-deleted child would
+  // surface rows the live read never shows, and QuotePrice's composite / QuotePriceBreak's
+  // threshold are unique only among live rows, so an unfiltered include makes ordering
+  // non-deterministic). Every collection is explicitly orderBy'd (issue #24 — HistoryPanel's
+  // whole-key JSON.stringify comparison is order-sensitive; `id` breaks position ties, which are
+  // service-managed, not DB-unique, on these tables). Live contact/ending-statement/user/part/
+  // step-code names are selected in so a diff reads "Quote line P-1002", never a cuid.
+  quote: {
+    customer: { select: { code: true, name: true } },
+    contact: { select: { name: true } },
+    endingStatement: { select: { name: true } },
+    quotedBy: { select: { displayName: true } },
+    closedBy: { select: { displayName: true } },
+    lines: {
+      where: { deletedAt: null },
+      orderBy: [{ position: "asc" }, { id: "asc" }],
+      include: {
+        part: { select: { partNumber: true } },
+        // #541: a picked material reads by name in History, never as a cuid.
+        material: { select: { name: true } },
+        prices: {
+          where: { deletedAt: null },
+          orderBy: [{ position: "asc" }, { id: "asc" }],
+          include: {
+            processStepCode: { select: { code: true, name: true } },
+            breaks: { where: { deletedAt: null }, orderBy: [{ threshold: "asc" }] },
+          },
+        },
+      },
+    },
+  },
+  // The eleventh reference kind (Phase 6 ruling 13) — audited through the generic reference
+  // machinery, exactly like commentSnippet/specification. No relations of its own.
+  endingStatement: undefined,
+  // Phase 7 (spec §4.2). A template's assignments are what its delete guard names, so the
+  // template-level diff pulls them in — live rows only (the partPrice precedent: a soft-deleted
+  // assignment would surface rows the live read never shows), explicitly orderBy'd (issue #24),
+  // with the customer's code/name selected in so history reads "AC1 · Acme", never a cuid.
+  // Versions are audited as their OWN model and are deliberately NOT included here: a template
+  // accumulates them forever, and the interesting version diffs are the version rows' own.
+  documentTemplate: {
+    assignments: {
+      where: { deletedAt: null },
+      orderBy: [{ id: "asc" }],
+      include: { customer: { select: { code: true, name: true } } },
+    },
+  },
+  // Snapshot projection lives in SNAPSHOT_SELECT below (never both — Prisma rejects a query
+  // carrying include AND select): logoImage is a bytes column exactly like signatureImage.
+  documentTemplateVersion: undefined,
+  // History names both ends of the assignment (the customerSurcharge precedent).
+  customerTemplateAssignment: {
+    customer: { select: { code: true, name: true } },
+    template: { select: { name: true, docType: true } },
+  },
+};
+
+/**
+ * Per-model `select` override for `snapshot()` below — used INSTEAD of `include` (never both;
+ * Prisma rejects a query carrying both) for any model whose own bytes column must never be
+ * pulled into a before/after snapshot in the first place. Fix-wave finding 3: before this, the
+ * three models below were audited via the bare `include`-driven `findUnique` at the bottom of
+ * this file, which has no column projection at all — a soft-delete's own "before" snapshot
+ * (`auditedSoftDelete`) fetched up to a 20MB `fileData` column, JSON-round-tripped it
+ * (`JSON.parse(JSON.stringify(...))` inside `redact()`), and only THEN scrubbed the key to
+ * `"[redacted]"` — real memory pressure on every attachment delete, for a value nothing ever
+ * needed in the first place. Listing every scalar except the bytes column here means the bytes
+ * never leave Postgres for this codepath at all; `redact()` stays defense-in-depth (CLAUDE.md),
+ * not the mechanism relied on to keep them out.
+ *
+ * Relations are deliberately omitted (these three are audited as their own rows, matching
+ * SNAPSHOT_INCLUDE's own comment above them). `storedDocument` has no update/delete path today
+ * (`auditedCreate` never calls `snapshot()` — see its own doc comment), so this entry is
+ * currently unreached; it is defined anyway so the exclusion already exists the moment that
+ * changes, rather than being something a future phase has to remember to add.
+ *
+ * Exported for tests/snapshot-order-sweep.test.ts (issue #24): the sweep walks BOTH maps, because
+ * a list relation projected through a `select` (user.overrides here) can carry an unordered
+ * collection into a snapshot exactly as an `include` can.
+ */
+/**
+ * The children-free projection a HEADER-ONLY patch asks for (owner ruling R5, 2026-10-22; #617,
+ * #616). `SNAPSHOT_INCLUDE` sizes every snapshot by the record: a PO number blur on the hub read
+ * every line, container, serial, load and charge twice and wrote them twice into its audit row,
+ * though a header patch cannot change a child row and `changedFields` diffs key by key within one
+ * entry, so a children-free entry renders the same diff. A mutator that writes header scalars
+ * alone passes `snapshot: "header"` to `auditedUpdate`, and both of its snapshots come from this
+ * map instead: the order and the cert as bare scalars (`undefined`, as in `SNAPSHOT_INCLUDE`), the
+ * invoice keeping only its to-one name selects, so its customer and order number still read as
+ * names, never cuids, and no `lines`. Only a model listed here may ask; `snapshot()` throws for any
+ * other. Which call sites may ask is proved per call by tests/audit-header-sweep.test.ts: a
+ * header-mode `doIt` is exactly one update of that model whose data holds no nested write, since a
+ * child write recorded under this projection would leave no trace. One record's history therefore
+ * mixes two shapes, header entries with no children and line entries with them; HistoryPanel diffs
+ * within an entry only, so nothing renders differently, and a reader that compares across entries
+ * must not assume one shape. Ruling 26 widened the callers to the order's status flips (recompute,
+ * a reversal's REOPENED, finalize's INVOICED), Link's and Unlink's `linkGroupId` and the cert's
+ * first-print `printedAt` (#711 step 5), and kept the full snapshot on finalize and unlock.
+ * Swept like the other two maps (tests/snapshot-order-sweep.test.ts, tests/certs-schema.test.ts).
+ */
+export const SNAPSHOT_HEADER: Partial<Record<AuditableModel, object | undefined>> = {
+  order: undefined,
+  cert: undefined,
+  invoice: {
+    customer: { select: { code: true, name: true } },
+    order: { select: { orderNumber: true } },
+  },
+};
+
+/**
+ * The lines-only projection a LINE EDIT asks for (owner ruling 2026-11-02 on #616, on R5's pattern
+ * and sweep). A Qty or Net weight blur on the hub writes one `OrderLine` row and nothing else, yet
+ * the full snapshot read every container, serial, load and charge of the order twice. The order's
+ * own scalars and its `lines`, built from `SNAPSHOT_INCLUDE.order.lines` itself (same order, same
+ * part number and quote number selects), so the diff on `lines` reads exactly as a full entry's
+ * does and the two cannot drift. A mutator passes `snapshot: "lines"`; `snapshot()` throws for a
+ * model this map does not list. tests/audit-header-sweep.test.ts proves each lines-mode site: a
+ * `doIt` that is exactly one `<client>.orderLine.update({ where, data })` whose data holds no
+ * nested write, so no container, serial, load or charge can change under it. `addLine` creates
+ * serials and `removeLine` deletes them, so both keep the full snapshot. Swept like the other maps
+ * (tests/snapshot-order-sweep.test.ts, tests/certs-schema.test.ts).
+ */
+export const SNAPSHOT_LINES: Partial<Record<AuditableModel, object>> = {
+  order: { lines: (SNAPSHOT_INCLUDE.order as { lines: object }).lines },
+};
+
+export const SNAPSHOT_SELECT: Partial<Record<AuditableModel, object>> = {
+  partAttachment: {
+    id: true, partId: true, filename: true, mimeType: true, size: true,
+    active: true, deletedAt: true, createdAt: true, updatedAt: true,
+  },
+  orderAttachment: {
+    id: true, orderId: true, filename: true, mimeType: true, size: true,
+    active: true, deletedAt: true, createdAt: true, updatedAt: true,
+  },
+  // Phase 4 widened this table from one owner to three; Phase 5A added invoiceId, 5B added
+  // customerId, and Phase 6 added quoteId, each listed here as it arrived. The list is the id,
+  // the six owner columns, kind, loadNumber, travelerLoadNumbers and createdAt. It is not every
+  // scalar except fileData: coveredOrderIds, templateVersionId and travelerPrintRecord were never
+  // added. No write reads this entry (the note above this map says why), and those three reach
+  // the audit trail in the payload `storeDocument` hands `auditedCreate`. An update or delete
+  // path for this model would have to list them here first.
+  storedDocument: {
+    id: true, orderId: true, shipperId: true, certId: true, invoiceId: true, customerId: true,
+    quoteId: true,
+    kind: true, loadNumber: true, travelerLoadNumbers: true, createdAt: true,
+  },
+  // Task 12: `User.signatureImage` is a bytes column exactly like the three above, and gets the
+  // same treatment — an explicit `select` (never `include`, which pulls every scalar including
+  // this one) that lists every OTHER User scalar plus the `overrides` relation SNAPSHOT_INCLUDE's
+  // `user` entry already carries, so `setSignature`'s own `auditedUpdate("user", ...)` never pulls
+  // the image bytes into a before/after snapshot in the first place. redact()'s "signatureimage"
+  // pattern stays defense-in-depth, not the mechanism relied on to keep them out (CLAUDE.md).
+  // `signatureUpdatedAt` (#171) is one such OTHER scalar — a timestamp, not bytes — so it belongs
+  // here by the "every scalar except the bytes column" rule the note above this map states.
+  user: {
+    id: true, username: true, passwordHash: true, displayName: true, title: true, roleId: true,
+    active: true, deletedAt: true, createdAt: true, updatedAt: true, signatureMimeType: true,
+    signatureUpdatedAt: true, lastSeenVersion: true,
+    // Ordered + stable-field-projected — issue #24 and the MR !152 Codex round, in step with
+    // SNAPSHOT_INCLUDE.user (this SELECT is the entry user snapshots actually take; see that
+    // entry's comment).
+    overrides: { select: { permission: true, mode: true }, orderBy: { permission: "asc" } },
+  },
+  // Phase 7 (spec §4.2): `logoImage` is a bytes column exactly like signatureImage/fileData —
+  // every scalar EXCEPT it, so a draft edit's before→after snapshot carries the real `config`
+  // diff (the point of auditing template edits) without half a megabyte of logo bytes riding
+  // along twice per save. redact()'s "logoimage" pattern stays defense-in-depth.
+  documentTemplateVersion: {
+    id: true, templateId: true, versionNumber: true, status: true, config: true,
+    logoMimeType: true, publishedAt: true, publishedById: true, createdAt: true, updatedAt: true,
+  },
+  // #93, the storedDocument precedent: `file` and `register` are bytes columns (a whole CSV and a
+  // whole PDF), and the model is create-only today (`auditedCreate` never calls snapshot(), so this
+  // entry is currently unreached) — defined anyway so the exclusion already exists the moment an
+  // update/soft-delete path appears, rather than being something a future phase has to remember.
+  // Every scalar except the two bytes columns; relations omitted (postings are the batch's own
+  // per-event ledger, unbounded by transaction volume — exactly what an audit row must not carry).
+  glExportBatch: {
+    id: true, exportNumber: true, closePeriodId: true, periodEnd: true, emittedAt: true,
+    emittedById: true, fileName: true, fileContentType: true, registerContentType: true,
+    createdAt: true, updatedAt: true,
+  },
+};
+
+export function redact(value: unknown): Prisma.InputJsonValue | undefined {
+  if (value === null || value === undefined) return undefined;
+  const clone = JSON.parse(JSON.stringify(value)) as Record<string, unknown>;
+
+  const sensitiveKeyPatterns = ["passwordhash", "password", "token", "secret", "signatureimage", "filedata", "logoimage"];
+
+  function redactRecursive(obj: unknown): unknown {
+    if (obj === null || obj === undefined) return obj;
+    if (Array.isArray(obj)) {
+      return obj.map((item) => {
+        if (item !== null && typeof item === "object" && !Array.isArray(item)) {
+          return redactRecursive(item);
+        }
+        return item;
+      });
+    }
+    if (typeof obj === "object") {
+      const result: Record<string, unknown> = {};
+      for (const [key, val] of Object.entries(obj)) {
+        const keyLower = key.toLowerCase();
+        const isSensitive = sensitiveKeyPatterns.some((pattern) => keyLower.includes(pattern));
+        if (isSensitive) {
+          result[key] = "[redacted]";
+        } else if (val !== null && typeof val === "object" && !Array.isArray(val)) {
+          result[key] = redactRecursive(val);
+        } else if (Array.isArray(val)) {
+          result[key] = redactRecursive(val);
+        } else {
+          result[key] = val;
+        }
+      }
+      return result;
+    }
+    return obj;
+  }
+
+  return redactRecursive(clone) as Prisma.InputJsonValue;
+}
+
+// Anything that behaves like the top-level Prisma client for the purposes of snapshot/write --
+// either `prisma` itself or the `tx` a caller received from its own `prisma.$transaction`. A
+// caller running its mutation inside a transaction must pass that same `tx` through to the
+// audited* helpers below (via `opts.tx`): reads made on the top-level client while a transaction
+// holding the row's lock is still open see the pre-transaction row, not the write in progress
+// (Postgres's default READ COMMITTED isolation blocks the read until the transaction commits or
+// rolls back, then returns what was committed before it started). That produced Fix 1 from the
+// final review -- an address rename inside `prisma.$transaction` snapshotted identical before/after
+// because both snapshots ran on `prisma`, outside the transaction, while the update itself ran on
+// `tx`. Passing `tx` through makes every snapshot and the audit write itself part of the same
+// transaction as the mutation, so they see (and commit or roll back with) exactly what it wrote.
+// `tx` on `auditedCreate`/`auditedUpdate`/`auditedSoftDelete` is required, not optional: the two
+// autocommit statements this type once tolerated (mutation on `prisma`, audit insert on `prisma`)
+// left an audit-write failure able to commit an unaudited mutation. Making it required lets the
+// compiler enumerate every caller instead of trusting each one to opt in.
+type Db = typeof prisma | Prisma.TransactionClient;
+
+/**
+ * Claims the audited row FOR UPDATE before the before-snapshot (issue #9). Without it, the
+ * before-snapshot → doIt → after-snapshot sequence is an open window: a CONCURRENT committed
+ * write to the same row lands inside the after-snapshot, so each entry's diff absorbs the other
+ * edit's field — history then attributes one operator's change to the other. Claiming the row
+ * first means whoever gets there first holds it until commit, and the loser's ENTIRE snapshot
+ * window sees a settled row. This is a row lock, so it guards at ANY caller isolation
+ * (CLAUDE.md's row-locks rule — never "simplify" it into a plain read).
+ *
+ * FOR NO KEY UPDATE, deliberately NOT FOR UPDATE — the strength is load-bearing. A non-key
+ * UPDATE (every audited mutation: scalar patches, deletedAt stamps) takes FOR NO KEY UPDATE on
+ * its row, and a foreign key's RI trigger probes the row a new FK value REFERENCES with FOR KEY
+ * SHARE — which conflicts with FOR UPDATE and with nothing weaker. Claiming FOR UPDATE therefore
+ * ADDS a conflict the mutation itself never had: two customers concurrently re-parenting onto
+ * each other (customers.test.ts's reciprocal-cycle test) each claimed their own row, then each
+ * UPDATE's RI probe of the OTHER row blocked on the other's claim — an ABBA deadlock through
+ * Postgres's own trigger that no claim ordering can prevent (the probe isn't ours to reorder),
+ * costing a deadlock_timeout stall per collision. Measured during this fix; FOR NO KEY UPDATE
+ * reproduces the mutation's own lock exactly, so writers of the SAME row still mutually exclude
+ * (NO KEY UPDATE conflicts with itself — the #9 guard) while RI probes pass as they always did.
+ *
+ * Deadlock surface is otherwise UNCHANGED: the mutation inside doIt takes this same row lock in
+ * this same tx anyway — the claim only acquires it EARLIER. The families that already claim
+ * their row before snapshotting (order/invoice/quote/template/revision) re-lock a row their tx
+ * already holds a stronger FOR UPDATE claim on — a no-op. Serializable callers see a locking
+ * read whose 40001 their existing retry wrappers already handle. `auditedCreate` needs no
+ * claim: it has no before-snapshot and its row is fresh. A missing id locks nothing and throws
+ * nothing — the snapshot's null / updateMany's count 0 keep reporting that case exactly as
+ * before.
+ *
+ * Never string-interpolate unvalidated input into SQL: `model` is compiler-constrained to the
+ * AuditableModel union and re-validated at runtime against SNAPSHOT_INCLUDE's own key set
+ * (`Record<AuditableModel, …>` — its keys ARE the model list) before the identifier is inlined
+ * via Prisma.raw; the id rides as an ordinary bound parameter. The table name is the model key
+ * with its first letter uppercased — no @@map exists in schema.prisma, so the Prisma model name
+ * IS the table name (pinned by tests/snapshot-order-sweep.test.ts's mapping test). `setting` is
+ * nominally in the union but never reaches these helpers (auditSettingChange is its sanctioned
+ * path; its PK is `key`, so the claim's own `SELECT "id"` would fail loudly first — Setting has
+ * no `id` column).
+ */
+async function claimAuditedRow(model: AuditableModel, id: string, db: Db): Promise<void> {
+  if (!Object.hasOwn(SNAPSHOT_INCLUDE, model)) throw new Error(`Not an auditable model: ${model}`);
+  const table = model.charAt(0).toUpperCase() + model.slice(1);
+  await db.$queryRaw`SELECT "id" FROM ${Prisma.raw(`"${table}"`)} WHERE "id" = ${id} FOR NO KEY UPDATE`;
+}
+
+/** What `auditedUpdate` snapshots: the registry's shape (`SNAPSHOT_SELECT`, else
+ *  `SNAPSHOT_INCLUDE`), `SNAPSHOT_HEADER`'s for a header-only patch (R5), or `SNAPSHOT_LINES`'s
+ *  for a line edit (#616). */
+export type SnapshotMode = "full" | "header" | "lines";
+
+async function snapshot(model: AuditableModel, id: string, db: Db, mode: SnapshotMode = "full"): Promise<unknown> {
+  // Each auditable model has a string id primary key named `id`.
+  const client = db[model] as unknown as {
+    findUnique: (a: { where: { id: string }; select?: object; include?: object }) => Promise<unknown>;
+  };
+  if (mode === "header") {
+    if (!Object.hasOwn(SNAPSHOT_HEADER, model)) throw new Error(`No header snapshot for model: ${model}`);
+    return client.findUnique({ where: { id }, include: SNAPSHOT_HEADER[model] });
+  }
+  if (mode === "lines") {
+    if (!Object.hasOwn(SNAPSHOT_LINES, model)) throw new Error(`No lines snapshot for model: ${model}`);
+    return client.findUnique({ where: { id }, include: SNAPSHOT_LINES[model] });
+  }
+  const select = SNAPSHOT_SELECT[model];
+  return select
+    ? client.findUnique({ where: { id }, select })
+    : client.findUnique({ where: { id }, include: SNAPSHOT_INCLUDE[model] });
+}
+
+async function write(entry: {
+  entity: string; entityId: string; action: string;
+  before?: unknown; after?: unknown; reason?: string;
+}, db: Db) {
+  const actor = currentActor();
+  await db.auditLog.create({
+    data: {
+      actorId: actor.id,
+      actorName: actor.name,
+      entity: entry.entity,
+      entityId: entry.entityId,
+      action: entry.action,
+      before: redact(entry.before),
+      after: redact(entry.after),
+      reason: entry.reason,
+    },
+  });
+}
+
+export async function auditSettingChange(key: string, beforeValue: unknown, afterValue: unknown): Promise<void> {
+  const actor = currentActor();
+  await prisma.auditLog.create({
+    data: {
+      actorId: actor.id,
+      actorName: actor.name,
+      entity: "setting",
+      entityId: key,
+      action: "update",
+      before: redact({ value: beforeValue }),
+      after: redact({ value: afterValue }),
+    },
+  });
+}
+
+/** Phase 8C §6.4. A dump is a full copy of every customer's record and `manage_backups` is a named
+ *  dangerous action, so "who dumped production, and when" is an audit question — but a backup has
+ *  no entity ROW to hang an auditedCreate on. This is the auditSettingChange sanctioned-exception
+ *  shape: a direct write, kept HERE so audit.ts stays the sole prisma.auditLog.create caller (the
+ *  permissions sweep asserts exactly that). A FAILED attempt is audited too — an attempted dump is
+ *  still an access event. */
+export async function auditBackupRun(archive: string, ok: boolean, error: string | null): Promise<void> {
+  const actor = currentActor();
+  await prisma.auditLog.create({
+    data: {
+      actorId: actor.id,
+      actorName: actor.name,
+      entity: "backup",
+      entityId: archive,
+      action: "create",
+      after: redact({ archive, ok, error }),
+    },
+  });
+}
+
+export async function auditedCreate<T extends { id: string }>(
+  model: AuditableModel, data: object, doIt: () => Promise<T>, opts: { tx: Prisma.TransactionClient },
+): Promise<T> {
+  const created = await doIt();
+  await write({ entity: model, entityId: created.id, action: "create", after: data }, opts.tx);
+  return created;
+}
+
+/** `opts.snapshot: "header"` is the header-only patch's children-free pair (`SNAPSHOT_HEADER`, R5),
+ *  and `"lines"` a line edit's header-and-lines pair (`SNAPSHOT_LINES`, #616): one mode for both
+ *  sides of the one call, so the two can never differ in shape (two shapes would diff every
+ *  omitted key). Omitted, the registry's full snapshot. */
+export async function auditedUpdate<T>(
+  model: AuditableModel, id: string, doIt: () => Promise<T>,
+  opts: { tx: Prisma.TransactionClient; reason?: string; snapshot?: SnapshotMode },
+): Promise<T> {
+  const db = opts.tx;
+  const mode = opts.snapshot ?? "full";
+  await claimAuditedRow(model, id, db);
+  const before = await snapshot(model, id, db, mode);
+  const result = await doIt();
+  const after = await snapshot(model, id, db, mode);
+  await write({ entity: model, entityId: id, action: "update", before, after, reason: opts.reason }, db);
+  return result;
+}
+
+/**
+ * The soft-delete write is conditional on the row still being live, and the audit entry is only
+ * written if that condition actually claimed the row.
+ *
+ * Callers pre-check with a `findFirst({ deletedAt: null })` so the ordinary "it's already gone"
+ * case gets a well-labelled 404. That check cannot be the whole guard: it is a separate
+ * statement from the write, so two overlapping deletes of the same row — an ordinary
+ * double-click on a delete link — can both pass it before either commits. Updating by `id`
+ * alone then let both succeed, the second re-stamping `deletedAt` with a later time and adding a
+ * second "delete" entry to the history of a row that was deleted once. `updateMany` with
+ * `deletedAt: null` in the WHERE makes the check and the write a single atomic statement:
+ * whichever transaction gets there second matches no rows, writes nothing, and reports that the
+ * record is already gone instead of inventing a second deletion.
+ *
+ * Fixing it here rather than in each caller covers all eight delete paths at once — including
+ * roles, reference rows and process step codes, where handoff §6 recorded this same defect
+ * ("a second DELETE re-stamps deletedAt and writes another audit row") as a carried item.
+ */
+export async function auditedSoftDelete(
+  model: AuditableModel, id: string, reason: string | undefined, tx: Prisma.TransactionClient,
+): Promise<void> {
+  const db = tx;
+  await claimAuditedRow(model, id, db);
+  const before = await snapshot(model, id, db);
+  const client = db[model] as unknown as {
+    updateMany: (a: {
+      where: { id: string; deletedAt: null }; data: { deletedAt: Date };
+    }) => Promise<{ count: number }>;
+  };
+  const { count } = await client.updateMany({ where: { id, deletedAt: null }, data: { deletedAt: new Date() } });
+  // Deliberately the same 404 the callers' own pre-check raises, so a racing loser is reported
+  // exactly like a sequential repeat rather than as some new class of failure.
+  if (count === 0) throw new HttpError(404, "That record has already been deleted");
+  await write({ entity: model, entityId: id, action: "delete", before, reason }, db);
+}
+
+/**
+ * `at` is millisecond-precision, so two entries written in the same millisecond — an edit and a
+ * delete racing each other, or a cascade writing several rows at once — tie on it, and ordering
+ * by `at` alone leaves their relative order up to the planner. That is what HistoryPanel renders,
+ * so a tie could show a record's delete above an update that preceded it. `id` breaks the tie
+ * deterministically: cuid is timestamp-prefixed and counter-sequenced, so within a process it
+ * also breaks it in the right direction.
+ */
+export function readAudit(entity: string, entityId: string) {
+  return prisma.auditLog.findMany({
+    where: { entity, entityId },
+    orderBy: [{ at: "desc" }, { id: "desc" }],
+  });
+}
+
+/**
+ * Every child entity the registry names, typed as `AuditableModel[]` **so the COMPILER rejects a
+ * registry entry naming an entity nothing is audited under** — such an entry would resolve to
+ * zero rows forever, and the panel would go on looking correct while showing nothing. That
+ * annotation is the whole point of this constant: the registry is a client-safe leaf
+ * (`src/lib/audit-children.ts`) and cannot import this union, so this is the only place the check
+ * can live. Exported so tests/audit-children.test.ts can pin that it still enumerates the WHOLE
+ * registry — a projection that quietly stopped covering an entry would take the compile-time
+ * guarantee with it.
+ */
+export const AUDIT_CHILD_ENTITIES: AuditableModel[] =
+  Object.values(AUDIT_CHILDREN).flatMap((specs) => specs.map((spec) => spec.entity));
+
+/** The cap on a parent History panel's union read (#153). Load-bearing, not a nicety: the stored
+ *  rows carry two whole snapshots each (SNAPSHOT_INCLUDE.partProcessRevision is a revision's whole
+ *  step tree, twice), a well-worn part holds hundreds of them, and Postgres returns and Prisma
+ *  parses each row's full jsonb whatever the route then ships (`readAuditForPanel`, #615, shrinks
+ *  the wire and the client parse, not that read). The panel states the truncation whenever
+ *  `hasMore` comes back true — a silently shortened history is the same class of lie as the "No
+ *  history" on a 403 that panel already refuses to show. */
+export const AUDIT_PANEL_LIMIT = 200;
+
+/** Row shape both audit reads return — `readAudit`'s array and `readAuditWithChildren`'s rows. */
+export type AuditRow = Awaited<ReturnType<typeof readAudit>>[number];
+
+/**
+ * One hop of a registry path, executed. Never filters `deletedAt`: see the leaf's own comment —
+ * a child's DELETE entry is the row a panel most needs, and an intermediate hop that has since
+ * been soft-deleted (a price row carrying breaks) must not take its children's history with it.
+ *
+ * Exported for tests/audit-children.test.ts's hop sweep, which runs EVERY `(model, fk)` pair in
+ * the registry through this exact function — the wired path, not a replica. It has to drive the
+ * hops individually: `readAuditWithChildren` walks a path only while the previous hop returned
+ * ids, so a sweep that walked a whole chain from a bogus parent id would short-circuit after the
+ * first hop and silently never execute the INNER hop of a multi-hop path (review round 1 — the
+ * `application → paymentId → payment → batchId` chain was validated by nothing).
+ */
+export async function hopIds(model: string, fk: string, parents: string[]): Promise<string[]> {
+  const delegate = (prisma as unknown as Record<string, {
+    findMany?: (a: { where: Record<string, unknown>; select: { id: true } }) => Promise<{ id: string }[]>;
+  }>)[model];
+  // The registry is a compile-time constant in this repo, never user input, so a miss here is a
+  // programming error and deserves to be loud. tests/audit-children.test.ts walks every hop of
+  // every path so it surfaces at test time rather than at the first panel load.
+  if (typeof delegate?.findMany !== "function") {
+    throw new Error(`audit-children: no Prisma model named "${model}"`);
+  }
+  const rows = await delegate.findMany({ where: { [fk]: { in: parents } }, select: { id: true } });
+  return rows.map((r) => r.id);
+}
+
+/**
+ * A parent's History panel, as a UNION over the child sections that edit it (#153).
+ *
+ * `readAudit` above is an exact `(entity, entityId)` match, and every child section writes its
+ * audit rows under its OWN entity and id — so a price edit, an address rename or a spec swap has
+ * never appeared on the parent's panel at all. This resolves the parent's child-row ids through
+ * `AUDIT_CHILDREN` and reads all of it as ONE newest-first query, so the rows interleave by TIME
+ * rather than as "the parent's own history, then everything else".
+ *
+ * **`readAudit` is deliberately left exactly as it was.** 40-odd call sites — nearly every service
+ * test in the suite — pin it as the exact-match primitive, and folding the union into it would
+ * silently widen all of them.
+ *
+ * The registry lookup goes through `auditChildrenOf`, which guards with `Object.hasOwn`: `entity`
+ * arrives straight off a query string, and `__proto__` must answer an empty union rather than
+ * crash on inherited junk. An unregistered parent simply reads as the exact match it always was.
+ *
+ * Ids union into a SET before the query is built, so a child reachable by two FKs — an
+ * `Application` under an `Invoice` as both the invoice it reduces and the credit it spends — is
+ * listed once, not twice.
+ *
+ * `take: limit + 1` is how `hasMore` is answered without a second COUNT over the same union.
+ */
+export async function readAuditWithChildren(
+  entity: string, entityId: string, limit: number = AUDIT_PANEL_LIMIT,
+): Promise<{ rows: AuditRow[]; hasMore: boolean }> {
+  const scopes: Prisma.AuditLogWhereInput[] = [{ entity, entityId }];
+
+  for (const spec of auditChildrenOf(entity)) {
+    const ids = new Set<string>();
+    for (const path of spec.paths) {
+      // Walk the path in REVERSE — parent id down to child ids — since each hop's `fk` points
+      // one level UP and the last hop's points at the parent itself.
+      let level = [entityId];
+      for (let i = path.length - 1; i >= 0 && level.length > 0; i--) {
+        level = await hopIds(path[i].model, path[i].fk, level);
+      }
+      for (const id of level) ids.add(id);
+    }
+    if (ids.size > 0) scopes.push({ entity: spec.entity, entityId: { in: [...ids] } });
+  }
+
+  const rows = await prisma.auditLog.findMany({
+    where: { OR: scopes },
+    // The same tie-break as readAudit, and for the same reason — but it matters more here: a
+    // union routinely writes several entries in one millisecond (a cascade, a replace-grid), and
+    // `at` alone would leave their order to the planner.
+    orderBy: [{ at: "desc" }, { id: "desc" }],
+    take: limit + 1,
+  });
+  return { rows: rows.slice(0, limit), hasMore: rows.length > limit };
+}
+
+/**
+ * The History route's single-record branch (#615): `readAuditWithChildren`'s rows, each snapshot
+ * pair reduced to what the panel draws (`projectForPanel`, the client-safe leaf the panel diffs
+ * with, so the two can never disagree about which keys count). A row with a null side ships whole.
+ * `readAuditWithChildren` itself is unchanged, as `readAudit` is (CLAUDE.md): the projection is a
+ * reader of its own, and the envelope is the same `{ rows, hasMore }`.
+ */
+export async function readAuditForPanel(
+  entity: string, entityId: string, limit: number = AUDIT_PANEL_LIMIT,
+): Promise<{ rows: AuditRow[]; hasMore: boolean }> {
+  const { rows, hasMore } = await readAuditWithChildren(entity, entityId, limit);
+  return {
+    rows: rows.map((row) => {
+      const projected = projectForPanel(
+        row.before as Record<string, unknown> | null, row.after as Record<string, unknown> | null);
+      return { ...row, before: projected.before as Prisma.JsonValue, after: projected.after as Prisma.JsonValue };
+    }),
+    hasMore,
+  };
+}
+
+/** Every `AuditLog` column but the two snapshots: the Audit log screen reads at, actor, entity,
+ *  id, action and reason and renders no snapshot (#615), so the plant-wide list does not carry two
+ *  whole trees per row across the wire. A reader that wants a row's snapshots reads it by entity. */
+const AUDIT_LIST_SELECT = {
+  id: true, at: true, actorId: true, actorName: true, entity: true, entityId: true, action: true, reason: true,
+} satisfies Prisma.AuditLogSelect;
+
+export function searchAudit(filter: { entity?: string; actorName?: string; from?: Date; to?: Date; limit?: number }) {
+  return prisma.auditLog.findMany({
+    select: AUDIT_LIST_SELECT,
+    where: {
+      ...(filter.entity ? { entity: filter.entity } : {}),
+      ...(filter.actorName ? { actorName: { contains: filter.actorName, mode: "insensitive" } } : {}),
+      ...(filter.from || filter.to ? { at: { gte: filter.from, lte: filter.to } } : {}),
+    },
+    orderBy: { at: "desc" },
+    take: filter.limit ?? 200,
+  });
+}

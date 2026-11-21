@@ -1,0 +1,119 @@
+# Per-service limits preserve docker logs without changing the shared Docker daemon.
+x-logging: &bounded-logs
+  driver: local
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    # docker-init runs as PID 1, so it, not the postmaster, reaps any process orphaned in this
+    # container. The postmaster treats a child it does not track exiting with 2 as a crashed
+    # backend and restarts every connection (#595).
+    init: true
+    logging: *bounded-logs
+    environment:
+      POSTGRES_USER: erp
+      POSTGRES_PASSWORD: erp_local_dev
+      POSTGRES_DB: erp
+    ports: ["127.0.0.1:5432:5432"]
+    volumes:
+      # Mounted at /var/lib/postgresql, NOT /var/lib/postgresql/data. Postgres 18+ images store
+      # data in a major-version-specific subdirectory (18/docker/) so `pg_upgrade --link` can work
+      # without crossing a mount boundary, and they refuse to start if they find a mount at the
+      # old path — even an empty one. See docker-library/postgres#1259.
+      - dbdata:/var/lib/postgresql
+      - ./db-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      # Exec form, never CMD-SHELL. A check past its timeout has only its main process killed,
+      # and a shell's pg_isready child then outlives it, orphaned (#595).
+      test: ["CMD", "pg_isready", "-U", "erp"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    restart: unless-stopped
+    logging: *bounded-logs
+    ports: ["80:3000"]
+    environment:
+      DATABASE_URL: postgresql://erp:erp_local_dev@db:5432/erp
+      SESSION_SECRET: ${SESSION_SECRET:?set in .env}
+      # Phase 8C §6.4: the SAME folder the backup container writes to, so the app can list archives
+      # and write on-demand ones. A deploy value, deliberately not a runtime Setting — the nightly
+      # container cannot honor a live change, and a setting the writer ignores is half a feature.
+      BACKUP_DIR: /backups
+      # Release updates: the folder the host's update agent shares with the app (status.json read,
+      # hold.json written). A deploy value, the BACKUP_DIR shape.
+      UPDATES_DIR: /updates
+      HEALTH_MONITOR_TOKEN: ${HEALTH_MONITOR_TOKEN:-}
+      LOADSYNQ_API_TOKEN: ${LOADSYNQ_API_TOKEN:-}
+    volumes:
+      - ./backups:/backups
+      - ./updates:/updates
+    depends_on:
+      db: { condition: service_healthy }
+    profiles: ["prod"]
+
+  # Phase 8B §5.1: a separate PRACTICE copy of the same image, pointed at erp_practice on its own
+  # port. Its own `practice` profile (NOT `prod`), so `docker compose --profile prod up` never starts
+  # it and the prod-only backup (§6.3) never adopts it. Practice-vs-production is decided
+  # authoritatively by database identity (practiceMode()); PRACTICE_MODE only corroborates. The
+  # shared CMD runs `prisma migrate deploy` against DATABASE_URL on start, migrating erp_practice.
+  # First-population of the demo slice is a documented one-time command (npm run db:seed:demo).
+  app-practice:
+    build: .
+    restart: unless-stopped
+    logging: *bounded-logs
+    ports: ["8080:3000"]
+    environment:
+      DATABASE_URL: postgresql://erp:erp_local_dev@db:5432/erp_practice
+      PRACTICE_MODE: "true"
+      SESSION_SECRET: ${SESSION_SECRET:?set in .env}
+      # A distinct session cookie so a practice login on :8080 never overwrites the prod token on :80
+      # (cookies are host/path-scoped, not port). http.ts + proxy.ts both read this at runtime.
+      SESSION_COOKIE_NAME: erp_practice_session
+      # Phase 8C §6.3: NO BACKUP_DIR and NO ./backups mount, deliberately. The practice copy's data
+      # is disposable (the reset re-seeds it) so it has no backup responsibility, and a trainer's
+      # "Back up now" must never pollute production's archive list or staleness signal. The routes
+      # also refuse it via assertNotPracticeDatabase — this is the belt to that pair of braces.
+      # The same goes for UPDATES_DIR and the ./updates mount: the practice copy never reads the
+      # update folder and can never hold an update (practiceMode() refuses it too).
+    depends_on:
+      db: { condition: service_healthy }
+    profiles: ["practice"]
+
+  backup:
+    image: postgres:18
+    restart: unless-stopped
+    logging: *bounded-logs
+    environment:
+      DATABASE_URL: postgresql://erp:erp_local_dev@db:5432/erp
+      BACKUP_DIR: /backups
+      # #354: the nightly runs at this fixed local time, whatever the container's restart history.
+      # Literals, not ${...}: the time is a reviewed Compose change (it reaches .182 only in a
+      # release's bundle), and the render needs no .env key. Avoid 01:00-02:59 (refused: a
+      # daylight-saving change skips or repeats it) and the 04:00-07:00 install window (a stop
+      # mid-dump). Moving the time later makes the next start take one catch-up backup. TZ is never
+      # exported to the dump, so archive names stay UTC. After changing either value, or
+      # scripts/backup.sh, recreate the service (`up -d --force-recreate --no-deps backup`): a
+      # `start` or `restart` keeps the old entrypoint and environment with whatever script the
+      # checkout now holds.
+      BACKUP_TIME: "23:10"
+      BACKUP_TZ: America/Chicago
+    volumes:
+      - ./backups:/backups
+      - ./scripts/backup.sh:/backup.sh:ro
+    # backup.sh --scheduled: at start it catches up a missed slot, then runs the one-shot at every
+    # BACKUP_TIME; a run with no verified archive retries after five minutes, and a verified dump
+    # whose bookkeeping failed (exit 10) keeps the schedule and its failure evidence.
+    entrypoint: ["sh", "/backup.sh", "--scheduled"]
+    depends_on:
+      db: { condition: service_healthy }
+    profiles: ["prod"]
+
+volumes:
+  dbdata:

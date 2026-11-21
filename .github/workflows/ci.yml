@@ -1,0 +1,309 @@
+name: CI
+
+# The source gates of this public snapshot, on GitHub's hosted runners: ci, docker, e2e and
+# security-audit. No job reads a repository credential or publishes anything, and every job runs
+# on ubuntu-latest. The token is read-only.
+
+on:
+  pull_request: {}
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: erp
+          POSTGRES_PASSWORD: erp_local_dev
+          POSTGRES_DB: erp
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U erp"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://erp:erp_local_dev@localhost:5432/erp
+      DATABASE_URL_TEST: postgresql://erp:erp_local_dev@localhost:5432/erp_test
+      PGPASSWORD: erp_local_dev
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      - name: Gates
+        working-directory: erp
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node -p 'process.versions.node.split(".")[0]')" = "$(tr -d '[:space:]' < ../.nvmrc)"
+          # The filesystem permission tests hold only for a user other than root.
+          test "$(id -u)" -ne 0
+          cp .env.example .env
+          for db in erp_test erp_practice; do
+            psql -h localhost -U erp -d erp -v ON_ERROR_STOP=1 -c "CREATE DATABASE ${db} OWNER erp"
+          done
+          timeout 5m npm ci
+          npx prisma validate
+          npx prisma generate
+          npm run public:prepare
+          npm run db:bootstrap
+          DATABASE_URL="$DATABASE_URL_TEST" npm run db:bootstrap
+          npm test -- --reporter=default --reporter=junit --outputFile.junit=test-results/vitest-junit.xml
+          npx next typegen
+          NODE_OPTIONS=--max-old-space-size=4096 npx tsc --noEmit
+          npx eslint src tests e2e scripts prisma
+          npm run manual:build
+          if ! git diff --quiet -- public/manual.html; then
+            git diff --stat -- public/manual.html
+            echo "erp/public/manual.html is stale. Run 'npm run manual:build' from erp/ and commit the result." >&2
+            exit 1
+          fi
+          npm run build
+          # The standalone output is the server alone, never a trace of the whole project.
+          node scripts/check-standalone-trace.mjs
+      - if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: vitest-junit
+          path: erp/test-results/vitest-junit.xml
+          retention-days: 30
+          if-no-files-found: ignore
+
+  e2e:
+    runs-on: ubuntu-latest
+    # PROVISIONAL: the suite's 45-minute bound (`timeout 45m` below) sits inside this 60-minute job
+    # cap, room for the artifact upload, until the first runs on a hosted runner measure the suite.
+    # Raise one and the other moves with it: a job cap that cancels the job uploads nothing.
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: erp
+          POSTGRES_PASSWORD: erp_local_dev
+          POSTGRES_DB: erp
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U erp"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://erp:erp_local_dev@localhost:5432/erp
+      PGPASSWORD: erp_local_dev
+      E2E_WARMUP_BUDGET_MS: "600000"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      # The backups flow runs a real pg_dump, which refuses a server of a newer major: the client
+      # matches the postgres:18 service and comes first on the path for every later step.
+      - name: PostgreSQL 18 client
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-18 >/dev/null
+          echo /usr/lib/postgresql/18/bin >> "$GITHUB_PATH"
+      - name: Prepare
+        working-directory: erp
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(node -p 'process.versions.node.split(".")[0]')" = "$(tr -d '[:space:]' < ../.nvmrc)"
+          case "$(pg_dump --version)" in
+            *"(PostgreSQL) 18"*) echo "$(pg_dump --version) (from $(command -v pg_dump))" ;;
+            *) echo "pg_dump major is not 18; the backups flow would refuse the server" >&2; exit 1 ;;
+          esac
+          cp .env.example .env
+          for db in erp_test erp_practice; do
+            psql -h localhost -U erp -d erp -v ON_ERROR_STOP=1 -c "CREATE DATABASE ${db} OWNER erp"
+          done
+          timeout 5m npm ci
+          npx prisma generate
+          npm run public:prepare
+          npm run db:bootstrap
+          npm run db:seed
+          npx playwright install --with-deps chromium
+      # The suite and its verdict are one step, so the suite's own status is read from PIPESTATUS and
+      # never from the tee beside it. A retried flow fails the job even when its second attempt
+      # passes: the harness prints `  RETRIED ` for it and keeps each retry's
+      # `e2e-artifacts/<flow>__attempt-<n>` directory. A clean green run uploads nothing.
+      - name: Suite
+        working-directory: erp
+        shell: bash
+        run: |
+          set -u
+          console_log="$RUNNER_TEMP/e2e-console.log"
+          set +e
+          timeout 45m npm run test:e2e 2>&1 | tee "$console_log"
+          statuses=("${PIPESTATUS[@]}")
+          set -e
+          suite_rc=${statuses[0]}
+          log_rc=${statuses[1]}
+          if [ "$suite_rc" -eq 124 ]; then
+            echo "E2E suite exceeded its 45-minute bound."
+          fi
+          copy_rc=0
+          mkdir -p e2e-artifacts || copy_rc=1
+          if [ -f "$console_log" ]; then
+            cp "$console_log" e2e-artifacts/console.log || copy_rc=1
+          else
+            echo "E2E console log is missing."
+            copy_rc=1
+          fi
+          shopt -s nullglob
+          retry_rc=0
+          granted=(e2e-artifacts/*__attempt-*)
+          green_on_retry=0
+          if [ -f "$console_log" ] && grep -qE '^  RETRIED ' "$console_log"; then
+            green_on_retry=1
+          fi
+          if [ "${#granted[@]}" -eq 0 ] && [ "$green_on_retry" -eq 0 ]; then
+            echo "No flow needed a retry."
+          else
+            retry_rc=1
+            echo "ERROR: a flow was retried; CI requires first-attempt passes."
+            for directory in "${granted[@]}"; do echo "  retry artifact dir: ${directory}"; done
+          fi
+          if [ "$suite_rc" -eq 0 ] && [ "$retry_rc" -eq 0 ] && [ "$log_rc" -eq 0 ] && [ "$copy_rc" -eq 0 ]; then
+            rm -rf e2e-artifacts
+            exit 0
+          fi
+          if [ "$suite_rc" -ne 0 ]; then
+            echo "E2E suite failed (exit ${suite_rc})."
+            exit "$suite_rc"
+          fi
+          if [ "$retry_rc" -ne 0 ]; then exit "$retry_rc"; fi
+          if [ "$log_rc" -ne 0 ]; then echo "E2E console capture failed (exit ${log_rc})."; exit "$log_rc"; fi
+          echo "E2E diagnostic copy failed."
+          exit "$copy_rc"
+      - if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-artifacts
+          path: erp/e2e-artifacts/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build, decoder floor, bootstrap and boot check
+        shell: bash
+        run: |
+          set -euo pipefail
+          project="heatsynq-ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          app_name="${project}-app"
+          temporary="$(mktemp -d)"
+          compose_file="$temporary/compose.yml"
+          cleanup() {
+            docker rm -f "$app_name" >/dev/null 2>&1 || true
+            docker compose --project-name "$project" -f "$compose_file" down --volumes --remove-orphans >/dev/null 2>&1 || true
+            rm -rf "$temporary"
+          }
+          trap cleanup EXIT
+          cat > "$compose_file" <<'YAML'
+          services:
+            db:
+              image: postgres:18
+              environment:
+                POSTGRES_USER: erp
+                POSTGRES_PASSWORD: erp_local_dev
+                POSTGRES_DB: erp
+              tmpfs:
+                - /var/lib/postgresql:size=2g
+              healthcheck:
+                test: ["CMD", "pg_isready", "-U", "erp"]
+                interval: 5s
+                timeout: 3s
+                retries: 20
+          YAML
+          docker compose --project-name "$project" -f "$compose_file" up -d --wait db
+          # The image is built from `git archive HEAD`, which fills erp/build-stamp.txt with the
+          # commit and its date (export-subst); the working tree holds the placeholder.
+          source_tree="$temporary/src"
+          mkdir -p "$source_tree"
+          git archive --format=tar HEAD | tar -x -C "$source_tree"
+          docker build -t heatsynq-app:ci "$source_tree/erp"
+          # The patched libheif floor on the decoder Next loads in this image.
+          docker run --rm -i --entrypoint node heatsynq-app:ci --input-type=module - < erp/scripts/lib/image-decoder-policy.mjs
+          database_url=postgresql://erp:erp_local_dev@db:5432/erp
+          docker run --rm --network "${project}_default" -e DATABASE_URL="$database_url" \
+            heatsynq-app:ci node scripts/public-runtime/public-bootstrap.mjs
+          docker run -d --name "$app_name" --network "${project}_default" \
+            -p 127.0.0.1::3000 -e DATABASE_URL="$database_url" heatsynq-app:ci
+          port="$(docker port "$app_name" 3000/tcp | awk -F: '/127[.]0[.]0[.]1/ {print $NF; exit}')"
+          test -n "$port"
+          ok=0
+          for _ in $(seq 1 60); do
+            if curl -fsS --max-time 5 "http://127.0.0.1:${port}/api/health" | grep -q '"ok":true'; then
+              echo "boot check passed"
+              ok=1
+              break
+            fi
+            if [ -z "$(docker ps -q -f "name=^${app_name}$")" ]; then
+              echo "container exited before becoming healthy" >&2
+              break
+            fi
+            sleep 3
+          done
+          if [ "$ok" -ne 1 ]; then
+            echo "boot check FAILED" >&2
+            docker logs "$app_name" || true
+            exit 1
+          fi
+
+  security-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: node:26-bookworm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: |
+          test "$(node -p 'process.versions.node.split(".")[0]')" = "$(tr -d '[:space:]' < .nvmrc)"
+          cd erp
+          timeout 5m npm ci --ignore-scripts
+          node scripts/audit-dependencies.mjs
+      - if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: security-audit-artifacts
+          path: erp/audit-artifacts/
+          retention-days: 30
+          if-no-files-found: ignore

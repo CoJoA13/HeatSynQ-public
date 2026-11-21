@@ -1,0 +1,208 @@
+/**
+ * The customer statement's template contract (spec §5.3), derived from
+ * `src/server/pdf/statement.ts`'s `buildStatementDefinition` — sections are the builder's
+ * stacked blocks in stack order, fields are its printed labels and data-bound slots.
+ *
+ * The aging labels come from `src/lib/ar-constants.ts` — REFERENCED, not duplicated: that
+ * module is pure client-safe constants (the one sanctioned cross-import here), and the builder
+ * itself prints from the same `AGING_BUCKET_LABELS`, so the strip's paper and this contract can
+ * never drift apart. The finance-charge line and the aging strip are each their own section
+ * (the Task 2 brief's explicit shape): the finance line only prints when a run assessed one,
+ * and a template may hide either independently.
+ *
+ * Its canvas profile (`STATEMENT_CANVAS`, design 2026-11-11 §4.1) was admitted in PR 1 of its lane, and
+ * its paper prints since PR 2 (the docType is in `CANVAS_PRINTS`, template-contracts/index.ts): a layout
+ * prints through src/server/statement-canvas.ts and a draft offers Design on a canvas.
+ */
+import { AGING_BUCKET_LABELS } from "../ar-constants";
+import { defaultConfig, type CanvasProfile, type TemplateConfig, type TemplateContract } from "./types";
+import { CANVAS_GRID } from "./canvas";
+
+/** The statement canvas's floors (design 2026-11-11 §4.1), measured by
+ *  tests/statement-canvas-floors.test.ts on the flow's own nodes at the Standard's base size, each
+ *  block's nodes counted by the wrapper rule (design §5.2: a one-node block's own margins zeroed, a
+ *  several-node block's children's margins kept): the Bill To is its label, its 6 pt top margin
+ *  kept, and its first line; the finance-charge line keeps its own [0, 2, 0, 0], its start mark
+ *  above it. STATEMENT_ROW_FLOOR is the least of the five blocks' one-line heights (the finance
+ *  line with its kept 2 pt in Liberation Serif), the least across the four font families, rounded
+ *  DOWN (a least height a block drawn one measured line tall meets); STATEMENT_FIRST_TABLE_ROOM is
+ *  the largest of the five blocks' rooms (the open items' header and first row, and the aging's two
+ *  rows, the same height), in Roboto, rounded UP (room needed). */
+export const STATEMENT_ROW_FLOOR = 13;
+export const STATEMENT_FIRST_TABLE_ROOM = 32;
+
+/** The totals' fixed parts plus one grid step (design 2026-11-11 §4.1, call 12): totalLine's 200 pt
+ *  label and 100 pt amount and the two 6 pt gaps beside the label (316.5). The open items' columns are
+ *  content-sized (auto and "*"), so their entry is the owner's (#971, ruling 4, 2026-11-14): the
+ *  table's 44.8 pt of padding and rules, rounded up to the 4.5 pt grid (45), plus one grid step;
+ *  narrower, its padding and rules alone would print past its box. The Bill To has no fixed part and
+ *  no entry. A literal (this leaf imports nothing from src/server), held to the builder's widths
+ *  (`STATEMENT_WIDTHS`, src/server/pdf/statement.ts) by tests/statement-canvas.test.ts. */
+export const STATEMENT_LEAST_WIDTHS: Record<string, number> = {
+  open_items: 45 + CANVAS_GRID,
+  finance_charge: 200 + 100 + 2 * 6 + CANVAS_GRID,
+  total: 200 + 100 + 2 * 6 + CANVAS_GRID,
+};
+
+/** The statement's canvas profile (design 2026-11-11 §4.1): five blocks, in the flow's order (the Bill
+ *  To, a block keyed by its field that prints at least its drawn height, `holdsHeight`, beside the
+ *  Remit To box; the open items, a rows block; the aging strip, a boxed column table; the finance
+ *  charge and the total due, rows blocks), nothing required, no barcode; every row of a block and the
+ *  Bill To are never a field item, the Remit To box prints in a border, and no field prints on a
+ *  rule. Its paper prints since PR 2 of its lane (`CANVAS_PRINTS`, template-contracts/index.ts). */
+export const STATEMENT_CANVAS: CanvasProfile = {
+  paper: "statement",
+  tables: [
+    { key: "bill_to", keyed: "field", heading: "bill_to", rows: false, printed: null, holdsHeight: true },
+    { key: "open_items", keyed: "section", heading: null, rows: true, printed: null },
+    { key: "aging", keyed: "section", heading: null, rows: false, printed: { kind: "boxed", copies: 1, head: { size: 9 } } },
+    { key: "finance_charge", keyed: "section", heading: null, rows: true, printed: null },
+    { key: "total", keyed: "section", heading: null, rows: true, printed: null },
+  ],
+  required: [],
+  barcode: false,
+  notFields: ["bill_to", "document_no", "date", "due_date", "original", "open", "finance_charge", "total_due"],
+  boxedFields: ["remit_to"],
+  ruledFields: [],
+  leastWidths: STATEMENT_LEAST_WIDTHS,
+  rowFloor: STATEMENT_ROW_FLOOR,
+  firstTableRoom: STATEMENT_FIRST_TABLE_ROOM,
+};
+
+export const STATEMENT_CONTRACT: TemplateContract = {
+  docType: "STATEMENT",
+  name: "Statement",
+  sections: [
+    {
+      // headerBlock — the "Statement" title over the company name, both centered. Unlike the
+      // invoice, the title here is a LABEL (nothing kind-varies it), so it is overridable text.
+      key: "header", name: "Header", hideable: true, reorderable: true,
+      fields: [
+        { key: "title", name: "Document title", defaultLabel: "Statement", removable: true },
+        { key: "company_name", name: "Company name", defaultLabel: "", removable: true },
+      ],
+    },
+    {
+      // identityBlock — customer / statement date / live bill-to left, the boxed Remit To right.
+      key: "identity", name: "Statement identity", hideable: true, reorderable: true,
+      fields: [
+        { key: "customer", name: "Customer", defaultLabel: "Customer:", removable: true },
+        {
+          key: "statement_date", name: "Statement date", defaultLabel: "Statement Date:",
+          removable: true,
+        },
+        { key: "bill_to", name: "Bill-to address", defaultLabel: "Bill To", removable: true },
+        { key: "remit_to", name: "Remit-to box", defaultLabel: "Remit To", removable: true },
+      ],
+    },
+    {
+      // openItemsTable — widths ["auto", "auto", "auto", "*", "*"]: content-sized, the builder's
+      // own hand-laid choice, NOT a per-column width knob (the traveler process-row precedent) —
+      // so these fields carry no column membership and templates get label/visibility only.
+      key: "open_items", name: "Open items", hideable: true, reorderable: true,
+      fields: [
+        { key: "document_no", name: "Document number", defaultLabel: "Document #", removable: true },
+        { key: "date", name: "Document date", defaultLabel: "Date", removable: true },
+        { key: "due_date", name: "Due date", defaultLabel: "Due Date", removable: true },
+        { key: "original", name: "Original amount", defaultLabel: "Original", removable: true },
+        { key: "open", name: "Open amount", defaultLabel: "Open", removable: true },
+      ],
+    },
+    {
+      // agingStrip — seven equal flex columns (the builder's Array(7).fill("*")): the five
+      // buckets off AGING_BUCKET_LABELS, then Unapplied (owner ruling 8: never folded into a
+      // bucket) and Net.
+      key: "aging", name: "Aging strip", hideable: true, reorderable: true,
+      fields: [
+        {
+          key: "aging_current", name: "Current bucket", defaultLabel: AGING_BUCKET_LABELS.CURRENT,
+          removable: true, column: { table: "aging", defaultWidth: "*" },
+        },
+        {
+          key: "aging_1_30", name: "1–30 bucket", defaultLabel: AGING_BUCKET_LABELS.D1_30,
+          removable: true, column: { table: "aging", defaultWidth: "*" },
+        },
+        {
+          key: "aging_31_60", name: "31–60 bucket", defaultLabel: AGING_BUCKET_LABELS.D31_60,
+          removable: true, column: { table: "aging", defaultWidth: "*" },
+        },
+        {
+          key: "aging_61_90", name: "61–90 bucket", defaultLabel: AGING_BUCKET_LABELS.D61_90,
+          removable: true, column: { table: "aging", defaultWidth: "*" },
+        },
+        {
+          key: "aging_90_plus", name: "90+ bucket", defaultLabel: AGING_BUCKET_LABELS.D90_PLUS,
+          removable: true, column: { table: "aging", defaultWidth: "*" },
+        },
+        {
+          key: "aging_unapplied", name: "Unapplied", defaultLabel: "Unapplied", removable: true,
+          column: { table: "aging", defaultWidth: "*" },
+        },
+        {
+          key: "aging_net", name: "Net", defaultLabel: "Net", removable: true,
+          column: { table: "aging", defaultWidth: "*" },
+        },
+      ],
+    },
+    {
+      // The finance-charge line — its own section (see the file comment); prints only when the
+      // statement run assessed one.
+      //
+      // #162 (owner ruling 2026-08-19): the figure is INFORMATIONAL — nothing is posted, nothing
+      // ages, and `statements.ts` returns `totalDue: aging.net`, which excludes it. The line
+      // therefore prints directly above a Total Due that does not contain it, and the LABEL is
+      // what has to say so; "Finance Charge:" alone read as a levied charge, and a customer
+      // paying the Total Due below it would have been right to.
+      //
+      // FIXED IN THE LABEL, DELIBERATELY NOT BY MOVING THIS SECTION BELOW `total`. A stored
+      // config renders in ITS OWN stored section order, so a re-order here would reach the
+      // default template and silently miss every already-published version; a `defaultLabel`
+      // re-resolves against this contract at every print for every config that has NOT overridden
+      // it (the editor does expose a per-field label override — `types.ts` puts it exactly: a
+      // stored config pins only what it explicitly stores, so a typed label keeps its own wording
+      // and this relabel does not reach it). For the seeded Standard template the stored label is
+      // `null`, so it re-resolves; that is the case that matters today. (#103 — see `types.ts`'s
+      // evolution header, which names "changing an existing contract default" as NOT
+      // rendering-neutral.) That is the
+      // whole reason this landed before acceptance: nothing has published a custom statement
+      // template yet, so the relabel changes no paper anyone has already designed. Once one has,
+      // this same edit would silently relabel their published version too.
+      key: "finance_charge", name: "Finance charge", hideable: true, reorderable: true,
+      fields: [
+        {
+          key: "finance_charge", name: "Finance charge",
+          // Sized to `totalLine`'s 200pt label column at 10pt (measured: 174pt Roboto, 175pt
+          // Liberation Sans, 161pt Liberation Serif) so it does not wrap on the three
+          // proportional families. **Roboto Mono is 252pt and DOES wrap** — accepted: it is
+          // selectable per template but no seeded template uses it, and the cost is a two-line
+          // label with the amount beside the first line, not a wrong figure. "Total Due" is
+          // referenced in lower case because that label is itself overridable.
+          defaultLabel: "Finance Charge (not billed, not in total):",
+          removable: true,
+        },
+      ],
+    },
+    {
+      // The bold Total Due line.
+      key: "total", name: "Total due", hideable: true, reorderable: true,
+      fields: [
+        { key: "total_due", name: "Total due", defaultLabel: "Total Due:", removable: true },
+      ],
+    },
+  ],
+  textBlocks: [], // the statement carries no standing paragraph
+  // `money()` is the invoice's own (SIGN_AFTER_SYMBOL, 2 decimals, grouped thousands) — a credit
+  // or on-account payment row prints negative money, so the style knob is on this surface;
+  // `longDate` prints "July 29, 2026" ("MMMM D, YYYY", the full-month token — Task 13 maps it).
+  formats: {
+    negativeStyle: "SIGN_AFTER_SYMBOL", priceDecimals: 2, thousandsSeparator: true,
+    dateFormat: "MMMM D, YYYY",
+  },
+  // Today's builder: defaultStyle 9pt; "Statement" (20pt) is the heading. No fine print smaller
+  // than the base ever prints, so the small role starts pinned to the base size until a
+  // conversion task gives it a slot.
+  fonts: { family: "Roboto", baseSize: 9, headingSize: 20, smallSize: 9 },
+  canvas: STATEMENT_CANVAS,
+};
+
+export const DEFAULT_CONFIG: TemplateConfig = defaultConfig(STATEMENT_CONTRACT);

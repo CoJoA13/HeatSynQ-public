@@ -1,0 +1,3 @@
+# git archive fills in the build stamp with the archived commit and its date (#542): the .182 deploy
+# agent and the devtest rebuild build from such an archive, which carries no .git.
+build-stamp.txt export-subst

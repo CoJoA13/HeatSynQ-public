@@ -1,0 +1,30 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+import { handle, HttpError, requireUser } from "@/server/http";
+import { mustDo } from "@/server/permissions";
+import { updateUserWithOverrides } from "@/server/users";
+
+const Body = z.object({
+  displayName: z.string().trim().optional(),
+  // The signature title (Phase 6 ruling 14) — blank is legal and clears it (blank prints nothing).
+  title: z.string().max(200).optional(),
+  roleId: z.string().nullable().optional(),
+  active: z.boolean().optional(),
+  password: z.string().min(8).optional(),
+  overrides: z.array(z.object({ permission: z.string(), mode: z.enum(["GRANT", "DENY"]) })).optional(),
+});
+
+export const PUT = handle(async (req, ctx) => {
+  mustDo(requireUser(), "manage_users");
+  const { id } = await ctx.params;
+  const body = Body.parse(await req.json());
+  // Display name is a blur-save box on Selected user (owner, 2026-11-02, #827): its refusal is a
+  // sentence the panel shows, not a field path.
+  if (body.displayName === "") throw new HttpError(400, "Display name cannot be blank.");
+  const { overrides, ...rest } = body;
+  // #237: ONE service call, ONE transaction — a body carrying fields + overrides used to run as
+  // two transactions, so an overrides refusal left the field update already committed (and
+  // audited) with only the 400 reported back.
+  await updateUserWithOverrides(id, rest, overrides);
+  return NextResponse.json({ ok: true });
+});

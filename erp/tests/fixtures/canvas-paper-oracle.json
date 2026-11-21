@@ -1,0 +1,2388 @@
+{
+ "TRAVELER standard, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "9d8fc05ef82e79679fd2b348e69010f7e2a48482ccd0103f19764b5fb50efb2e"
+  ],
+  "positions": "185bce70f788a0550f5e54d109f48b34ce45776527b54a7ea961ade8854ef3eb",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER standard, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "4ff8ab47861d762ffba4754257c5d9ec8e1819c77c288628c389870ccf895071"
+  ],
+  "positions": "185bce70f788a0550f5e54d109f48b34ce45776527b54a7ea961ade8854ef3eb",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER standard, 40 steps [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "4eb8330387d9f9de0d21efce86c630c8c921f828d80110fcfa77f66f858b26f2",
+   "3d6583f09b1db7867d72b71efa5677e2d01554aa32cdbb3a9228e6c54f362fd0"
+  ],
+  "positions": "5f6e13ac5d4ad22755ef1dd4cded591c108e6048bdf403552da50eb97fe6cbe8",
+  "measure": "62fc4d4398db2c5c29a86ba6d4d9f0bb4a151f30483b9da3e45e9209c62f04d5"
+ },
+ "TRAVELER standard, 40 steps [page line on]": {
+  "pages": 2,
+  "perPage": [
+   "e624259b72ae87ca501d05e4d28dd55d7ca613df4034372dd5e9c3fd187b7aa2",
+   "4c3cd995c51b514630e38ba1b1808871c177c65b980b0234550a70761a8b52a7"
+  ],
+  "positions": "25bfa40031c9ea35879b1cc8b96ea0b9ec09f259c840f9f9c50274fea8605a4b",
+  "measure": "d319e984a003b9b4e8bc96a832025c6817fea04848c12bfbc4187e1e473488a9"
+ },
+ "TRAVELER standard, long-word record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "9022005cee64664e823b4b70895e92577131ac87efde8cc5149985266d182d19"
+  ],
+  "positions": "ab9e17d709ebd6cad3146069d799b327b61d92b8ce74edcd574baf5323a1a854",
+  "measure": "9996f61d5288d3c4b8609919b0cd4aea447b79d69dda6be1a37889f012653a80"
+ },
+ "TRAVELER standard, long-word record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "36e60153932f6e241b06a18df7da3d74d74b82eb1d39a381c2bb320c118aae67"
+  ],
+  "positions": "ab9e17d709ebd6cad3146069d799b327b61d92b8ce74edcd574baf5323a1a854",
+  "measure": "9996f61d5288d3c4b8609919b0cd4aea447b79d69dda6be1a37889f012653a80"
+ },
+ "TRAVELER standard, Liberation Serif base 10 with a logo [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "5a2a9cd394675a1df9c838443c06d12df45a5c9e8deb620ae13fb3eb9f15a174"
+  ],
+  "positions": "52c0632c78c6192f66f556905a95ddbe1d8734e6e96958c843fbf694e3ebe6ac",
+  "measure": "0bb60f425d74c05a982a333e25ee4ec750f1e1952c759029a11e43fe20173e9f"
+ },
+ "TRAVELER standard, Liberation Serif base 10 with a logo [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "8096da884906ad708f0bfe63710084ad7aaa3e2936cfc0f1f391333d00154401"
+  ],
+  "positions": "52c0632c78c6192f66f556905a95ddbe1d8734e6e96958c843fbf694e3ebe6ac",
+  "measure": "0bb60f425d74c05a982a333e25ee4ec750f1e1952c759029a11e43fe20173e9f"
+ },
+ "TRAVELER standard, two loads [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "dee82c596517d868ce45dc8fc0ff02ba955f9f08aa1b2cfd2f6b202f6bb43307",
+   "4e9ad8bd231f2a1ab99d4c4fb36639cdbd47282531a50e17cc245005dcd1a08f"
+  ],
+  "positions": "fc2c234ac60afb99865d029d5e1200e11f05e004300e559b5c2efa825d97c251",
+  "measure": "ba95fe9ab8f94b931b18086a51ae1e90908787ac538e9fff9a52d9a893654f31"
+ },
+ "TRAVELER standard, two loads [page line on]": {
+  "pages": 2,
+  "perPage": [
+   "dcc6f28008801b4c91c78b828c0756f3362811ad8d467c3ee9bd1b8dbe571d84",
+   "f1bfd8badfa1b63f9d85482ce32a1b721d33bd6987be7bacfe319e6b004db8ec"
+  ],
+  "positions": "fc2c234ac60afb99865d029d5e1200e11f05e004300e559b5c2efa825d97c251",
+  "measure": "ba95fe9ab8f94b931b18086a51ae1e90908787ac538e9fff9a52d9a893654f31"
+ },
+ "TRAVELER standard, oversized row 3 + tall + 5 [page line off]": {
+  "pages": 3,
+  "perPage": [
+   "9b3ffd24606cc733fcc77266f41920f36e2b99bc0a43648cd8922450a1c36661",
+   "9f084e3e6a6b43ca5de097b95facbf64ecf8364e2efba425d7d2954f1f6e0d10",
+   "7ecfbbca3d344318718ed8fdcad2c129639c06638b644c5b379c4cfbf97a10d9"
+  ],
+  "positions": "7faaab905e837b1e26d011ffa2cc041c1205f3779716b30f8d62e35849e2fa78",
+  "measure": "192817a1bb3015eed4acf93da8233f6bb35659c45d7c54db80a6c5adec3abb7a"
+ },
+ "TRAVELER standard, oversized row 3 + tall + 5 [page line on]": {
+  "pages": 3,
+  "perPage": [
+   "37c9aab76737ad99016d6fdc5e47627c3eb8d08a4d83c20b434e037f5572bba1",
+   "2ceaf8df5ba1ecf6e3a62c46c84022f18bbf939b241936de0622dae826f95068",
+   "999f7bde043953d4f0535addb0291d256f27d31e8a3ba9cc93ed74279ad2df88"
+  ],
+  "positions": "5fbf94f6863b89a909f8a488e59759fc9c6ab020f781fbd9168bd315f81edeaf",
+  "measure": "558043ee5330ac7c39fb1fa2224a8abf0e222b443b1c875b3f9accf89785735d"
+ },
+ "TRAVELER standard, oversized row 3 + tall + 40 [page line off]": {
+  "pages": 4,
+  "perPage": [
+   "9b3ffd24606cc733fcc77266f41920f36e2b99bc0a43648cd8922450a1c36661",
+   "9f084e3e6a6b43ca5de097b95facbf64ecf8364e2efba425d7d2954f1f6e0d10",
+   "d7a155db6810241727b6bd9cc34a4f027dbed36ee5b480a5932d4f2e1f359520",
+   "ce2e044ee613d139635d7741bef13fc6c1a016ed79c24e2e5ca9229bca90c97e"
+  ],
+  "positions": "0bae6d53ea4641bc3981b7608712936455f0a921d1d914039e9d07bfdf03128f",
+  "measure": "1fe2bdce3774f09942de167db9832886a5c7d336f9880f20df932e14279367a1"
+ },
+ "TRAVELER standard, oversized row 3 + tall + 40 [page line on]": {
+  "pages": 5,
+  "perPage": [
+   "f37e820809232af3eb7a79d797bd9813c495d76021f715cd699bc977d670a632",
+   "c1a7e45bae1da99f8184717ed06377439270b0cc7f5dae6ff03b1a1c2dbfbdd5",
+   "8a662619474ab1e69d2bc619d8e5f3d506d7358bb80af3759e75a181c330c52b",
+   "72127e6e9ade1417d789d4c6a59bb3569e70959bedae759d3541866a005a8391",
+   "2b2ae2d40418e97131b8527bd7dc5128ae7483f83a786fb56bae6e30c680326f"
+  ],
+  "positions": "3d4460c317a41aae804e832334a6e2050d934e8d39857feb34cfbfb0d3f94d43",
+  "measure": "bc2accf195065ac2d6e589e691bfc527d2bf65e2317f8e786cc54519080df584"
+ },
+ "TRAVELER standard, oversized row 80 parameters [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "169d8fce9baf49b1c708147d9fd8730a746ecce0cf87946acfd2415f1b8fc1f9",
+   "479e826656892f8bf18ccc7df0979d8f77e7be9b850ad427695a774446c4e739"
+  ],
+  "positions": "9006edd3b3a1c4fcd8dd5f0be956bf1979f4da2280044e66ff6a885125ff8bee",
+  "measure": "73a7473300bea47f75a417614c5fe2147376fa752f78758e82ed06cedf26edfd"
+ },
+ "TRAVELER standard, oversized row 80 parameters [page line on]": {
+  "pages": 3,
+  "perPage": [
+   "bbf3c70e6814b75edc2e8862cdbd9d19376dc578036e08ec554a80ec293e3bd5",
+   "2ed804293be22017160181fac654c144b1bc23121822f6cd82d9d1f20d15b0c6",
+   "766d4a5a1834af8fbfd838b59d2483f9a6faea93025e29e93133dd16051f42ed"
+  ],
+  "positions": "5ba8b425e8b2c59d67a520a26525932051313a98f6e7fbde235c7a51fc9f4987",
+  "measure": "d32d325e370a80f93ef301ce63086c366070691574de0ee09a79cba715f7a144"
+ },
+ "TRAVELER steps then inspections, oversized row 3 + tall + 5 [page line off]": {
+  "pages": 3,
+  "perPage": [
+   "617ec9f46dc749a1cf40963871d0a5eb9e027f97842e201a66c58c9b13dfd724",
+   "3dccf8eb3777d4ec61c348145f5da23429bf7b63aa28c550a9154362074f2cf6",
+   "2956f218aee76cbad5a63e99f1f342b9aa4bd81c59a3e9243c59e11f82a25ec6"
+  ],
+  "positions": "8cabc71f37d01e672438843507c0b1851cf122d7427893e20c7880783b769762",
+  "measure": "7cdd8ca701c2dfa15f10e0523ed8f980044e166c3f1d92b41686d9847f112b49"
+ },
+ "TRAVELER steps then inspections, oversized row 3 + tall + 5 [page line on]": {
+  "pages": 3,
+  "perPage": [
+   "79aaf17a90f77a1a268904bf998ed648c913f6dfa8212b43a2a67ee5c58775f6",
+   "78a26f73b71513e33ca60c486895c39d97d23d9d3db8420c8fcd8dbb7126d5e6",
+   "5b08d8c5448ce2563c42713a79e1de6f9dc0638ccae9b8acd68d96d53c7275c2"
+  ],
+  "positions": "32fe7efdd88585c59ee83ca9d2c3300eb2bad2b45dc1bacd7ad78321a5bedf69",
+  "measure": "9771c9334918974179a131e73879d1011834c8155d9019169c118ceae8d30bba"
+ },
+ "TRAVELER steps then inspections, oversized row 3 + tall + 40 [page line off]": {
+  "pages": 4,
+  "perPage": [
+   "617ec9f46dc749a1cf40963871d0a5eb9e027f97842e201a66c58c9b13dfd724",
+   "3dccf8eb3777d4ec61c348145f5da23429bf7b63aa28c550a9154362074f2cf6",
+   "389564ad428111c513f42c78aa9e1464c64282b61a5c617f7577ecd3bcfe5f07",
+   "334e3e994a3e0f2681da9f9823bb4606917543972ac8908cb384c5c0e1fde1c7"
+  ],
+  "positions": "1a4e765e5e3af0220db19f50019848ea51ce51d6b198b039fd6f1eebd6c7e480",
+  "measure": "5c1fcbf7380bb5692ac5beacc8dcffe3be139db5b28d913fd659aa01d57bde25"
+ },
+ "TRAVELER steps then inspections, oversized row 3 + tall + 40 [page line on]": {
+  "pages": 5,
+  "perPage": [
+   "a5e02a16763154afb170ab2470f6fda862ce50dca4275f71339154e098fb9ca5",
+   "7548fb777405cc16f51bb08f695d8bef45dedaffbd3d24a2058a725affb51028",
+   "262aef47f8e5106bd5028a215fea7d5471bf4687cb8cc04373ba4e1549dc5dfc",
+   "66d05222e27b7d85d62eeff92735eddc6349f6d04564645a519cfff36aa88ae6",
+   "2b2ae2d40418e97131b8527bd7dc5128ae7483f83a786fb56bae6e30c680326f"
+  ],
+  "positions": "f0f9e1be678c8ff00c76c47b84155396e85104c93cb9b080b0f74d042b216864",
+  "measure": "f55ba30027160e4146af9c724888dbeb5604152fb5e7a9bd34dfaddf2f6e86c1"
+ },
+ "TRAVELER steps then inspections, oversized row 80 parameters [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "668c121abf0ab99f385e3337def243021e5bad656bf1bb8d9313903a8f501be9",
+   "2209b0e339ea8cbfccb6e0d44a659df2c4fef244308d44433a7f9d9343d6bb6f"
+  ],
+  "positions": "136a5318e2beda6f277e00c6fd4e0d7bfcb6b8890ee178cfe12ab4bd7af2aaf8",
+  "measure": "c11f49c383b54c840242a836c2e5259604046aec6e3c0afaa998f39c51654916"
+ },
+ "TRAVELER steps then inspections, oversized row 80 parameters [page line on]": {
+  "pages": 3,
+  "perPage": [
+   "5768c50205d143bf3816b4f18b74a940f2e5bdc9330a9f01096e5c3936c40d18",
+   "9543e84833dd364777310abc3b4606ec90f721077a7dfe94c3642088b28bfc99",
+   "766d4a5a1834af8fbfd838b59d2483f9a6faea93025e29e93133dd16051f42ed"
+  ],
+  "positions": "8cf441970efe726dde2ad2b7b3598c7c7fd41620ab8e9840e1a616e983abc357",
+  "measure": "fd878b3ed843e332781cc11a3fe5a7563cbe95045e0ba53710b7b0eb65b8792b"
+ },
+ "TRAVELER steps then inspections, 40 steps [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "90ccfd71f0f387432fd65e1687749a898d501378647c75f058da57cee05f91c2",
+   "8e141ea2f16d2bb34e3a2d7f61ad824968c41984e26f7bf65aa82108aec19b92"
+  ],
+  "positions": "3f8ae606e881612a208dd113908cdc93ad55682db285d8430458b81880a0bc2a",
+  "measure": "2972a2850b20eb9f2b827435e593a22a41cd588b6d2fdfdd8cc20a4e0f0ac89f"
+ },
+ "TRAVELER steps then inspections, 40 steps [page line on]": {
+  "pages": 2,
+  "perPage": [
+   "5dde98177d3b6778ee2cf8da54fd559ad3fe71d34e95c15d863ad8ce7817aa84",
+   "96b3c981f2d6aee3682f1cbcfc5bb8f631cb69f63648af72e62d68c3d230c1f9"
+  ],
+  "positions": "71b8648c77d1ab2cdd48c71fb71a4e6076186d6609121af27d1caade4ba77170",
+  "measure": "e1115c662a47e8453f40ae17f74a93ca9dc3cec451281c8107f64e47e06feb59"
+ },
+ "TRAVELER standard, steps 40 pt in, 40 steps [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "9a686f0d83bbbc27f6d5d7a20230e668d49e3beeb1931224f80a29e6e75741f0",
+   "41ed2c48874cadd00d9a6eab794475c13825bd40349812e102c215e8e3b5ae10"
+  ],
+  "positions": "665dc10943962687524ca4054e1af993184d076e4b14639b7e866554454cec2f",
+  "measure": "62fc4d4398db2c5c29a86ba6d4d9f0bb4a151f30483b9da3e45e9209c62f04d5"
+ },
+ "TRAVELER standard, steps 40 pt in, 40 steps [page line on]": {
+  "pages": 2,
+  "perPage": [
+   "f066266020a368aef7672f2aa4abdb36a253b297e9c224fed1699b577513dae6",
+   "b7939acfccfd5cd997a57cb85ed818477422fe1b5cd6382c4130f4d33d20f122"
+  ],
+  "positions": "e031e49ee50e38b2a23f727c3d3c8428cdb0c1c5caf67d0c6e07fb57c61b3538",
+  "measure": "d319e984a003b9b4e8bc96a832025c6817fea04848c12bfbc4187e1e473488a9"
+ },
+ "TRAVELER steps then inspections, steps 40 pt in, 40 steps [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "b0b1cfcddb72a850a10e723ce5e20a12781e90dd44fe55816ed7a734e50e18b6",
+   "693acace105406599fbb9aeb117d490868c0e93e71ef70ebffbdce8944e31e6b"
+  ],
+  "positions": "777d8ea7fe6c70be4ece1024fabda22f9feec90846eb42454f7c10a84e3b81c6",
+  "measure": "2972a2850b20eb9f2b827435e593a22a41cd588b6d2fdfdd8cc20a4e0f0ac89f"
+ },
+ "TRAVELER steps then inspections, steps 40 pt in, 40 steps [page line on]": {
+  "pages": 2,
+  "perPage": [
+   "0decdc929b643cc719a9d275cb407c4b51e31f64b865251907e196e14a750132",
+   "af721eddf6d881a22774a4a5e6fd982d81bbd4ba3e85d576fad464a516be966b"
+  ],
+  "positions": "0710dd5d099df989036034c73e1beea5607a0b35ee16c320bf7752f97105a7b1",
+  "measure": "e1115c662a47e8453f40ae17f74a93ca9dc3cec451281c8107f64e47e06feb59"
+ },
+ "TRAVELER standard, 80 steps [page line off]": {
+  "pages": 4,
+  "perPage": [
+   "4eb8330387d9f9de0d21efce86c630c8c921f828d80110fcfa77f66f858b26f2",
+   "d887ad4e40a9bb9b787a0cb999026e40d63acbf8d8d1f361a3c76c5334a2207c",
+   "45768db4ef47869a7db1f3911a8fad0912b2845638bd3fd21ba46b2a2c29a8d8",
+   "3f2b9d6e2433d94fd11aba3fdae1a2a5e87aba12d9ffa7a6065ff46e532b249d"
+  ],
+  "positions": "fe5f14b9f60cc2fe845bfa5dc42b8d0f2c8b626609c1dcae6a0b2d056f3aa4c9",
+  "measure": "6d1a2726420babeb2dd6811960cb9845276a2d0a98f3dc9f20bbdf8e815bc730"
+ },
+ "TRAVELER standard, 80 steps [page line on]": {
+  "pages": 4,
+  "perPage": [
+   "86598715d9fe71891adabfc310f75af8a4ae3b22f47f9709d124078046ce4857",
+   "e1187a5aa4c8400ad3015a9057cb2a0d527e5222c7faa62449a96510f66be1e2",
+   "a2e7940ec94eab40094b0c5cb19cc742fd3d7a8cc9368c240c098a733c3598e2",
+   "048d613c5b483dab69322d157c697a97265841dd9d93e23ae6e4694ca63c43ff"
+  ],
+  "positions": "b42d88d42b265f1f9091b460d08ff029b5e5cf60d460660957c3d10a47b08dd0",
+  "measure": "c86ac672fe320478f90fdf8b4b386daa8ad3e223d90253e241e9d64a0cc5e31b"
+ },
+ "TRAVELER steps then inspections, 80 steps [page line off]": {
+  "pages": 4,
+  "perPage": [
+   "90ccfd71f0f387432fd65e1687749a898d501378647c75f058da57cee05f91c2",
+   "73bdd981d8089141c2d91817dda3540e9e70cc84073c972a7b8cc37a6d6e204c",
+   "539b9d2246c304fedf46aacbe1b98ccba27cdc2baf5cc26c1588755bd92136b5",
+   "b5de4faf6b3d620c8d46677e6adb5c5b29d5d1b0103688e87b4b917f729139a0"
+  ],
+  "positions": "81badabb3cc36772f19c667ec7989878f9dc685d222e28ea296f485bc938e5da",
+  "measure": "6bef43ffd6285743c3c417cf137712f2eae5300cb662511a43b5d5f37646c059"
+ },
+ "TRAVELER steps then inspections, 80 steps [page line on]": {
+  "pages": 4,
+  "perPage": [
+   "03ed8bec5b6e505b7fdf943905a3380eb077e7e87176aa6078b79f63fd6ab361",
+   "580e19d8cd0712dcebd77312f51ccf1223c1611b592c92a736b2380eae544250",
+   "6fa8469d43ada7cc14ca5fa88dd5871b6aafeaf2984a79df823dcb909ba6352e",
+   "f11ae32d10c30194087236ffe51d234edd0ba469723c9a1884bf7bb88f98fb86"
+  ],
+  "positions": "fbde5e9b21266382f127218f086d9d8a6f5d4d1b2a5a12b3fda204c3c9640789",
+  "measure": "189267fb8867661cf185245a326307af9116e08690335843579485055b95f06e"
+ },
+ "TRAVELER standard, steps 40 pt in, 80 steps [page line off]": {
+  "pages": 4,
+  "perPage": [
+   "9a686f0d83bbbc27f6d5d7a20230e668d49e3beeb1931224f80a29e6e75741f0",
+   "b8c7ea94f28c94c9bda56125c51a50effd09809b418b4810f528263c4119a7f4",
+   "14bdfdcfb254a66dfa81cbfdb47273186fa0d0ca3c05c33bddbefa960acecb13",
+   "a759a53b9c2a23b73af45c9336a1361738acdac3b2469ebd236b8d62ec3a7eb6"
+  ],
+  "positions": "52d169530035eda97055c6ece4bc05da48ee52bd84207f58b08a5ebafb9417cd",
+  "measure": "6d1a2726420babeb2dd6811960cb9845276a2d0a98f3dc9f20bbdf8e815bc730"
+ },
+ "TRAVELER standard, steps 40 pt in, 80 steps [page line on]": {
+  "pages": 4,
+  "perPage": [
+   "bdbf1cbaf602f9feb4fc2837a7beca21ba797c0f734508b390e2ed296bb4f300",
+   "b9c78727039a85b821b169d750a3e46bf801342b8be90d6484701dcc7057997f",
+   "2cf9581d0034c5b38722e6be973153c440ef043f1b8635abbbc0edc26b022bb2",
+   "9066f90a11f1e5e3332eea4e458c9587b782b056dedd2002de95afd50397529d"
+  ],
+  "positions": "0a8ca4a1c46a287141f3b980115efe04d7aa1d3b749cf5981625978c66bf3545",
+  "measure": "c86ac672fe320478f90fdf8b4b386daa8ad3e223d90253e241e9d64a0cc5e31b"
+ },
+ "TRAVELER steps then inspections, steps 40 pt in, 80 steps [page line off]": {
+  "pages": 4,
+  "perPage": [
+   "b0b1cfcddb72a850a10e723ce5e20a12781e90dd44fe55816ed7a734e50e18b6",
+   "11bf643e3d73e29b226bbba750bbb93ffb7754cfb93af7ac7475f6a1d8c4ef15",
+   "796423f812a4d2503234b588fc110bc5e974a67350f87c0d80ca22c59efc931c",
+   "511d5371266bb7b2e39976ad382c5486db5c9131d36acd712258d2ded3d24922"
+  ],
+  "positions": "efcdfcf4a782e787623f6bc103a25c42f3ed903c5c94b20287c7db1d6148bd69",
+  "measure": "6bef43ffd6285743c3c417cf137712f2eae5300cb662511a43b5d5f37646c059"
+ },
+ "TRAVELER steps then inspections, steps 40 pt in, 80 steps [page line on]": {
+  "pages": 4,
+  "perPage": [
+   "604564cf47a7ad48462edd0f3982a72d42969639289f8b913c12fc45bf6c923b",
+   "f362b42c60b9b82f68a14f89a2a9e18a6050f5976bb6e5d68737256ab56f76d3",
+   "01e317e2c0d12f0243b2fa02d7454cd8af39feccfef6658adcf508905c684e56",
+   "ab7a6ec7e1b94e1b49c6f58868f43e21ea644853f2dc6a9028fb5517da8c667a"
+  ],
+  "positions": "35273f9b0620f04ee7edd5c7dbce9a2a8bc45faf78a101facb027f3b6e474190",
+  "measure": "189267fb8867661cf185245a326307af9116e08690335843579485055b95f06e"
+ },
+ "TRAVELER standard, 60 lines [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "95e4103b3b1590cedf92ee5bfcae87a61a9fe2dba32593a30e7ba180fdb9b127",
+   "64cf166e47f861d4ed4f91ff82f6f89eac95000b345f2c6561835b6f5fa35e26"
+  ],
+  "positions": "4726bb26963d852c163398cf0c164b463e4eef34ae3d9181999c613b84435812",
+  "measure": "864de07c8745055fa86fa82f99ad38e02963bb549e8d16ad454a36df3678fcd5"
+ },
+ "TRAVELER standard, 60 lines [page line on]": {
+  "pages": 2,
+  "perPage": [
+   "67cd25ef94e06dc8953daa33ca9184977af3c12422e1fbe2e65b4291f66fdbca",
+   "67ff4eb3e5548f4d2ab4a5916e001a563bc6447c67a2494ccaef01199e1ab637"
+  ],
+  "positions": "8bcc8d32ddebf7d46fa4ec970ed673bb68bb74066c84974b2d3b6c1c09a2ce68",
+  "measure": "e58fbf415ed90366d7ad162f78fffa729a8d4e4ba0a672c33fc89afe92a48b25"
+ },
+ "TRAVELER standard, lines 40 pt in, 60 lines [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "eeabbfa81054732b6c37ce7a58d1a6d29e97726e97e027a0065188d2445a0697",
+   "ed93b9bd8c0ec5383254faccc9bb8880013691157425ec31bdd0c64d4d76ee2d"
+  ],
+  "positions": "fa37f46cac7994129eabc82f41c2664d5071444835fbb29b20e4f3b50ea0963e",
+  "measure": "864de07c8745055fa86fa82f99ad38e02963bb549e8d16ad454a36df3678fcd5"
+ },
+ "TRAVELER standard, lines 40 pt in, 60 lines [page line on]": {
+  "pages": 2,
+  "perPage": [
+   "17728f76e5fb715b4422325108757c86bb3811c597e46df927e8d2c7bcf41697",
+   "c96f9bebdc49840a702536d89e77a105588d556ce0547fb503ef1968c775c754"
+  ],
+  "positions": "e2537309abb03a0c5487b40bf4b15e2e5bf65a89660a65f22735367dbc406789",
+  "measure": "e58fbf415ed90366d7ad162f78fffa729a8d4e4ba0a672c33fc89afe92a48b25"
+ },
+ "TRAVELER standard, 70 containers [page line off]": {
+  "pages": 3,
+  "perPage": [
+   "853fac8c9722335d7ff03e429087c9851bc7f0f55913cd7e8563173a1d0746dd",
+   "ef6a425d9de2a8324a828c08f3b0f91f911e4c36fbc7af544fc6464e45e56e1b",
+   "e2757d1cfccabb0434ac707a2cda0f28f0a685f693a094caaa5a8c549ad1e389"
+  ],
+  "positions": "2a966bf1407a8779ed58d66e7b4405a1df483b0a30790cbaa17499caa4258310",
+  "measure": "a186647c6eacc362bee42c5cacf0dfde725a3615743953b708d8e0ee3f430042"
+ },
+ "TRAVELER standard, 70 containers [page line on]": {
+  "pages": 3,
+  "perPage": [
+   "903cfcfd0440201091dfe84198d9c1847d6a5a3b3adfd76a48255abd82412aaf",
+   "46bae2dbc0743b9802024608ef564a1e955e69317832c3bbdafc35a9f12921ed",
+   "d36ae014225c71b2ca23e422821d168c0128088dfda2b2ece1c170cc1aab9e3e"
+  ],
+  "positions": "d291531a2170b909ab02f1fdad676d35f563a3d27ee03b3e0bc72e17b9b4d31c",
+  "measure": "f80e458360fba8da242725f826b6aed828c044dfce40e8d387e862304edd0507"
+ },
+ "TRAVELER standard, quantities 40 pt in, 70 containers [page line off]": {
+  "pages": 4,
+  "perPage": [
+   "85674d4bdfdb0428e39c188158650188df9802381b842aa5ea5f932a9d17a65d",
+   "6b3238b507f653cc2065ab71752dc8b904359599c0ff4811d5b5b4fb498c17bf",
+   "481e60bf818532285bdda6d4dd1a7d3de100b4f5d2c51224e60e3b59e45e2ee3",
+   "6c32d95ed8bc27b7566e24634681a32a674b1a3138d2cdb03536fdb6eabbd823"
+  ],
+  "positions": "133f4dc64e684dc3635c132e8dc939ff4f223ac59340318140e7434a6bfce9e4",
+  "measure": "567dfc4573b5e6acef3882cb76e6cb641e56ec0710c8dd966fe70e1cd31c7a09"
+ },
+ "TRAVELER standard, quantities 40 pt in, 70 containers [page line on]": {
+  "pages": 4,
+  "perPage": [
+   "8a84bb214185a36dcf45b1ed963ca95d2005077b64d37b0caf3a23300d92d8c9",
+   "679162c5104cbefbddff131e2a5317c97c483b0f81fdb1af9ea80888d7ffac2e",
+   "59cb78c6f2ad7cbe6a54fec7a1dfbc13328f054434c6e0761d8c0b3d871b864e",
+   "dc549986455545aa98e432fd1a08f069aca97d2921cbffdce621f814ca2369cc"
+  ],
+  "positions": "74212a25436bf7795c66be9fc85ef9cb89be4fbe2b5e3c4b00e47de9a5a0a7e1",
+  "measure": "7a7a230a8837b57bc01e396f2f74390dcde80fa7f34376a044d348ee17b8c33e"
+ },
+ "TRAVELER standard, 70 inspections [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "a462e1f55a553ef86e591ca12113460ac293b59d15b8c3a601e696646bd4de4f",
+   "067aa7464d2dea4afeebf3725b98a4611b1294acdbc9309921dfc782ee888dc7"
+  ],
+  "positions": "6eb424b41bc8652836e93a541a7736b0cfbc909a0414961f5336fd83afcd7f23",
+  "measure": "b520310b267907b495b0927fe809bdd7b5b7d1b09b9b88ff1c6dfce17c00c373"
+ },
+ "TRAVELER standard, 70 inspections [page line on]": {
+  "pages": 2,
+  "perPage": [
+   "1232b8455ea9355a545fb09951c473c9f680460559a8d517049430070fc9e098",
+   "7ae672add67dad334b11a673f4954b96c04b5dcd8c7ac07c501cafee5e0de774"
+  ],
+  "positions": "f8adc8977cd0edc3cd0234f708960a3cb510e6ba79d454c519156abfbd9a42c9",
+  "measure": "630846bc1c171a4f0825deb2f27406ad653d754c502acba1afce0aa559ccd104"
+ },
+ "TRAVELER standard, inspections 40 pt in, 70 inspections [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "88d7e1de15ed9e710c40c0e836cb6530a14dc49204a0881f929ef1a4ded442ba",
+   "07b9fb8f36c05e30c9cd005de1e90b5b07f661f1580c014fce8101d3483b9e37"
+  ],
+  "positions": "c61c577114d7232acd1dd0224a11ebbb4216679c9ca6b716a45c9dbedb1bc296",
+  "measure": "b520310b267907b495b0927fe809bdd7b5b7d1b09b9b88ff1c6dfce17c00c373"
+ },
+ "TRAVELER standard, inspections 40 pt in, 70 inspections [page line on]": {
+  "pages": 2,
+  "perPage": [
+   "2499d538092f00ce0a00241fb3d845b46c3cc437e4f71d15db62114e950f2fc4",
+   "5bc34b3e15c1609634d9322f0ff78ed3dedd7833fdc88ace1f873d2ff8c337f1"
+  ],
+  "positions": "088b800e3ef68b5ff186ed5e9619548e1e12dfda00ae92fa3db06e8a6225ccfb",
+  "measure": "630846bc1c171a4f0825deb2f27406ad653d754c502acba1afce0aa559ccd104"
+ },
+ "TRAVELER standard, lines 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "6fa8632199a78ec7fd3eebb89ea99ad8afc77ebcb9d7e37cf718f5f4f14ecb25"
+  ],
+  "positions": "9ffe27c915d485a2a46d5f77685c207d5f55f054dc7a0364242673069868c6ef",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER standard, lines 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "8ac47e8492f192c523071485032cf91143930771c4576ee553e872d3eda98730"
+  ],
+  "positions": "9ffe27c915d485a2a46d5f77685c207d5f55f054dc7a0364242673069868c6ef",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER standard, quantities 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "c10365b76e97422e1fa54068da22a2e115a1ffb22b3bf7b4b6970747e8c2c385"
+  ],
+  "positions": "ceefe85f56534f309d681cf7a2e66aeed8697b1d722ccd08f93cfd78336226d7",
+  "measure": "ce7fc781f5a30d847608c959a6fb81704f3311a4fe1ba603905b0d3c337b1d58"
+ },
+ "TRAVELER standard, quantities 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "e1d5338e5a0560331e3b8725741a1ab40ee66e2051151dc1f5de63331dd8d15d"
+  ],
+  "positions": "ceefe85f56534f309d681cf7a2e66aeed8697b1d722ccd08f93cfd78336226d7",
+  "measure": "ce7fc781f5a30d847608c959a6fb81704f3311a4fe1ba603905b0d3c337b1d58"
+ },
+ "TRAVELER standard, inspections 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "bf149ecee729ce75506dc95c9d6bd84bc2c6be55fbc2f659b340b5ade164bcce"
+  ],
+  "positions": "76c1da14a442e0087eae03bc9d860195169a677d7b3b163a2355db3626a84b33",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER standard, inspections 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "bcb17acf13d7359239a4b6c268ce870ce11e08a3a9d45767cc5300e542042214"
+  ],
+  "positions": "76c1da14a442e0087eae03bc9d860195169a677d7b3b163a2355db3626a84b33",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER standard, steps 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "dc6531dc50171c5650bb9c6ac0d34fc1e27fa02dafef922a56aa67ef652a749a"
+  ],
+  "positions": "495386d6911e15c7351f5000972d179d907f64323287cdd27bf7cf432140f89c",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER standard, steps 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "8d3a07660087eea1f4409805888c3e811a02d75a5039dcc2068c940e65b72e30"
+  ],
+  "positions": "495386d6911e15c7351f5000972d179d907f64323287cdd27bf7cf432140f89c",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "SHIPPER standard, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "7c073ff39ea31701d5246fdf2ee70db10269208625c75fdd7a2935fb47124a97"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER standard, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "2a2643852bf3d99c53636b528b7b53b307231f4a4ec776c432db989763d91584"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER standard, 60 lines [page line off]": {
+  "pages": 5,
+  "perPage": [
+   "cdad8e294d149964967a07ef9fd50f5678b83ebe3616a1ad697d51523e19dd86",
+   "59ede835c33d7ed9a19b554a7178a8a1279214c2c9a5443296f46a743e30a089",
+   "753ccc06a4edac8690a7dc936f5aa9c63ecb4f1ff2ebb618380f01d6ff9add87",
+   "da06a0f9f37a97aa5099c095c57d82e18bc184161e9a9b9c821b8235602e16c2",
+   "c823c9e6483220275e8edac9e0d8197e99927104d1480f4a98dc73e699326e89"
+  ],
+  "positions": "42ab172e62de9d281a862e476d3769e4d246af220b7968d5ae475e2ff01e39fb",
+  "measure": "25adf2f01b98c0b5c3b0195d068298cb914c44929bda981735157cac0f5620ce"
+ },
+ "SHIPPER standard, 60 lines [page line on]": {
+  "pages": 5,
+  "perPage": [
+   "ed81b0e2096be8f40c9b12874976f42aa2303e1a4c7447e1ae4fa9abb00f3e53",
+   "505d6992f759dec353b8ddfa43d7b4d150e873b4c0ae1ecfc23e04ac508eed71",
+   "f06d469bd8a0dd5a6d3d53c6f67a2f27b6c092029c59080c832f22f928a8a25d",
+   "16b4542a960c894cbdb4815fb876ac56108b6c033c217c560aa52c57e8f90a23",
+   "975f3975a72bad932741fac1bf19715b20674f32da1d67fb992120f2e9510cb1"
+  ],
+  "positions": "d7b8cf9bda31b8948239851449af669a0c1694003a8de6b8157eb8dd2e1abb3a",
+  "measure": "9c0ac1bf62ed3b696d3acfd564f733af21b868009142dfe86c7aa8a3320b575d"
+ },
+ "SHIPPER standard, long-word record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "36fe994ef073c694ba6eaac43f4b8c99d11126be4ece5068ff9c27a8199cdddc"
+  ],
+  "positions": "9d56ed0aae90778a36394d6eb17b131dea6a75f107f9cb0f088831538a0b946b",
+  "measure": "2b1f8dc10d5b77360cfb654f9966dc5ff45c3fa5dc95b7b0805fa7ab9950f6a9"
+ },
+ "SHIPPER standard, long-word record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "a6b3a9901e60e34daf2e9a11091ba48842cf65620837828aedc134995ef1548f"
+  ],
+  "positions": "9d56ed0aae90778a36394d6eb17b131dea6a75f107f9cb0f088831538a0b946b",
+  "measure": "2b1f8dc10d5b77360cfb654f9966dc5ff45c3fa5dc95b7b0805fa7ab9950f6a9"
+ },
+ "SHIPPER standard, Liberation Serif base 10 with a logo [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "0ec83898fdb2894b1362be8f11e9efb39792de28dd17c3f13f3659cc8eb8df0c"
+  ],
+  "positions": "f06749a0a2dd3b6490da3adce6f84398ed214065a38a9f8aac7a221d6381e093",
+  "measure": "ddfe7eb654d4484ceee1ff932c52d00400e48daae795fa93a8bce38053547095"
+ },
+ "SHIPPER standard, Liberation Serif base 10 with a logo [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "48f6870ec8ca62e52ff890a4d0e7e947707dea1876d6a0d55bd6071462cb4adb"
+  ],
+  "positions": "f06749a0a2dd3b6490da3adce6f84398ed214065a38a9f8aac7a221d6381e093",
+  "measure": "ddfe7eb654d4484ceee1ff932c52d00400e48daae795fa93a8bce38053547095"
+ },
+ "SHIPPER standard, 120 containers [page line off]": {
+  "pages": 4,
+  "perPage": [
+   "57b3e3ae1adafa25ce62ecfa3e8bb6161063860ed28a8c257c68feda1b8902e6",
+   "eee096a6339d198661446345cb5066b2c4c360f8937ca1d354113ada3ee8b36f",
+   "f92a706c47cd20dea8f5be3502046b2bcc3a06976a259dfe7872bcdc59e90869",
+   "c823c9e6483220275e8edac9e0d8197e99927104d1480f4a98dc73e699326e89"
+  ],
+  "positions": "339c2abb6dbf34e6c7a0b24130ceedc6297469e8d4a523a5d252cf55d72019a2",
+  "measure": "3615f5fe0129998bf32cddc7335800261ce80ec8edf8baa1239e4f6e5123be2f"
+ },
+ "SHIPPER standard, 120 containers [page line on]": {
+  "pages": 4,
+  "perPage": [
+   "b3486dff1e59a95b155ee35b88ce668bd7c6e9f3c2f93f664ad501c2b5e93260",
+   "65b61f8e2de2bab25c1437c67a8ebd1a3c29ee4bc6b06aa07a9b1492cf199c71",
+   "1de5541139c063f0457a0f554d5f871e39d11ad182474bfa0f45580b9bc2bf3c",
+   "975f3975a72bad932741fac1bf19715b20674f32da1d67fb992120f2e9510cb1"
+  ],
+  "positions": "72593a46119363f1c1686e5c9fcf27a9ed9c794254414efc4d76e6f522b2e12e",
+  "measure": "5455a8f2dcdd107b749b8c0acf6320ae8502c1c38884478e6782a9002a451f6c"
+ },
+ "SHIPPER standard, 80 serials [page line off]": {
+  "pages": 3,
+  "perPage": [
+   "5f564742ed1529c4cdf6784af3989aca5b884adac80c111deaa113a0cf982895",
+   "4f82f72b2e452e6908c0827fe13ba94eb55bcecf0516b2d9c1e66c005af3d63e",
+   "c823c9e6483220275e8edac9e0d8197e99927104d1480f4a98dc73e699326e89"
+  ],
+  "positions": "caf0e4787e91b414615cbf3386243015a8241f6ff288f5f2c5b8ce7f451259eb",
+  "measure": "831fd6d9030f6a593b6e8dc13fca46a2085f946dc2da4593e14e1d3535ccba6d"
+ },
+ "SHIPPER standard, 80 serials [page line on]": {
+  "pages": 3,
+  "perPage": [
+   "2344f419c9fefe3d43f364b9856243ad3ad6a5870ebe7801bbc8cbe546a56dda",
+   "f1713e4745b4a2a0d54c5730acaae12cc59037e63b76055ea2b327e52a5c36cd",
+   "975f3975a72bad932741fac1bf19715b20674f32da1d67fb992120f2e9510cb1"
+  ],
+  "positions": "4136d6536b006db1853666aa25818b485e2aaf482ba495535eb2bae3a8059eea",
+  "measure": "c5771f92d0271cec560261765391d1394839bd553e01bd8cf76178e365f4e78a"
+ },
+ "SHIPPER reordered, full width, 110 containers and 6 serials [page line off]": {
+  "pages": 4,
+  "perPage": [
+   "da9dd14faa3877cdc8efd9cc9345d09e49da95be7b47f004b0fd49658b832ed6",
+   "d842c4cf9208563be85e7e9eff339120ca5aa818fb1aeb96da454e725098b289",
+   "9e1ae60ea8b86fa67dca8bac30b5567cb60aa9ca23c229fd1fd60197e2e39755",
+   "64af4536c97da247b6f5a7c2b05c07248136a79368e8a1e65f04031aeb987e09"
+  ],
+  "positions": "fd97e246e98ac584bf879076037515779d29756f0daed9ceb71502261a910092",
+  "measure": "a2573a3da3cf46eadb024e151ef59f181f06aa734baaa6d6f67d1f4a1f0a9e7d"
+ },
+ "SHIPPER reordered, full width, 110 containers and 6 serials [page line on]": {
+  "pages": 4,
+  "perPage": [
+   "97cbc15cac061e0e0ac01cc84a9f21568b3f6596ce21c0c16011e15d4ffb7ffe",
+   "08a05a17d16302edda47c51be115142f1e9e1a5b5765a25ca38b432799de6a43",
+   "6191871fce3ffb6676b11a3385058a14376a2306da9fa4f414deda2fe94eb882",
+   "93b5de34fe302abb85f996a77155962edd8933e1a05801077223b07dc7c7781a"
+  ],
+  "positions": "6a6c8e4786fde5076289a6c434296b7c862492fa2da353d0ed94a9d7e45715a5",
+  "measure": "dd9b3cff64d76c35c597469852d73aa663cec32365cb5ab49d384ed5185f9da1"
+ },
+ "SHIPPER standard, lines 40 pt in, 60 lines [page line off]": {
+  "pages": 5,
+  "perPage": [
+   "902127e054e0a764b2ea118eff082733a28d07f8fa2bb1265fc8ba4aab9d2816",
+   "9db68212f3b2e3892bf4332142dbb50d2ddeb9c7392b74747c80e48d41e9a08a",
+   "29a76995b523c9f408096f105b97f2bd62c04020763e6bb43d8284bb349cf64b",
+   "da06a0f9f37a97aa5099c095c57d82e18bc184161e9a9b9c821b8235602e16c2",
+   "a566c8ac75ca96f90f678d75807df442999129d5192585e5dab3dc68202153d0"
+  ],
+  "positions": "f2727a234829f71cb403744823e08a725d2757aa80e9bb737acafb4c4a52d2cf",
+  "measure": "25adf2f01b98c0b5c3b0195d068298cb914c44929bda981735157cac0f5620ce"
+ },
+ "SHIPPER standard, lines 40 pt in, 60 lines [page line on]": {
+  "pages": 5,
+  "perPage": [
+   "a9478456a7c04ccb0b012d911ef7cb591ebe84408cbb0f976194e8b8d771324d",
+   "0728ae7b7f03cf541d797db8a4077d1ac724a69dd18769b7d5dab560a99894b5",
+   "80591a5ca3e2ecce64bb9703793025c4a1f694a8836bb2966e5f958b219c9053",
+   "46d8f631ba8f401287ca7d17a0b1a4d0be49ffcc549d74b251613d022ab3b2da",
+   "d73708bfd000f03c53e21eee776320aee51a5207fb230abe69a163f84581b814"
+  ],
+  "positions": "a950bcf88f98ece86d31c866a2cb11b33b8770e78d6d64b733422e024decc1f6",
+  "measure": "9c0ac1bf62ed3b696d3acfd564f733af21b868009142dfe86c7aa8a3320b575d"
+ },
+ "SHIPPER standard, containers 40 pt in, 120 containers [page line off]": {
+  "pages": 5,
+  "perPage": [
+   "cd961ab5b27604b8fd65824998d218cade810ef3f8a0389984c5346d154645a3",
+   "ae57043dd90fef1ccc63169d91463a081e7734a0907f0cb569798bd163c8aff3",
+   "acd8a944d8559be666e4d5204bb4c9a4e15edae344d15051854f930dfdd4af25",
+   "f93235b99332f91f2905470947821bc2121f15b1aeefca612aae09557b3ae4d3",
+   "0e8ce7df9a977b452aa6326ffe27d9d7d7ee115af37dddf16dce29ce887c0352"
+  ],
+  "positions": "7d1db83346a3ea55268dc7ea4b21537155805e3eba3f9f42ef411ed26ef5172e",
+  "measure": "d283b871cb08d3d8b0d7a5fac58311cd2483e5f093797927adb9803147473d56"
+ },
+ "SHIPPER standard, containers 40 pt in, 120 containers [page line on]": {
+  "pages": 5,
+  "perPage": [
+   "8d38316fa3b000435f0ed20c121a1ccad5e2ce03f6c5eaaef2683a7c912daff0",
+   "08bb4eaf3be67e821c5a38a3010da69a01e8b5f43b1ec74abdadf7d38f15390a",
+   "7cb7e4f8e5dc55e858ea13ad4ae9287a4ff97d88ddf8072cb04fe1bcbe6efd02",
+   "a0d09fc62a87ae9ba4f63ddf4cfe9de07ce2072e6787b85ad8bcc22d95562cdf",
+   "886c0158445245365927582edfb39074cd8db4adb4bc5a9a868664a645b1fa08"
+  ],
+  "positions": "4f78dabb03f67a65f308faee2119e0bf4bc0f324ddf3b43c4de602a09e02d374",
+  "measure": "c81bfc52be5e77ce0be2424d04bc19f6bee3c105660d55bb2dbd6404d87066c0"
+ },
+ "SHIPPER standard, serials 40 pt in, 80 serials [page line off]": {
+  "pages": 3,
+  "perPage": [
+   "5c8f876639e5fabdb58766be957d8b112dfbb9ccbe8c1997408291482b848391",
+   "671c0e40d6c600bff5c021dc400033f5f40496662b96171ffc5bd67352813d70",
+   "8d5c82233368e5f4377e862bdb5144cc0c588a633db9c14d293ee6e2b27f4245"
+  ],
+  "positions": "d0525a4f1cc241bfd6f3bb17df2174bec0174ea542f64fd260e63db4f79eca3f",
+  "measure": "831fd6d9030f6a593b6e8dc13fca46a2085f946dc2da4593e14e1d3535ccba6d"
+ },
+ "SHIPPER standard, serials 40 pt in, 80 serials [page line on]": {
+  "pages": 3,
+  "perPage": [
+   "37a49d72126beafa0531af696310cb035bd12b3522f2fd6a7e07384a9f8a8973",
+   "afd9ba05109db9abe585fc8a1cdc912777099b94800c891e512d7897bb8996c5",
+   "ed3a9e24e49d243002c0135875e6b0ca4ca9fd97426fc3405567c01231ce2d52"
+  ],
+  "positions": "d8d1247c8365ecdc8eaa4f2ca635582ec63037f601b74c03b8f25de9a9f78588",
+  "measure": "c5771f92d0271cec560261765391d1394839bd553e01bd8cf76178e365f4e78a"
+ },
+ "SHIPPER standard, field_strip 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "87b7302da9f97e339e5d22147840aa3a8dbf34ba03c63fc7fad101166ec53bb5"
+  ],
+  "positions": "65824ac762b9ed2579a825d3cd443597a6fad4b2fe3dcc4418fa6654b10f0486",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER standard, field_strip 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "bf219b33825858d0c362069d20be5a7e11914c77220c795e63ac4d09a67a9baf"
+  ],
+  "positions": "65824ac762b9ed2579a825d3cd443597a6fad4b2fe3dcc4418fa6654b10f0486",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER standard, lines 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "8ac4e5a31919f90096cc3866948b608d88f53535b69fe55dd97bef4c70ce06fb"
+  ],
+  "positions": "81807968258e7590a0805bb097facee20d2653321a13266aab2f1f0ab658aeef",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER standard, lines 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "d9584c48bbe281543be6106a91911e439e7ab81fa85ff4031062002bdcd2ca75"
+  ],
+  "positions": "81807968258e7590a0805bb097facee20d2653321a13266aab2f1f0ab658aeef",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER standard, containers 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "fb5bc88e20b58a8fb950c581f73f99de1886f484fa2b853830b9de316c87f7fb"
+  ],
+  "positions": "44625b3fc37c47b33adb0212b5b219aaeffe1e6065ebdb739100fbac84f8a976",
+  "measure": "bd6dc93ce17b6a85be8e02b911d5fd64693d029f0ad36396371de42693975eb8"
+ },
+ "SHIPPER standard, containers 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "0829a0b4f503dacbb16cb9c9083f812e60f44078df95801eb55bb0b84d0336bc"
+  ],
+  "positions": "44625b3fc37c47b33adb0212b5b219aaeffe1e6065ebdb739100fbac84f8a976",
+  "measure": "bd6dc93ce17b6a85be8e02b911d5fd64693d029f0ad36396371de42693975eb8"
+ },
+ "SHIPPER standard, serials 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "568075694ea3a9af5cd166d58c33643f06d0d7a5f9d3606642fddceb6d5e3f62"
+  ],
+  "positions": "216bf6e0ad0b465d13aef1de9c8a0ec1476060cbacbccde5226965fb953ed4f5",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER standard, serials 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "0f067358e1e7c4b13999d8b2141fda5032b8a901a5df08f5c4f94da0e3e6fcbf"
+  ],
+  "positions": "216bf6e0ad0b465d13aef1de9c8a0ec1476060cbacbccde5226965fb953ed4f5",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER standard, totals 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "9884ea37967b5985a6b3ddcbb75fddaee80da659db4d08f7cf18e06e10706753"
+  ],
+  "positions": "96f7873326b7507cf66080571597db8f8ad5801901acd02ee916e91e015eb160",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER standard, totals 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "e31867394369d2c6513c17a8609910e2f7ffa6a60f35904299e1ae51922af0f3"
+  ],
+  "positions": "96f7873326b7507cf66080571597db8f8ad5801901acd02ee916e91e015eb160",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER standard, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "7c073ff39ea31701d5246fdf2ee70db10269208625c75fdd7a2935fb47124a97"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER standard, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "2a2643852bf3d99c53636b528b7b53b307231f4a4ec776c432db989763d91584"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER standard, 60 lines [page line off]": {
+  "pages": 5,
+  "perPage": [
+   "cdad8e294d149964967a07ef9fd50f5678b83ebe3616a1ad697d51523e19dd86",
+   "59ede835c33d7ed9a19b554a7178a8a1279214c2c9a5443296f46a743e30a089",
+   "753ccc06a4edac8690a7dc936f5aa9c63ecb4f1ff2ebb618380f01d6ff9add87",
+   "da06a0f9f37a97aa5099c095c57d82e18bc184161e9a9b9c821b8235602e16c2",
+   "c823c9e6483220275e8edac9e0d8197e99927104d1480f4a98dc73e699326e89"
+  ],
+  "positions": "42ab172e62de9d281a862e476d3769e4d246af220b7968d5ae475e2ff01e39fb",
+  "measure": "25adf2f01b98c0b5c3b0195d068298cb914c44929bda981735157cac0f5620ce"
+ },
+ "MOS_SHIPPER standard, 60 lines [page line on]": {
+  "pages": 5,
+  "perPage": [
+   "ed81b0e2096be8f40c9b12874976f42aa2303e1a4c7447e1ae4fa9abb00f3e53",
+   "505d6992f759dec353b8ddfa43d7b4d150e873b4c0ae1ecfc23e04ac508eed71",
+   "f06d469bd8a0dd5a6d3d53c6f67a2f27b6c092029c59080c832f22f928a8a25d",
+   "16b4542a960c894cbdb4815fb876ac56108b6c033c217c560aa52c57e8f90a23",
+   "975f3975a72bad932741fac1bf19715b20674f32da1d67fb992120f2e9510cb1"
+  ],
+  "positions": "d7b8cf9bda31b8948239851449af669a0c1694003a8de6b8157eb8dd2e1abb3a",
+  "measure": "9c0ac1bf62ed3b696d3acfd564f733af21b868009142dfe86c7aa8a3320b575d"
+ },
+ "MOS_SHIPPER standard, long-word record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "36fe994ef073c694ba6eaac43f4b8c99d11126be4ece5068ff9c27a8199cdddc"
+  ],
+  "positions": "9d56ed0aae90778a36394d6eb17b131dea6a75f107f9cb0f088831538a0b946b",
+  "measure": "2b1f8dc10d5b77360cfb654f9966dc5ff45c3fa5dc95b7b0805fa7ab9950f6a9"
+ },
+ "MOS_SHIPPER standard, long-word record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "a6b3a9901e60e34daf2e9a11091ba48842cf65620837828aedc134995ef1548f"
+  ],
+  "positions": "9d56ed0aae90778a36394d6eb17b131dea6a75f107f9cb0f088831538a0b946b",
+  "measure": "2b1f8dc10d5b77360cfb654f9966dc5ff45c3fa5dc95b7b0805fa7ab9950f6a9"
+ },
+ "MOS_SHIPPER standard, Liberation Serif base 10 with a logo [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "0ec83898fdb2894b1362be8f11e9efb39792de28dd17c3f13f3659cc8eb8df0c"
+  ],
+  "positions": "f06749a0a2dd3b6490da3adce6f84398ed214065a38a9f8aac7a221d6381e093",
+  "measure": "ddfe7eb654d4484ceee1ff932c52d00400e48daae795fa93a8bce38053547095"
+ },
+ "MOS_SHIPPER standard, Liberation Serif base 10 with a logo [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "48f6870ec8ca62e52ff890a4d0e7e947707dea1876d6a0d55bd6071462cb4adb"
+  ],
+  "positions": "f06749a0a2dd3b6490da3adce6f84398ed214065a38a9f8aac7a221d6381e093",
+  "measure": "ddfe7eb654d4484ceee1ff932c52d00400e48daae795fa93a8bce38053547095"
+ },
+ "MOS_SHIPPER standard, 120 containers [page line off]": {
+  "pages": 4,
+  "perPage": [
+   "57b3e3ae1adafa25ce62ecfa3e8bb6161063860ed28a8c257c68feda1b8902e6",
+   "eee096a6339d198661446345cb5066b2c4c360f8937ca1d354113ada3ee8b36f",
+   "f92a706c47cd20dea8f5be3502046b2bcc3a06976a259dfe7872bcdc59e90869",
+   "c823c9e6483220275e8edac9e0d8197e99927104d1480f4a98dc73e699326e89"
+  ],
+  "positions": "339c2abb6dbf34e6c7a0b24130ceedc6297469e8d4a523a5d252cf55d72019a2",
+  "measure": "3615f5fe0129998bf32cddc7335800261ce80ec8edf8baa1239e4f6e5123be2f"
+ },
+ "MOS_SHIPPER standard, 120 containers [page line on]": {
+  "pages": 4,
+  "perPage": [
+   "b3486dff1e59a95b155ee35b88ce668bd7c6e9f3c2f93f664ad501c2b5e93260",
+   "65b61f8e2de2bab25c1437c67a8ebd1a3c29ee4bc6b06aa07a9b1492cf199c71",
+   "1de5541139c063f0457a0f554d5f871e39d11ad182474bfa0f45580b9bc2bf3c",
+   "975f3975a72bad932741fac1bf19715b20674f32da1d67fb992120f2e9510cb1"
+  ],
+  "positions": "72593a46119363f1c1686e5c9fcf27a9ed9c794254414efc4d76e6f522b2e12e",
+  "measure": "5455a8f2dcdd107b749b8c0acf6320ae8502c1c38884478e6782a9002a451f6c"
+ },
+ "MOS_SHIPPER standard, 80 serials [page line off]": {
+  "pages": 3,
+  "perPage": [
+   "5f564742ed1529c4cdf6784af3989aca5b884adac80c111deaa113a0cf982895",
+   "4f82f72b2e452e6908c0827fe13ba94eb55bcecf0516b2d9c1e66c005af3d63e",
+   "c823c9e6483220275e8edac9e0d8197e99927104d1480f4a98dc73e699326e89"
+  ],
+  "positions": "caf0e4787e91b414615cbf3386243015a8241f6ff288f5f2c5b8ce7f451259eb",
+  "measure": "831fd6d9030f6a593b6e8dc13fca46a2085f946dc2da4593e14e1d3535ccba6d"
+ },
+ "MOS_SHIPPER standard, 80 serials [page line on]": {
+  "pages": 3,
+  "perPage": [
+   "2344f419c9fefe3d43f364b9856243ad3ad6a5870ebe7801bbc8cbe546a56dda",
+   "f1713e4745b4a2a0d54c5730acaae12cc59037e63b76055ea2b327e52a5c36cd",
+   "975f3975a72bad932741fac1bf19715b20674f32da1d67fb992120f2e9510cb1"
+  ],
+  "positions": "4136d6536b006db1853666aa25818b485e2aaf482ba495535eb2bae3a8059eea",
+  "measure": "c5771f92d0271cec560261765391d1394839bd553e01bd8cf76178e365f4e78a"
+ },
+ "MOS_SHIPPER reordered, full width, 110 containers and 6 serials [page line off]": {
+  "pages": 4,
+  "perPage": [
+   "da9dd14faa3877cdc8efd9cc9345d09e49da95be7b47f004b0fd49658b832ed6",
+   "d842c4cf9208563be85e7e9eff339120ca5aa818fb1aeb96da454e725098b289",
+   "9e1ae60ea8b86fa67dca8bac30b5567cb60aa9ca23c229fd1fd60197e2e39755",
+   "64af4536c97da247b6f5a7c2b05c07248136a79368e8a1e65f04031aeb987e09"
+  ],
+  "positions": "fd97e246e98ac584bf879076037515779d29756f0daed9ceb71502261a910092",
+  "measure": "a2573a3da3cf46eadb024e151ef59f181f06aa734baaa6d6f67d1f4a1f0a9e7d"
+ },
+ "MOS_SHIPPER reordered, full width, 110 containers and 6 serials [page line on]": {
+  "pages": 4,
+  "perPage": [
+   "97cbc15cac061e0e0ac01cc84a9f21568b3f6596ce21c0c16011e15d4ffb7ffe",
+   "08a05a17d16302edda47c51be115142f1e9e1a5b5765a25ca38b432799de6a43",
+   "6191871fce3ffb6676b11a3385058a14376a2306da9fa4f414deda2fe94eb882",
+   "93b5de34fe302abb85f996a77155962edd8933e1a05801077223b07dc7c7781a"
+  ],
+  "positions": "6a6c8e4786fde5076289a6c434296b7c862492fa2da353d0ed94a9d7e45715a5",
+  "measure": "dd9b3cff64d76c35c597469852d73aa663cec32365cb5ab49d384ed5185f9da1"
+ },
+ "MOS_SHIPPER standard, lines 40 pt in, 60 lines [page line off]": {
+  "pages": 5,
+  "perPage": [
+   "902127e054e0a764b2ea118eff082733a28d07f8fa2bb1265fc8ba4aab9d2816",
+   "9db68212f3b2e3892bf4332142dbb50d2ddeb9c7392b74747c80e48d41e9a08a",
+   "29a76995b523c9f408096f105b97f2bd62c04020763e6bb43d8284bb349cf64b",
+   "da06a0f9f37a97aa5099c095c57d82e18bc184161e9a9b9c821b8235602e16c2",
+   "a566c8ac75ca96f90f678d75807df442999129d5192585e5dab3dc68202153d0"
+  ],
+  "positions": "f2727a234829f71cb403744823e08a725d2757aa80e9bb737acafb4c4a52d2cf",
+  "measure": "25adf2f01b98c0b5c3b0195d068298cb914c44929bda981735157cac0f5620ce"
+ },
+ "MOS_SHIPPER standard, lines 40 pt in, 60 lines [page line on]": {
+  "pages": 5,
+  "perPage": [
+   "a9478456a7c04ccb0b012d911ef7cb591ebe84408cbb0f976194e8b8d771324d",
+   "0728ae7b7f03cf541d797db8a4077d1ac724a69dd18769b7d5dab560a99894b5",
+   "80591a5ca3e2ecce64bb9703793025c4a1f694a8836bb2966e5f958b219c9053",
+   "46d8f631ba8f401287ca7d17a0b1a4d0be49ffcc549d74b251613d022ab3b2da",
+   "d73708bfd000f03c53e21eee776320aee51a5207fb230abe69a163f84581b814"
+  ],
+  "positions": "a950bcf88f98ece86d31c866a2cb11b33b8770e78d6d64b733422e024decc1f6",
+  "measure": "9c0ac1bf62ed3b696d3acfd564f733af21b868009142dfe86c7aa8a3320b575d"
+ },
+ "MOS_SHIPPER standard, containers 40 pt in, 120 containers [page line off]": {
+  "pages": 5,
+  "perPage": [
+   "cd961ab5b27604b8fd65824998d218cade810ef3f8a0389984c5346d154645a3",
+   "ae57043dd90fef1ccc63169d91463a081e7734a0907f0cb569798bd163c8aff3",
+   "acd8a944d8559be666e4d5204bb4c9a4e15edae344d15051854f930dfdd4af25",
+   "f93235b99332f91f2905470947821bc2121f15b1aeefca612aae09557b3ae4d3",
+   "0e8ce7df9a977b452aa6326ffe27d9d7d7ee115af37dddf16dce29ce887c0352"
+  ],
+  "positions": "7d1db83346a3ea55268dc7ea4b21537155805e3eba3f9f42ef411ed26ef5172e",
+  "measure": "d283b871cb08d3d8b0d7a5fac58311cd2483e5f093797927adb9803147473d56"
+ },
+ "MOS_SHIPPER standard, containers 40 pt in, 120 containers [page line on]": {
+  "pages": 5,
+  "perPage": [
+   "8d38316fa3b000435f0ed20c121a1ccad5e2ce03f6c5eaaef2683a7c912daff0",
+   "08bb4eaf3be67e821c5a38a3010da69a01e8b5f43b1ec74abdadf7d38f15390a",
+   "7cb7e4f8e5dc55e858ea13ad4ae9287a4ff97d88ddf8072cb04fe1bcbe6efd02",
+   "a0d09fc62a87ae9ba4f63ddf4cfe9de07ce2072e6787b85ad8bcc22d95562cdf",
+   "886c0158445245365927582edfb39074cd8db4adb4bc5a9a868664a645b1fa08"
+  ],
+  "positions": "4f78dabb03f67a65f308faee2119e0bf4bc0f324ddf3b43c4de602a09e02d374",
+  "measure": "c81bfc52be5e77ce0be2424d04bc19f6bee3c105660d55bb2dbd6404d87066c0"
+ },
+ "MOS_SHIPPER standard, serials 40 pt in, 80 serials [page line off]": {
+  "pages": 3,
+  "perPage": [
+   "5c8f876639e5fabdb58766be957d8b112dfbb9ccbe8c1997408291482b848391",
+   "671c0e40d6c600bff5c021dc400033f5f40496662b96171ffc5bd67352813d70",
+   "8d5c82233368e5f4377e862bdb5144cc0c588a633db9c14d293ee6e2b27f4245"
+  ],
+  "positions": "d0525a4f1cc241bfd6f3bb17df2174bec0174ea542f64fd260e63db4f79eca3f",
+  "measure": "831fd6d9030f6a593b6e8dc13fca46a2085f946dc2da4593e14e1d3535ccba6d"
+ },
+ "MOS_SHIPPER standard, serials 40 pt in, 80 serials [page line on]": {
+  "pages": 3,
+  "perPage": [
+   "37a49d72126beafa0531af696310cb035bd12b3522f2fd6a7e07384a9f8a8973",
+   "afd9ba05109db9abe585fc8a1cdc912777099b94800c891e512d7897bb8996c5",
+   "ed3a9e24e49d243002c0135875e6b0ca4ca9fd97426fc3405567c01231ce2d52"
+  ],
+  "positions": "d8d1247c8365ecdc8eaa4f2ca635582ec63037f601b74c03b8f25de9a9f78588",
+  "measure": "c5771f92d0271cec560261765391d1394839bd553e01bd8cf76178e365f4e78a"
+ },
+ "MOS_SHIPPER standard, field_strip 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "87b7302da9f97e339e5d22147840aa3a8dbf34ba03c63fc7fad101166ec53bb5"
+  ],
+  "positions": "65824ac762b9ed2579a825d3cd443597a6fad4b2fe3dcc4418fa6654b10f0486",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER standard, field_strip 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "bf219b33825858d0c362069d20be5a7e11914c77220c795e63ac4d09a67a9baf"
+  ],
+  "positions": "65824ac762b9ed2579a825d3cd443597a6fad4b2fe3dcc4418fa6654b10f0486",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER standard, lines 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "8ac4e5a31919f90096cc3866948b608d88f53535b69fe55dd97bef4c70ce06fb"
+  ],
+  "positions": "81807968258e7590a0805bb097facee20d2653321a13266aab2f1f0ab658aeef",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER standard, lines 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "d9584c48bbe281543be6106a91911e439e7ab81fa85ff4031062002bdcd2ca75"
+  ],
+  "positions": "81807968258e7590a0805bb097facee20d2653321a13266aab2f1f0ab658aeef",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER standard, containers 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "fb5bc88e20b58a8fb950c581f73f99de1886f484fa2b853830b9de316c87f7fb"
+  ],
+  "positions": "44625b3fc37c47b33adb0212b5b219aaeffe1e6065ebdb739100fbac84f8a976",
+  "measure": "bd6dc93ce17b6a85be8e02b911d5fd64693d029f0ad36396371de42693975eb8"
+ },
+ "MOS_SHIPPER standard, containers 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "0829a0b4f503dacbb16cb9c9083f812e60f44078df95801eb55bb0b84d0336bc"
+  ],
+  "positions": "44625b3fc37c47b33adb0212b5b219aaeffe1e6065ebdb739100fbac84f8a976",
+  "measure": "bd6dc93ce17b6a85be8e02b911d5fd64693d029f0ad36396371de42693975eb8"
+ },
+ "MOS_SHIPPER standard, serials 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "568075694ea3a9af5cd166d58c33643f06d0d7a5f9d3606642fddceb6d5e3f62"
+  ],
+  "positions": "216bf6e0ad0b465d13aef1de9c8a0ec1476060cbacbccde5226965fb953ed4f5",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER standard, serials 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "0f067358e1e7c4b13999d8b2141fda5032b8a901a5df08f5c4f94da0e3e6fcbf"
+  ],
+  "positions": "216bf6e0ad0b465d13aef1de9c8a0ec1476060cbacbccde5226965fb953ed4f5",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER standard, totals 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "9884ea37967b5985a6b3ddcbb75fddaee80da659db4d08f7cf18e06e10706753"
+  ],
+  "positions": "96f7873326b7507cf66080571597db8f8ad5801901acd02ee916e91e015eb160",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER standard, totals 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "e31867394369d2c6513c17a8609910e2f7ffa6a60f35904299e1ae51922af0f3"
+  ],
+  "positions": "96f7873326b7507cf66080571597db8f8ad5801901acd02ee916e91e015eb160",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "BOL standard, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "00e2f8d89098fbc3e74aaa7e58b7ff575bc13ee58cfb8be74cb9a5ce6ac35f92"
+  ],
+  "positions": "b0e705a3f15133b4a0d268fae761d651b8be64de9238999f520557c79955e0e6",
+  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+ },
+ "BOL standard, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "be9549d472d4ae16ff4ea98f8b5f57c5b607fefa7b023cc87dc32f69c42c5aa7"
+  ],
+  "positions": "b0e705a3f15133b4a0d268fae761d651b8be64de9238999f520557c79955e0e6",
+  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+ },
+ "BOL standard, 1000-word freight [page line off]": {
+  "pages": 5,
+  "perPage": [
+   "06530b667c2eaefc15a3ddfa8a61cd812ec0cbf97a57bb0d701be4f493ff9ba8",
+   "aea8e310b85338f108102579d5bc6836bae93e818d1244575966fa752ffd68b3",
+   "53ab8be50413ed588ca1196b9f45df97707e036783101b9d1dcd2bb044e5cdc4",
+   "53ab8be50413ed588ca1196b9f45df97707e036783101b9d1dcd2bb044e5cdc4",
+   "920cac1f1cbd621a640e34445374838d16d3d6d457b28a799edeb822b0470c7b"
+  ],
+  "positions": "bce4b45299c312b46f339911aaf8f4fe971042f946d512727e7e81b4446899a5",
+  "measure": "595238c75d95d979c84422ff208a452ed7e8d5948563719c50f49a92e1e17b35"
+ },
+ "BOL standard, 1000-word freight [page line on]": {
+  "pages": 5,
+  "perPage": [
+   "1690145fd1273738dc8eed07202a5bc071c9e2de6870fe0e929e6b4a5fb58edb",
+   "ba23453d53c7aa78c6a04b68942f6e39ba1d69cb325471b3a37f65647d22d8b1",
+   "8f2b1e3f2da890d1f773ea77d6f997fccaaa2415e351cf3542461c92c8035197",
+   "914a466182cf0ba588a233d53ca848a93100b3c9c27d63e64a8ab0fba404ea88",
+   "6917e20cbedb3c7ffe1aa2728d906bc9de42bc0dd24cd8c25712d06a08dfe704"
+  ],
+  "positions": "74e73064a90c4467b5273795c346ca97d37d6624c3af81f64ddc9b0e0f698a45",
+  "measure": "934ae0bc712c96abc79f1af323dacc5a569155b3db99eb1329747b392f89a6c9"
+ },
+ "BOL standard, long-word record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "cc86974ff1540afb2a55fda420c00efcfff9875b4a60e94ea940ababfc24bb9d"
+  ],
+  "positions": "b0e705a3f15133b4a0d268fae761d651b8be64de9238999f520557c79955e0e6",
+  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+ },
+ "BOL standard, long-word record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "d00a8b58bdea5833e196b1b53cb299b9fe2323e27c14d3edcd08c8379ad56fd2"
+  ],
+  "positions": "b0e705a3f15133b4a0d268fae761d651b8be64de9238999f520557c79955e0e6",
+  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+ },
+ "BOL standard, Liberation Serif base 10 with a logo [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "026aad2592e0b7f0d5ed1f1bae31cc9f03ec846533fa174e3fcb0859feca7b6a"
+  ],
+  "positions": "3f4cf3bc6282f4a732420fe8ee7afca6f315418e6b85bf25a86545d976bc1af9",
+  "measure": "9c01dadce405181ffe271f491567fb81cc14e1e5b61dd2ded8ca4705c8b2b288"
+ },
+ "BOL standard, Liberation Serif base 10 with a logo [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "6d75f7d24e0fee017c5996fa79b3cffb9e05453367624b3bc30227da4ad4839a"
+  ],
+  "positions": "3f4cf3bc6282f4a732420fe8ee7afca6f315418e6b85bf25a86545d976bc1af9",
+  "measure": "9c01dadce405181ffe271f491567fb81cc14e1e5b61dd2ded8ca4705c8b2b288"
+ },
+ "BOL consignee ref full width, 1500 POs [page line off]": {
+  "pages": 3,
+  "perPage": [
+   "e0ba92cb322daac8cf669bb02aad74c2d6dbc29448ed9d250d417ca450a14e77",
+   "fa7832689c3212ce63f800b1ca58ee6dc39a8b1671be3c7e11f9cbb6e0da556d",
+   "81fae9726ff6c8c692c456a528caee4b9643a9b389c877b1d9129d056a9e1073"
+  ],
+  "positions": "16d739671a6d5c2f3828b444bcea6eec9f0f3052d4e12b16e23002d68b4665a2",
+  "measure": "ccf4e7092e3415ff416940bd6de688b9fda934bb3283470ce0c812db75df75c2"
+ },
+ "BOL consignee ref full width, 1500 POs [page line on]": {
+  "pages": 3,
+  "perPage": [
+   "761aac92970f06c7ad82ed91f70fff2fd941ad1cf29420306c5280ba48a4571d",
+   "df4ab48b90eb8c17da04b137a9720075bcfe0bc3ef6e4ee0cf79d9e749897c95",
+   "5b9207b5e8dff69394de965c04d3dc4d37677fe2827410bfbeed9c0c4375b650"
+  ],
+  "positions": "281b7ec071f12a96fbf42f4cefdcb254580108f9fc555a09201ec876a1b5977e",
+  "measure": "f7e83dcd4f1b9c97ec785b69f89fc29aeba74e37178be3901ea9e408157a7941"
+ },
+ "BOL standard (consignee ref 338/244), 1500 POs [page line off]": {
+  "pages": 8,
+  "perPage": [
+   "0af9da36d7ed1901df51d55f9131db98038ebcc7d5012ba5323c1146cbb25dc4",
+   "9ebfbb0506865cee795fd8fc3cf1552b80da283e8d4cea3a789996f9eb6b4aaa",
+   "bbea82d36e4e240602339787ebe3a6d6314f580430066326fba92d05c45f9a82",
+   "9ff7387e1a774e5d7389633b5ec749710b53fff9234e2743e32001ef59fed93c",
+   "e8ff69871d5ab701a40ad8ffaa0edb243ca9174331da4d12762d3e84f340f6cb",
+   "f325afe4086868a312303b82b8c4cbe819d126b12fb6ad6eea184259bb7c9bdc",
+   "d0452708fef9270b6fe9d149218cbf37c6efa44d2effffe3926f0a61b7322745",
+   "81fae9726ff6c8c692c456a528caee4b9643a9b389c877b1d9129d056a9e1073"
+  ],
+  "positions": "95fbef7be54a40f34c47ac3552eae320cdf2deaf451de1f9a7506e882e7b2b9c",
+  "measure": "ee5b6056e89d59759104b8a2f7d83d31f60ccbabd635f82381efcf915908e961"
+ },
+ "BOL standard (consignee ref 338/244), 1500 POs [page line on]": {
+  "pages": 8,
+  "perPage": [
+   "6ea4a98633217e28545c6979a31a596959c5da0cb1bbda064745005295074b06",
+   "c0f49dca51795c5e888024e2d4452e2ba02c8d34cf3e6daad2b61e596d375f06",
+   "1b0cad67ddc35ca7bddba3db0d719c3eb047b8dc24dfeab644932a230e2aae26",
+   "5ebee99590dd8b8d9464e6c4c3f751caf527ad475eb33e2afece34b1bec167d4",
+   "b28930f4d6612e58e116dee43f02b511a4d7e893fd7b242a29da3c736b313a52",
+   "0b71ad5894fa2d9cf63e0f6833c557ff2310cf3fc12def74165bd8f920685e59",
+   "6655b33ffb763dbbc4265a23656df16928a46701ef62ea657865456f9b01c376",
+   "c3d3a76d3b178cd78fbfbb9a7ec90f23bb8ef9d735205d91b3ef18b09797455d"
+  ],
+  "positions": "30689ede0a29907ca15c15879721a5fffcf71737262f13af00caa8163532532d",
+  "measure": "2f4c84127ab528235a05d85216bdd4a1f82e81cefc3912bf91c6012b3c492136"
+ },
+ "BOL consignee ref 64/484, 1500 POs [page line off]": {
+  "pages": 3,
+  "perPage": [
+   "5cdcefd8365455325d570634305c7c5cabb9afe1aca0a0fc9b2d65f69cf16617",
+   "a45e80a358a6b8a4d5a93e9fdf51b15f22253e01c6844c21a356a94258e975b3",
+   "da017ba7b127a43f97eb9ad3902dcdd2eb3e59a37f7bea56451d4ab66206df4b"
+  ],
+  "positions": "b490249d80f37a8bdf7f5f148d020f5df15ae6e07030bb43605a1cd54b7d5f9d",
+  "measure": "43eac77ed7fc87de4a6a50a3996f9ed2856bdec4b7c063f841b0eec71fa12a8e"
+ },
+ "BOL consignee ref 64/484, 1500 POs [page line on]": {
+  "pages": 3,
+  "perPage": [
+   "ca6730926cbb0bbab6ea8653b2421a7cfa9978660e8df216ffa3f9b3f009c650",
+   "9a04af55be083a3d18cc90736de18b63048b92082dc4fba47dc7de6308f787cc",
+   "f1a9b951749c418863b56644f93e3890bcd60de1e713737b92a0032cee2e3979"
+  ],
+  "positions": "b09a93e284c3af0a66e14c407498d9adc6404de5a47f2e62fb9aa191db0944c7",
+  "measure": "508409f5e97108124c048a7e5fc115d78cfe74e02517291a936fa70e2d9764ef"
+ },
+ "BOL freight first, 400-word freight [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "d93f156728b915ee4e562c2704116b8b4131667208341cbcd373429c733c5f31",
+   "24af83f5a0c120d51563d3c76f7429a44b2d436f84b945c56c0bac2cf40a0844"
+  ],
+  "positions": "1316ffc8966d332021a3506a9092fa8dcda38dc7836bbb9c494a906f4189dbaf",
+  "measure": "63a53ebed22fce11300fed62c86a597629bd5bdffe76c42502251e5992e52d11"
+ },
+ "BOL freight first, 400-word freight [page line on]": {
+  "pages": 2,
+  "perPage": [
+   "b78fe479d9d10e05ed7b4c75607995a884d3de39b210b6d2e30f31a8cd2dcc2f",
+   "dbc538ae1f9f96aad7f815d15f83937ca564319530c03d99f6980a4d1a49c8ef"
+  ],
+  "positions": "72c3518982369515761c1474db18fa666058b28666b43762c7a224b2d438ea41",
+  "measure": "e023794e35e42a1495fae609f1a4428c1578046b413b0c3284565a0f7045b025"
+ },
+ "BOL freight first, freight 40 pt in, 400-word freight [page line off]": {
+  "pages": 4,
+  "perPage": [
+   "7f3c137443291a8dadc3759b216a6024e6a3e9e9c8d19adf764d1f7cb8c0a60f",
+   "ebd78d92f2b736764ddbda8a0872218948c03098d58f023f934432f9e07fa029",
+   "91599b2cec14fa07c830548a0c7e7e0b7927cc33e2c8a95f1f32504c9212aac5",
+   "d15ed0674314f19678f41840882190c7aeac9ffb47cc68e943b8b1ccbc98d150"
+  ],
+  "positions": "30103b7c42892a9a84f43690d3a00fc82e8413042746a97e8a2c43b8e56a510b",
+  "measure": "aea5b2cb9b306d4da7a1218c9644d47a5737abf98a16dfd273e4112dd96fdd7c"
+ },
+ "BOL freight first, freight 40 pt in, 400-word freight [page line on]": {
+  "pages": 4,
+  "perPage": [
+   "3b1d7f5c0a8040042f7f63d6fd6990d85b1a162d767c68b52b59f7a82d3bfc64",
+   "1f223decda38c39b71d181eaa2bf21206292022388ec4b11c1bda4b023474328",
+   "b97085790a1b13831b7e6cdcb789c1eed09d65faf9f73fd162dfba06adcf1edd",
+   "9eddca289cfef156fe6cb171cd6baaca4eeff510ab4f0588fd633830497ccc7f"
+  ],
+  "positions": "63f6d9b7543c6d3565d464aaaad6bd546673ae02b43770a88a6862f9d9fa32bb",
+  "measure": "2aaf7dd3645a292c62e7c04f664ca8079b059f17febcaf879b5a6b6f3ad1ebbc"
+ },
+ "BOL standard, consignee_ref 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "adecc5c4f097637dbad24359fa194ca80fdc03660361dbf4142a6def71d8ed25"
+  ],
+  "positions": "b9f7b42f9fe12118d40c71306f27f12f377558158e557778ee04e3cbd3c11194",
+  "measure": "52b75fbb9f8bb06596dc96cbc2319a25ffb8ae155978e3413ed8f8f358233f10"
+ },
+ "BOL standard, consignee_ref 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "12c5c1a7361a14f94f7173de57682a4a22f228ca883333825cd4f08f05d27d68"
+  ],
+  "positions": "b9f7b42f9fe12118d40c71306f27f12f377558158e557778ee04e3cbd3c11194",
+  "measure": "52b75fbb9f8bb06596dc96cbc2319a25ffb8ae155978e3413ed8f8f358233f10"
+ },
+ "BOL standard, trv 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "568512adf83008b2c33ba21535f79b2086b1c0085b74f6cc464a8d0c807b3952"
+  ],
+  "positions": "7bc03c54d90cb2274362d8cdc3f2e1dc52aa067e95f581fc329e5ff9da241f88",
+  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+ },
+ "BOL standard, trv 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "f5aba984a71b3268d739916d3fb9462495c68521798a3664eaf4e564a484ee0d"
+  ],
+  "positions": "7bc03c54d90cb2274362d8cdc3f2e1dc52aa067e95f581fc329e5ff9da241f88",
+  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+ },
+ "BOL standard, freight 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "6a21ca000350ce4222c5257b167fe355ad3580ef0b752700d52f33a320ddc20f"
+  ],
+  "positions": "5e239f332f9aef313a7295f8ca85217ccbd97bf305890fa9613dad307c956f39",
+  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+ },
+ "BOL standard, freight 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "cc75fe9712a12a57e65cf9a352606871b9bdf73bae72639d4dda57765fbd11cb"
+  ],
+  "positions": "5e239f332f9aef313a7295f8ca85217ccbd97bf305890fa9613dad307c956f39",
+  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+ },
+ "CERT standard, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "33ab1f600d9416a2cb6c342b23a157ba25d45fc74a30b2e7b9ced4819d5ec1dd"
+  ],
+  "positions": "a8b15e995dbc5ead0e873fc11c53d9bc2d4ebd95c2455bae2d864d2cbb073235",
+  "measure": "5db0c427905cfbeea160301393ae92a8a129baca9b1d88d5261795fe19bf8cca"
+ },
+ "CERT standard, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "8434b63095c3886bfd685f75b7cc49defe24c8825d84bea6ea15aaf8a35b4a32"
+  ],
+  "positions": "a8b15e995dbc5ead0e873fc11c53d9bc2d4ebd95c2455bae2d864d2cbb073235",
+  "measure": "56ab387fdcea14fec64024339b22cde737b7508e8ec708f55eed754df416a600"
+ },
+ "CERT standard, dataset A [page line off]": {
+  "pages": 6,
+  "perPage": [
+   "084899833e107fc20c04333e3e96c38d29a83c4d8d85c0063601d549799ab28a",
+   "eedacc9bb290775c6d31d1f685fd39d85696b00908115557ab774387da035213",
+   "4242ab7b4a2efd38b8636378c188f02be8a3bd9a29f57f618e7b0ec8d10e5a2c",
+   "c43ef1afb497134d53619a7254e89d339c1511b91a693d86e83dd98f56eed011",
+   "6f23d070a345cacb24b4582f67dcb74c04b73cac50edc1fbaa3b004f2aa1fcd7",
+   "93d96ef461ca69b3a2b4e7fa7a0322f08bc96841294130c6d26590de04e9905a"
+  ],
+  "positions": "2a423f78b9746db578a9a4a4ec2c41a48c981e86dec2699403578dc751302d87",
+  "measure": "a273a170bfebca928411a7099c48abcf84ccf9f0895b057805788e40d5f13d2c"
+ },
+ "CERT standard, dataset A [page line on]": {
+  "pages": 6,
+  "perPage": [
+   "ed586c53c2ba1ff9de8dae4a0dcdee9b2d7aca3b272f0c376f0914d4130541fd",
+   "1b99ea4267355d8bb65e30fbc9c0906dcf263f01c81a5203cbe53b0454ad6892",
+   "123e874e101fedaf36c84a5bfb01af024261200107b4a6bc68e581f940d6a007",
+   "69e47492bc0088a21569108da51c18388af205ccfbf844caaed88668b52c244d",
+   "f3d9c6c2f9f3cb05cf9bbc6613277d640b6147f39e08b14fd4f04f8ccdb474b9",
+   "1fa1540e2bcff3dac8b418d4e4d71fd5fcee295c97ad200ddc8f2f12c8482282"
+  ],
+  "positions": "b6c41e36eb556834f81b59dc9dae8b3c4d8a9341db765465266aca807ac0ca45",
+  "measure": "76c3baef44150b53e609d6c081d6236e9bbeba6ff260520d45df9d9f1ab668e5"
+ },
+ "CERT standard, dataset B long-word record [page line off]": {
+  "pages": 6,
+  "perPage": [
+   "084899833e107fc20c04333e3e96c38d29a83c4d8d85c0063601d549799ab28a",
+   "eedacc9bb290775c6d31d1f685fd39d85696b00908115557ab774387da035213",
+   "4242ab7b4a2efd38b8636378c188f02be8a3bd9a29f57f618e7b0ec8d10e5a2c",
+   "c43ef1afb497134d53619a7254e89d339c1511b91a693d86e83dd98f56eed011",
+   "4388c2ae6719461c96afa258a37fde5b49f31121884573ee576ac972fabf4819",
+   "4dbf331fee674dacafacf311cb9cb7985848cf197f701d81a4090cbdca615940"
+  ],
+  "positions": "30b1fbd310f805c86a249d8f44b003d0879ec906eec33fc1e50488e90ff3f324",
+  "measure": "11f636ab0462dfec5f635a6118f48abf9cdb8b523fc16826436d3cb404dfca9d"
+ },
+ "CERT standard, dataset B long-word record [page line on]": {
+  "pages": 6,
+  "perPage": [
+   "ed586c53c2ba1ff9de8dae4a0dcdee9b2d7aca3b272f0c376f0914d4130541fd",
+   "1b99ea4267355d8bb65e30fbc9c0906dcf263f01c81a5203cbe53b0454ad6892",
+   "123e874e101fedaf36c84a5bfb01af024261200107b4a6bc68e581f940d6a007",
+   "69e47492bc0088a21569108da51c18388af205ccfbf844caaed88668b52c244d",
+   "469492070477ca23af95b184ea01bce6e1708186d2d7f4320016119bf64def75",
+   "6b2b78412cbfcb806c5738142f24605355cf0bf7fecbc9ca57bde386909a1270"
+  ],
+  "positions": "5abdc82bbb4785235407d5a6a45fdbf72abfcfbac9d8c5d66bcb91e419939c08",
+  "measure": "3b2d750679f1a087745a484c1078a3e978a7ebbe084ecdd388654f1d2182decb"
+ },
+ "CERT standard, Liberation Serif base 10 with a logo [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "9703bae6dbad8bac8954b57bc624445a7e99fb5f11679faca6b10250159e80d5"
+  ],
+  "positions": "d43918e26022501192a6ebac1077bd60b6692ddf90654fcf3544619f9160c1f2",
+  "measure": "281c86d109073ac6fea3d44be52dfca665512cd4ab135cad0e1b6e49d513caac"
+ },
+ "CERT standard, Liberation Serif base 10 with a logo [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "4e3d57e66f74fd6f7b2f7b68cd4e73e4f4608e6a35b7b84f45fd2de877105cad"
+  ],
+  "positions": "d43918e26022501192a6ebac1077bd60b6692ddf90654fcf3544619f9160c1f2",
+  "measure": "c2e24b30611978effce73a5e7e0ba2a2b8ff5c80128c4002d6d5b5cd963619fc"
+ },
+ "CERT standard, 300 readings [page line off]": {
+  "pages": 3,
+  "perPage": [
+   "3924f155d8799f3d12fad36df8d62ee98fec33b3f0678f6a15459e6acd09fedd",
+   "eec9d2387ff5871dd8015c37fa9e7dc24284c2fb58b205034408c638cd96a6bc",
+   "9451fb371663c2c5eb49ee15cdec6cf2e83a008a32999cc3cdee841fb2ad7136"
+  ],
+  "positions": "26150191815def0c98f630849a037702b69307d011f1d2a1bd62850ee9dbf606",
+  "measure": "98b57c16c354fea91984be1a3e823ea7795986508e1a196e575d8d4190e2bd22"
+ },
+ "CERT standard, 300 readings [page line on]": {
+  "pages": 3,
+  "perPage": [
+   "c7459266d92596d026ede74b1f46241bc34139e314524218387bf0306be4080a",
+   "2af05aceb7957d9e9194daa70f52cb0da24f58df30e85458580a42e96c9c25d3",
+   "7e56bacb10c1ed575d08153970bbb619e8be5c4c145d5fd7ee1b2c28781a0bd5"
+  ],
+  "positions": "a573d3790ae8c25e6104010ee1c29f4f733eefc9ca7636784b85353466999628",
+  "measure": "0e6a96c6c651eec06fc82eee248a20dadce439ceac3bedf4ac44deb371d1ade8"
+ },
+ "CERT standard, requirements 40 pt in, 300 readings [page line off]": {
+  "pages": 3,
+  "perPage": [
+   "7fd40fe4e84c83c20b6838ef31403fe71616ea94c57a0799128f02e725232948",
+   "978788aa220a7599c19e82466e6f2d366fe86108e6a4ec8416a298edaccc14da",
+   "a79f624dabdbea76809d93b044a129ca99206ff3246c5de4f5f7652875755dab"
+  ],
+  "positions": "59eefee5133e1bd2c085dd13ce7e0421f66779de97bc7235e566d5576970d41a",
+  "measure": "98b57c16c354fea91984be1a3e823ea7795986508e1a196e575d8d4190e2bd22"
+ },
+ "CERT standard, requirements 40 pt in, 300 readings [page line on]": {
+  "pages": 3,
+  "perPage": [
+   "9192da93e2877577a656751e4cdd0b803d805c68706579c59d94a206c861a405",
+   "853c840dff1031437aaeb93ad7500192ea2a1cae620f1ec1723d21ef505cf31b",
+   "3dec697e3e43020b503b0b28e535e0ef4c90b75ef369fd5221fb8b061409d4d7"
+  ],
+  "positions": "8cb74eb0ca75ceedd24c20c4431b0b41c69022d4b9ae569dc279092e27a44b03",
+  "measure": "0e6a96c6c651eec06fc82eee248a20dadce439ceac3bedf4ac44deb371d1ade8"
+ },
+ "CERT standard, to 34.75 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "2171ba573caa0dcb437a55d6ec4d6241bf2eee4a675d1471cb2e6d224d90b11a"
+  ],
+  "positions": "d9e88a5051945bcfcbbe7bf6d5ad3331e710ff8f77db290c0d503b329d46486a",
+  "measure": "5db0c427905cfbeea160301393ae92a8a129baca9b1d88d5261795fe19bf8cca"
+ },
+ "CERT standard, to 34.75 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "2ef27b64dd2e41f8abd445fb71920d3f7981e2c9cb9887f2fba440df3a9b3834"
+  ],
+  "positions": "d9e88a5051945bcfcbbe7bf6d5ad3331e710ff8f77db290c0d503b329d46486a",
+  "measure": "56ab387fdcea14fec64024339b22cde737b7508e8ec708f55eed754df416a600"
+ },
+ "CERT standard, parts 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "ab5f7b9cee77178cca7b8660dfb0cb15736b9dd033fd118e106779c9db66934b"
+  ],
+  "positions": "231add73113acc0cb0a19b729ad30ae40426540196c4fb629c1053e0238b5422",
+  "measure": "5db0c427905cfbeea160301393ae92a8a129baca9b1d88d5261795fe19bf8cca"
+ },
+ "CERT standard, parts 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "588873eed16991cfec57a0ba60e862b0dbaf20b9121633dd87c02cdd03f049ec"
+  ],
+  "positions": "231add73113acc0cb0a19b729ad30ae40426540196c4fb629c1053e0238b5422",
+  "measure": "56ab387fdcea14fec64024339b22cde737b7508e8ec708f55eed754df416a600"
+ },
+ "CERT standard, statement 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "25a55fb44d7ce8cc2dc40e9ef4e4045ffc19d81e2039cd23ea9c4f1ac6203494"
+  ],
+  "positions": "747cad76445af95ff2124c517764269e5a070f882ba6484adca94427a94c9e3d",
+  "measure": "a9d4b62503a19f49440e7bb5251c784c5f011736959ef0de47b11727b9af4ecf"
+ },
+ "CERT standard, statement 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "5f76406ab412ccb80f2dba9248e0b82790be639c2616282728adb916ec127a47"
+  ],
+  "positions": "747cad76445af95ff2124c517764269e5a070f882ba6484adca94427a94c9e3d",
+  "measure": "e630e16e3367619a23efc50ea3f5ba91d8afc1452222cb27b8e5d03aef442c5c"
+ },
+ "CERT standard, requirements 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "38edf4183bfaa9fb61020628a811dbb99389936e2f4d414549a037f14fa563f4"
+  ],
+  "positions": "4c848349218df7eee9a7443b3d30749b6ede0b1b0db4c1f8c6a1c6880652106d",
+  "measure": "5db0c427905cfbeea160301393ae92a8a129baca9b1d88d5261795fe19bf8cca"
+ },
+ "CERT standard, requirements 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "40c02127a4ef8e70eec830e2eedd215cd7fd9245fceb88008e73dd54fdf0fe75"
+  ],
+  "positions": "4c848349218df7eee9a7443b3d30749b6ede0b1b0db4c1f8c6a1c6880652106d",
+  "measure": "56ab387fdcea14fec64024339b22cde737b7508e8ec708f55eed754df416a600"
+ },
+ "CERT standard, serials 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "3ae8705ad4417725139611387de622f28a19704434b0aef077f88469ecb62dee"
+  ],
+  "positions": "b4767e658ad7bbcf692d72dcd46bde55f74da61c07adfb8aea571377e69fe1ac",
+  "measure": "5db0c427905cfbeea160301393ae92a8a129baca9b1d88d5261795fe19bf8cca"
+ },
+ "CERT standard, serials 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "9f9a3453ac58e371d0f130a7b3eb33057a65579ebc1e8df4f96f4a19971f860a"
+  ],
+  "positions": "b4767e658ad7bbcf692d72dcd46bde55f74da61c07adfb8aea571377e69fe1ac",
+  "measure": "56ab387fdcea14fec64024339b22cde737b7508e8ec708f55eed754df416a600"
+ },
+ "CERT standard, freeform 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "d3634cf79c22ad7a05a3c016d1b4c5382d086246bb807ab75ff4091604e57c81"
+  ],
+  "positions": "1322a6df23f193d5f8169ba5a2708c04b9fe4230da8cc1400c45af69a27313d4",
+  "measure": "5db0c427905cfbeea160301393ae92a8a129baca9b1d88d5261795fe19bf8cca"
+ },
+ "CERT standard, freeform 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "80ae93b50a2819460339837585f939723d94e334a81f56383c330392f8422077"
+  ],
+  "positions": "1322a6df23f193d5f8169ba5a2708c04b9fe4230da8cc1400c45af69a27313d4",
+  "measure": "56ab387fdcea14fec64024339b22cde737b7508e8ec708f55eed754df416a600"
+ },
+ "CERT standard, signature 12.75 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "3d5ebb81bb598a075fdf90e360bc0af0556c5da5095efdac29bd6012e3c66b8b"
+  ],
+  "positions": "9da289dfa14be8da328d819886ea5e9a4e658304c72ba633b17cd5d1b0124d27",
+  "measure": "5db0c427905cfbeea160301393ae92a8a129baca9b1d88d5261795fe19bf8cca"
+ },
+ "CERT standard, signature 12.75 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "0f7a7053ef5ec3e455b7df7151954ac528f53614546838bf2c4dd74148f45ed0"
+  ],
+  "positions": "9da289dfa14be8da328d819886ea5e9a4e658304c72ba633b17cd5d1b0124d27",
+  "measure": "56ab387fdcea14fec64024339b22cde737b7508e8ec708f55eed754df416a600"
+ },
+ "CERT standard, parts right-only x 24 w 400, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "0bc4b64814d310d8e715df6fc8a1d8f237200588bf4389d7f563959fc12bc347"
+  ],
+  "positions": "a8b15e995dbc5ead0e873fc11c53d9bc2d4ebd95c2455bae2d864d2cbb073235",
+  "measure": "5db0c427905cfbeea160301393ae92a8a129baca9b1d88d5261795fe19bf8cca"
+ },
+ "CERT standard, parts right-only x 24 w 400, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "850a5a5474969e07d27e3be701d99c7e153cd7267f28687b0957917b02128492"
+  ],
+  "positions": "a8b15e995dbc5ead0e873fc11c53d9bc2d4ebd95c2455bae2d864d2cbb073235",
+  "measure": "56ab387fdcea14fec64024339b22cde737b7508e8ec708f55eed754df416a600"
+ },
+ "CERT standard, statement 40 pt in, one 60-character word long-word record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "1230cf2dfbbf37d829032119ac4996d438439f67ede1209e78e2c6494ef9a2c5"
+  ],
+  "positions": "0e64837ebef4a866da0348ba60be99444d57cf7ca4d990058c31d94d9beab726",
+  "measure": "400857d69218c1db98246c52b36220cfba6ac0e70e45e0d228fd09e51b37a237"
+ },
+ "CERT standard, statement 40 pt in, one 60-character word long-word record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "9ff0f91aa2858eb38c6210bb470354d3b644bd8465bb152b0d4273d50d268b7f"
+  ],
+  "positions": "0e64837ebef4a866da0348ba60be99444d57cf7ca4d990058c31d94d9beab726",
+  "measure": "1364014b7ff0797e442f4cf1ff22d420ab0ee1b964c0bfd9bdf06ef5d87ba767"
+ },
+ "CERT standard, To at x 288 w 300, a long city [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "05ec5b6a97eee3836157fe6d19de1568707ed4e861835836bfea0e9f64e09f4f"
+  ],
+  "positions": "250775fa532045fbbabccef4b15f05b6f772b299a83ab9a54cfc9e84c71320a4",
+  "measure": "bb900f18ca4de9bba42ce012f2cf364ae5f160c0210713bc9b249695cff3a4cf"
+ },
+ "CERT standard, To at x 288 w 300, a long city [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "430f4dff31bedff922ff8df3e5e39d9520d128f1e830e13b1a5a683c69ba48fd"
+  ],
+  "positions": "250775fa532045fbbabccef4b15f05b6f772b299a83ab9a54cfc9e84c71320a4",
+  "measure": "8c83881500df80bce011de7807490e5d3fc5116cb53c910e241492095ffbc418"
+ },
+ "INVOICE invoice standard, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "8cc4ee4d0948ef6eaa07a945729e4c4b29faa11e066390943b1571db543f959f"
+  ],
+  "positions": "5c09949004ee62fa2122a83619c630b756ad16392bea47600f097453a6783043",
+  "measure": "7df60266dfdcc5fa0dbd956ce20c73190df1cd30d28a98ae2f9aa57ed2f0b57a"
+ },
+ "INVOICE invoice standard, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "71ed314489303b8757b65e9bdcc1c5350cdee1dc394801bd08dc0e64d8cde9f5"
+  ],
+  "positions": "5c09949004ee62fa2122a83619c630b756ad16392bea47600f097453a6783043",
+  "measure": "be678b522eb26443fbb58bc12d73992ff1755bc6e6576f3d0e5b5ebd5c0411e3"
+ },
+ "INVOICE invoice standard, 70 parts [page line off]": {
+  "pages": 8,
+  "perPage": [
+   "08ee579e092ca39e7c0fb9ef8e45f24a66af9d479b21b12948271181cc2901da",
+   "60417372c5f244dbe5fc3ad65a487ca8ede72c83fdde1ff3aae3a240e52dad57",
+   "c65e1d752cf140afa0d8f25ec5d865abed90aa36ca67518cff9f6d844a18905f",
+   "4e3c31a18951cf84d6063de7aca5d31d4760563a7c8c08f06fb9880c7cea53f6",
+   "3b1b5ba43f2d8dd11a25ffdf695462c017e4052b245e54d6a82e42ac251c6f7a",
+   "feb76163878886fc9342c30921b89817a463237656c6f40a7339af00157aa502",
+   "22f5924b877200e43e5e12b64af4f6bd3899a8b8cd0c7d255f48bcb34faf2676",
+   "3b271a1d21bdcfddd9044d2e0bc56f5750be0cca7a9dfd04a3e54abd5f80eff7"
+  ],
+  "positions": "db2b9b1aa6048ed1a56259fc164105ffb6f8d73a18d380f03a69b0c538c97d8d",
+  "measure": "4452abc37a3a3ae71c54f2d0b62b9d92bfa7ce4793a1a32b291cfae48b684010"
+ },
+ "INVOICE invoice standard, 70 parts [page line on]": {
+  "pages": 8,
+  "perPage": [
+   "46a3b7c640628d2c8cefd4f89baf4fd75733df4b3b0330dee36383b9afadebf5",
+   "e3ea37964511192b81e7872a0d08052faa28eed9362bf9914ab0a999a7ea8c73",
+   "e8c807219527aeea00f4faaea2f3a8b249d35fe7f5fb7041b3ebdda6fd57cd61",
+   "2ebc715a18ca5bb648f6775e0491756e3d5431a7523c02331d627c6e32421d7a",
+   "aa595d550f1cc0f44e3dfabfd88b38ef98b58e82fe719fa1e7efef412765c322",
+   "d684f53e4d7dc31ca37efb50fede953455161bfaf594c4112161386b4da6da2c",
+   "3ab10d03b54c7f91ea9bc25fb2b70bb2f0f018437116da8526a458d2b1b2780e",
+   "4b5f3748dba575e0dae5b19ec115b803ca5b9078ac15a0425ca0baf99ff108eb"
+  ],
+  "positions": "1f401f352fbd1dcffd9930e741e0ec810d330c88d15dbb93012fb77636c8aab8",
+  "measure": "12c0de58439dda20f6e5d0a62a16bc946ca9ed139e79689d5c0e7752e56f0042"
+ },
+ "INVOICE invoice standard, long-word record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "ca1441a5d2b2b0ae336c7aebbe56e7fd72cf475b673320e8f9a784ea6498c677"
+  ],
+  "positions": "e236f4ff039724cef28bfccfd3f1cee01eb1690a49e8b41191ca162c48ee795c",
+  "measure": "2fa361090fd13fd363b718695af039fc729991013faf9079fff00eb351023fb3"
+ },
+ "INVOICE invoice standard, long-word record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "076b3b742d2bd522f73824f8f48e887bf5a11559981a1311924919daa4bd356a"
+  ],
+  "positions": "e236f4ff039724cef28bfccfd3f1cee01eb1690a49e8b41191ca162c48ee795c",
+  "measure": "f43f941cbbc737d746047d96ec3c2277722b256f983d9b616e6d664a217d243e"
+ },
+ "INVOICE invoice standard, Liberation Serif base 10 with a logo [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "1a1bc22802c2249ee7338caba3b3a0c0d41904700c90755c47bccc0cb8094656"
+  ],
+  "positions": "05a68fff158570f1c6ba81c6e6fac46513941b82249d84866bad8964122f8a67",
+  "measure": "40fb469dac641ff969da28a6429025dd0e423a6f97bf5eff0ef3bf5b1d3d01ed"
+ },
+ "INVOICE invoice standard, Liberation Serif base 10 with a logo [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "3206e76d3dc862e343fce922d273d6aeb190bd5782cb29136d16ba0c92e800ef"
+  ],
+  "positions": "05a68fff158570f1c6ba81c6e6fac46513941b82249d84866bad8964122f8a67",
+  "measure": "74116bac88e6b08eb2a28947e72133782e7c71922a9b23481a97ee3a5db32c00"
+ },
+ "INVOICE credit standard, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "74ded81f97d795ea92f85bf474b0d0819119a8bb72ee13ddbf03cad383ed9eaa"
+  ],
+  "positions": "5c09949004ee62fa2122a83619c630b756ad16392bea47600f097453a6783043",
+  "measure": "7df60266dfdcc5fa0dbd956ce20c73190df1cd30d28a98ae2f9aa57ed2f0b57a"
+ },
+ "INVOICE credit standard, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "cd90572591963d75f76cc36500003cb93d7d58ae9710712bea3da14ca532558e"
+  ],
+  "positions": "5c09949004ee62fa2122a83619c630b756ad16392bea47600f097453a6783043",
+  "measure": "be678b522eb26443fbb58bc12d73992ff1755bc6e6576f3d0e5b5ebd5c0411e3"
+ },
+ "INVOICE credit standard, 70 parts [page line off]": {
+  "pages": 8,
+  "perPage": [
+   "ec3857e86cb61eb4f0c2c3628c7e98a8283a64d7c5f96f411bb9e8255121b2fc",
+   "e3119f30475f98f120a8e02cfd3ce8b90d5644a9ff6493f19f5bbb7cf2434354",
+   "6c73514b19109b1ed4f7d9ec472289949c84e345a6404c55d826fa1ebf5189cb",
+   "bfa354305f102feb2c0e2a0db99386ff0236598ed9df8e91399e73787ea209b1",
+   "b56352ebc15d8ff2714c2b2b109041caf4759b3a666a6e33276e4a5ffeee54ed",
+   "7b69910d00ddeb43ca0a366391e0a297340dc2abb1799fb16ee70ede817fb3d6",
+   "752ed2107543a6a26c54ccccb43553e335f38d3ad73747d6f94f7cf7b71b7f1e",
+   "d0fce9fd46dd643d4fb9f63a7b5540b47ca52c0b292c6e25580889899df21630"
+  ],
+  "positions": "db2b9b1aa6048ed1a56259fc164105ffb6f8d73a18d380f03a69b0c538c97d8d",
+  "measure": "4452abc37a3a3ae71c54f2d0b62b9d92bfa7ce4793a1a32b291cfae48b684010"
+ },
+ "INVOICE credit standard, 70 parts [page line on]": {
+  "pages": 8,
+  "perPage": [
+   "12e8ca72b7510e3320e8fc723ab59280dd827139ec0706c75f55e5b987a6471e",
+   "0501fb8c7d54e62489e18967add62b9fcebfd70584da3ba309e48876d99cef50",
+   "2b9688459cf255ca0cc4132e464b7176a061e7faae8c859cfe3ddc8a3ea6c6b7",
+   "bce894109201edefd1a49496f4a2ad3a5f2dfc564a1de6dea8a3e6ef56c37c66",
+   "367d7c518ed5e0fb867f9458bca7b018a3166f7482d1b3967cc9053929c1aec9",
+   "4f13a38bba8a77c6f61a93e93cdc26ae75db4ebeb7b58fba730bbd1ebea3efa7",
+   "62dc95871e0f0232ca15fdc9274bc41b77cd0649fa122640b8eb87066039ecd0",
+   "c9c0a4eefbe93af2b6bb99c30bfa5dd7bc2d9497a30d58c5715047c5acacb50a"
+  ],
+  "positions": "1f401f352fbd1dcffd9930e741e0ec810d330c88d15dbb93012fb77636c8aab8",
+  "measure": "12c0de58439dda20f6e5d0a62a16bc946ca9ed139e79689d5c0e7752e56f0042"
+ },
+ "INVOICE credit standard, long-word record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "f12bc1c02949d0f99004b7312b628f4c7717455594c3a9065c94bfb3a04c3fdd"
+  ],
+  "positions": "e236f4ff039724cef28bfccfd3f1cee01eb1690a49e8b41191ca162c48ee795c",
+  "measure": "2fa361090fd13fd363b718695af039fc729991013faf9079fff00eb351023fb3"
+ },
+ "INVOICE credit standard, long-word record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "4c38941c39b2ab33c811ffbe1adbd5074218a49bc4884801438b62186ef39c6f"
+  ],
+  "positions": "e236f4ff039724cef28bfccfd3f1cee01eb1690a49e8b41191ca162c48ee795c",
+  "measure": "f43f941cbbc737d746047d96ec3c2277722b256f983d9b616e6d664a217d243e"
+ },
+ "INVOICE credit standard, Liberation Serif base 10 with a logo [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "d08e6907b7d3917fc5e21f5ade09c35034a81d5ba1a5a02cf846759eac322f87"
+  ],
+  "positions": "05a68fff158570f1c6ba81c6e6fac46513941b82249d84866bad8964122f8a67",
+  "measure": "40fb469dac641ff969da28a6429025dd0e423a6f97bf5eff0ef3bf5b1d3d01ed"
+ },
+ "INVOICE credit standard, Liberation Serif base 10 with a logo [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "449fa18c1132e551f0a62193776ba186ee55936c8095e064d150328dfeb4e52d"
+  ],
+  "positions": "05a68fff158570f1c6ba81c6e6fac46513941b82249d84866bad8964122f8a67",
+  "measure": "74116bac88e6b08eb2a28947e72133782e7c71922a9b23481a97ee3a5db32c00"
+ },
+ "INVOICE invoice standard, parties 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "d198729f8032a9e005725903f7a4594e15ba34fc4ec862bf351052309faede10"
+  ],
+  "positions": "ca642e79ebf02ff9700a5d9c3bf22f34b6729b8a2dd4fe9e73c9c384c77a6644",
+  "measure": "7df60266dfdcc5fa0dbd956ce20c73190df1cd30d28a98ae2f9aa57ed2f0b57a"
+ },
+ "INVOICE invoice standard, parties 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "f271a354dc664e2e06ffe3c017ca0006b7e58323a43b202e54b809f089f731b7"
+  ],
+  "positions": "ca642e79ebf02ff9700a5d9c3bf22f34b6729b8a2dd4fe9e73c9c384c77a6644",
+  "measure": "be678b522eb26443fbb58bc12d73992ff1755bc6e6576f3d0e5b5ebd5c0411e3"
+ },
+ "INVOICE invoice standard, column_header 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "f12a7321c65710588fbd9ee3573260b420eab59e44d3dfbcbf45d777848ebd02"
+  ],
+  "positions": "2c37f00eb888a59483c4917acecde22f9a56cfd03d3d54a5e3205091d8d92d0f",
+  "measure": "ac781dabf075fd5b4461212f825f467ed720461cf62700cd18bf4c026b4ac37b"
+ },
+ "INVOICE invoice standard, column_header 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "eed86686a08723265cbc3976e7dcea786ed5a2533aebe623719ca55dbdef3a18"
+  ],
+  "positions": "2c37f00eb888a59483c4917acecde22f9a56cfd03d3d54a5e3205091d8d92d0f",
+  "measure": "0a32970aef9189fd38d10475fa61c33b15fa20e9fbee523d585928a5a6a5bf96"
+ },
+ "INVOICE invoice standard, order_strip 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "d79ad3254a8b4c9622925dcb9b293faba847e8591feb5f80d068357d6d1473c0"
+  ],
+  "positions": "4ae0334e287cb8744ddde9f985d7e7cb7e5f62dabe9dd704411fb081b32d0d5a",
+  "measure": "7df60266dfdcc5fa0dbd956ce20c73190df1cd30d28a98ae2f9aa57ed2f0b57a"
+ },
+ "INVOICE invoice standard, order_strip 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "a26c887fa4622ecc71bf3f6c225ee9d81e30f7fcc398e1cbcf27c00e9f12313e"
+  ],
+  "positions": "4ae0334e287cb8744ddde9f985d7e7cb7e5f62dabe9dd704411fb081b32d0d5a",
+  "measure": "be678b522eb26443fbb58bc12d73992ff1755bc6e6576f3d0e5b5ebd5c0411e3"
+ },
+ "INVOICE invoice standard, parts 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "d8f7927c9fe23f725a1142de9d462175fe40776eafd0fb29d0b5f5573f676f88"
+  ],
+  "positions": "6373d29df1cde8d6575ded3fe79e7ceb1513da43122ebffb8240db02dc1f7409",
+  "measure": "7df60266dfdcc5fa0dbd956ce20c73190df1cd30d28a98ae2f9aa57ed2f0b57a"
+ },
+ "INVOICE invoice standard, parts 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "cb7de6cb8bacefc5226a1394cfcb431e1cda2efd8a25233b29fea90df6c28869"
+  ],
+  "positions": "6373d29df1cde8d6575ded3fe79e7ceb1513da43122ebffb8240db02dc1f7409",
+  "measure": "be678b522eb26443fbb58bc12d73992ff1755bc6e6576f3d0e5b5ebd5c0411e3"
+ },
+ "INVOICE invoice standard, price 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "5ddffead2acd1dc420ed4b91a1d4a605c91e438f4f6db75cd3841d76238b2452"
+  ],
+  "positions": "ea49e209d173bfd434c7ccbc93135fddc91c4791f88365f2abd36961c1decffc",
+  "measure": "7df60266dfdcc5fa0dbd956ce20c73190df1cd30d28a98ae2f9aa57ed2f0b57a"
+ },
+ "INVOICE invoice standard, price 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "475aec1c413aa6910169da27ac7d4653706a49d7883dafe434078f8c5ab5ecf7"
+  ],
+  "positions": "ea49e209d173bfd434c7ccbc93135fddc91c4791f88365f2abd36961c1decffc",
+  "measure": "be678b522eb26443fbb58bc12d73992ff1755bc6e6576f3d0e5b5ebd5c0411e3"
+ },
+ "INVOICE invoice standard, totals 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "b66a033e4bd451af9d897ba1e15038ac5e3a54d516e74cdf9414e50dd264fc93"
+  ],
+  "positions": "dbf1f281625e26dedafd1b579019acc63d89d85d0bcc00ccfff111dac24e3efc",
+  "measure": "7df60266dfdcc5fa0dbd956ce20c73190df1cd30d28a98ae2f9aa57ed2f0b57a"
+ },
+ "INVOICE invoice standard, totals 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "c1ad15bee7328182c4abbe7c5793b0bd591224291e530a2384defe9beb3de1c6"
+  ],
+  "positions": "dbf1f281625e26dedafd1b579019acc63d89d85d0bcc00ccfff111dac24e3efc",
+  "measure": "be678b522eb26443fbb58bc12d73992ff1755bc6e6576f3d0e5b5ebd5c0411e3"
+ },
+ "INVOICE invoice standard, price x 120 w 300, grouped record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "715554df3d0d87b9032a8d7c1fa4d55cb991250ef94b3327f7e1927b6a5827c2"
+  ],
+  "positions": "fdde02b68c6c2e1bc470d1f3a2293ce9b67eff36aeb7a2044245c6da27781313",
+  "measure": "8521c516b47e45230b952eb13ed1b56b1388039191c4e9c67cb4894538f484a1"
+ },
+ "INVOICE invoice standard, price x 120 w 300, grouped record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "082b4a75621a37a582627e9550f8193a88cff0b1c8b8225d2054b4ff915e68e0"
+  ],
+  "positions": "fdde02b68c6c2e1bc470d1f3a2293ce9b67eff36aeb7a2044245c6da27781313",
+  "measure": "5d005df71a09f9de449fa3362e64d132ee6a831c92f4bd0115f6b01589b959fc"
+ },
+ "INVOICE invoice standard, parts x 24 w 230.5 (the narrowest accepted), two parts [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "ec6d8d37b2e896e6494d5d74d91ea84f083a19fc780ad970bd1d97187a48ad67",
+   "ccf83e072767a7db864a53224e808cccbabaab8a54ba054e3fd426740ed87388"
+  ],
+  "positions": "0dfc79ac863e1416df52eb218e6f008a82434e1e50b758f09d6c98f463c5bc7f",
+  "measure": "5329532e7d767b8984165a43ddff5507b8529639e498c3567924ca9b10d678da"
+ },
+ "INVOICE invoice standard, parts x 24 w 230.5 (the narrowest accepted), two parts [page line on]": {
+  "pages": 2,
+  "perPage": [
+   "e3bb687b30c8618635bd413f22d4b6e6e1b9671b8d6126cd8799ae8493058781",
+   "9844edd070566ec5c100646ceef9da0a6096ed00300367bf8dfc236042ea3d8e"
+  ],
+  "positions": "fa6cb06634f94e78eea8017fd400999e3a626275ffbf6efa17edf260607028a0",
+  "measure": "e101e4c78a5f237d3055a25cf283754895e389a0342464e7c663c1a24665c4ea"
+ },
+ "QUOTE standard, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "39a717985f09c2676adc834aca77c4a40608f45f3cbcea1914875493f306d374"
+  ],
+  "positions": "b7fd0ca7bb62828965049a25bf56b315e526cf7e47a7f6c7e0cd28976d458242",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE standard, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "a183ce29815d4bb8f0f2538a7fbe7b52578e5dadde1d4e671787d561e353113f"
+  ],
+  "positions": "b7fd0ca7bb62828965049a25bf56b315e526cf7e47a7f6c7e0cd28976d458242",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE standard, 40 lines [page line off]": {
+  "pages": 8,
+  "perPage": [
+   "44ec0107dd119df4dda654baa40cfd1dac48f504babd3309706cc960cedefd71",
+   "fcc86ffb210730ef5145886322c2ad3f85c67ef026d6103dabe4cd0d82ebe3dc",
+   "c7f75d8a98b4fa28578018c0991fbc28875f80cf787d8b12236de776212839a0",
+   "a1ec7db6967cd24c0362bde0f35a0527ebc8b13ab35976c72f577ff0fffe120f",
+   "91dd08619ef16aa35b5af47f07fb64282d0224746def66f9ed02da634ae3a8f2",
+   "c6b51f073daeeacb4da0588cb9f58775465235dd0c406b4b134391e67d36afc5",
+   "dd57a1d21084136a324439e1cdb6a1702cb54a7718180de4341d44064a9dbbc8",
+   "60d51ccb8b6524a6ff82f670142ba06c7a821ab7b0c36cff4ebe92c8839e42e5"
+  ],
+  "positions": "82782818e68ded7c477dda02e05c3ec9c57ff51191590fa5e76451c8851979f9",
+  "measure": "44c2baaeba0bf750e1e21ff6396064d55ab078925711cd032be88b5a53b37cd4"
+ },
+ "QUOTE standard, 40 lines [page line on]": {
+  "pages": 8,
+  "perPage": [
+   "4fbc9b74a3abfb36e3012498f275209dddde580331b12b123716c95cdaa2112b",
+   "35b32ec9dda14d2b809bcb46099666979b7e8280c286d9c4da8e9395e4156735",
+   "4919d119c6a23b69468a66904136be08607153ff5baefb4051bdb041544af72a",
+   "aff834e29f2a220235527919214e8cc810c147f473784eca0c6605d06ee1bad9",
+   "2f53f1720f542e9d6d9ba84fe5fa08a4866a4b642ea6170d3079ae1e2f5e89e8",
+   "03f6271d2c019eda3e2301cb1c1ae7962965dd2c100a16aa233872726e9f88f3",
+   "ac17b023e3df43aa04ea82a9d02bcfa2c75416c71e38d789bb92fed4f601cd87",
+   "427eec8a994e196a9128eef88b2d109a2399f638227783910195498190169583"
+  ],
+  "positions": "d75a3d176f3898db930a1dfc9d6421141185917e9d33a3198b57dcddc3274171",
+  "measure": "f24cbec89e1fe958fae2af0d30ec8702c0f8fdd34c649d4723e844844062ab3e"
+ },
+ "QUOTE standard, long-word record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "043adc4153a831e2773448425f686fb3484c22939722a642fd08293c24ac8f4f"
+  ],
+  "positions": "829dff7ac5b479880e547c596e7873fbb249acd9b8b7150678172be4a8743098",
+  "measure": "f08d160d9aa231df973fc8a64785f2e64a95dbc8f0b9f756ff420d1f41a61d8e"
+ },
+ "QUOTE standard, long-word record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "0914ab596267b7b2d8252543b5b9178399631f17165117c4651fce4628882278"
+  ],
+  "positions": "829dff7ac5b479880e547c596e7873fbb249acd9b8b7150678172be4a8743098",
+  "measure": "f08d160d9aa231df973fc8a64785f2e64a95dbc8f0b9f756ff420d1f41a61d8e"
+ },
+ "QUOTE standard, Liberation Serif base 10 with a logo [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "d7fd9f0e9420e4e6a1ff5bcee4f055aeed4be8bef32482327c40a9d8f71c56f7"
+  ],
+  "positions": "effee0b5a2642cbb1b3f42b681e492fad21db6f124161d551c459ef6db4f00f0",
+  "measure": "d64eb23c8bacc49eb1c81733a4c0784325070da34e02682b625fec22dc89a90e"
+ },
+ "QUOTE standard, Liberation Serif base 10 with a logo [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "46260b957e3e8c07e71e5716eed06150dd1a0c3ad68f70669d5b7866dee3e4e0"
+  ],
+  "positions": "effee0b5a2642cbb1b3f42b681e492fad21db6f124161d551c459ef6db4f00f0",
+  "measure": "d64eb23c8bacc49eb1c81733a4c0784325070da34e02682b625fec22dc89a90e"
+ },
+ "QUOTE standard, parties 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "88eee4735c4991334d89675cf35ddbd03c9a786ee3aaeb52a9af8fa49b22a477"
+  ],
+  "positions": "02d9fd17c49c451a1af4564cacd1c4f38138c14b56ff65849d4f5d0cf4857e69",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE standard, parties 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "1b04f8a1bb50b40ffcae5292e70ad8d6c487890528892da08f50b44e091bd5f0"
+  ],
+  "positions": "02d9fd17c49c451a1af4564cacd1c4f38138c14b56ff65849d4f5d0cf4857e69",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE standard, intro 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "0efe789bdabb662ee2b976bd9208c8eb6a33bd519fe0f0bdd12abb93f4cae221"
+  ],
+  "positions": "6b82ad51442bd81efa6fe34240ddd37f62255627276f281ab2e5103f6dec9943",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE standard, intro 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "7fa671b26df465fdf4ecaa483966172d8e69fa41b301c90a089ddc0baab6e64d"
+  ],
+  "positions": "6b82ad51442bd81efa6fe34240ddd37f62255627276f281ab2e5103f6dec9943",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE standard, column_header 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "19e3b639765b4195d8289e5aa26fd8c7ffc61d73520923f483243a3914c1ce77"
+  ],
+  "positions": "f06ab1c34f45d8d5dcc6dc2e7111ff2da1d1a9ab8b05d7d6f51843c7cc1ed383",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE standard, column_header 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "6885681bb2e0ec4802ebb85075489885a3626c2e90be8ab9133b86d3253acc2c"
+  ],
+  "positions": "f06ab1c34f45d8d5dcc6dc2e7111ff2da1d1a9ab8b05d7d6f51843c7cc1ed383",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE standard, lines 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "b7cef4693e925115ee996fdcc9670496f38a23cdf388819615c4885f1ed19966"
+  ],
+  "positions": "59b3555867fedd208e578241fe27121b3cb3fad6bc7c9b5a9031f309be7d4b8a",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE standard, lines 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "dbf4c74d89631321b90a490b0bdba6add40f5ef8e908da6ccec20c6b59c6661d"
+  ],
+  "positions": "59b3555867fedd208e578241fe27121b3cb3fad6bc7c9b5a9031f309be7d4b8a",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE standard, closing 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "0bbe6a8bac78d6579a875c8e8584eaafd64d96ba448ec7dc82ac5662c63fb816"
+  ],
+  "positions": "d3742fbf25439acd6922b32a02f07c5f5056bdceee95d2d848ff37778019144d",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE standard, closing 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "b4e0b1c68bc4ff08bc9febd75df2eb0caf1d65ecf27f545ed5ffe371f18759e8"
+  ],
+  "positions": "d3742fbf25439acd6922b32a02f07c5f5056bdceee95d2d848ff37778019144d",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE standard, liability 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "0999ce0bbea0cbcab03074387680ded856a0f9fbcc847417228c44a5b5af95a7"
+  ],
+  "positions": "c10798518d474315234247f3b118509080f91051a91b6c60b7664644877ead1c",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE standard, liability 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "39944bee97b2e9ca511ca90c96348a6c3e11cfb96b064f76063ad9e7fb62aeb0"
+  ],
+  "positions": "c10798518d474315234247f3b118509080f91051a91b6c60b7664644877ead1c",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE standard, lines x 24 w 230.5 (the narrowest accepted), two lines [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "71c025014a6d69f00eb06b1403cc04350970eb91402e73feafb03787ad45415b",
+   "1596e5b225a1f8c241fa0197b1950b76830d02730f7f24376b030e43f707e0d8"
+  ],
+  "positions": "940d05729c56e699ec1ef7ec995daffc627fc2ec269589520c8fbce656bfd92b",
+  "measure": "b40eb0604bd3b90610f5cfbd12d4fd9dbbae5a7fac1d6812ee21bf15fe5d21e4"
+ },
+ "QUOTE standard, lines x 24 w 230.5 (the narrowest accepted), two lines [page line on]": {
+  "pages": 2,
+  "perPage": [
+   "53efe4d812e6d3b2e5cdbb3721a9fb08af6ea4ffcbb9db0901a5d13bab901638",
+   "bfcadcb0f553581c276eddf53511bfc8029ff9e88ad6ceac565be43db23d3ae5"
+  ],
+  "positions": "8abf44baf653ccda762c2207a5998a88beba6800338269dd31bbecc392433a86",
+  "measure": "c295acf90c6f0a3d685f0b7dc2f24ced4211c06d74a0a905420896dd9263e3d7"
+ },
+ "QUOTE standard, lines 40 pt in, 40 lines [page line off]": {
+  "pages": 8,
+  "perPage": [
+   "b63d27a995548ca76d813276586922d5896355725b99f254b7ab313ffb487270",
+   "b6101f6e619f29210c59d3ce617ddebd3ae0c39c9e845b5a6490eac6c2a28831",
+   "54afa53e3ac4deee2c559663322c64411863b1dc29cdbd0dc6be512940f2553b",
+   "70446ac5bfcf6dfe997354b03d1c71b176a5e18742c83e3e1c0b0edbcae67348",
+   "e24bab4e2ba1cac3855e454e86fdf13efeb306bbe62a87fa79d49b60c69aa2bd",
+   "ebe4fe9927ea352432be9d242a81e55afa32995101630e07768ccd01744590e3",
+   "e16f4d0671c748049fdd662e5add4e84270e5e777bf57627431ca4d06ba5d955",
+   "2e29d430df265345a862e03b3d86f0395d4d3bc68b33d820c58dc51a821eb416"
+  ],
+  "positions": "b5c9631fab7a006f20bef417cd3aa15c3fd7a0f1b9e0c423336e9e2c995477b0",
+  "measure": "44c2baaeba0bf750e1e21ff6396064d55ab078925711cd032be88b5a53b37cd4"
+ },
+ "QUOTE standard, lines 40 pt in, 40 lines [page line on]": {
+  "pages": 8,
+  "perPage": [
+   "46a185fb9122ef6dab008825adbe6b1b832b00691352dd812de39766d71d67c7",
+   "bbeb6ad6daefd8befa3aa74c895d3c13a570cf5950556cf591072386ddc34509",
+   "6272eb1915cba70f2da4d9825605871d010700d3c61f4e9ed6b6506e737b04ca",
+   "af19dbe43da5907cd9fd8da4e02b3a2a178889cea52502f65b5f2ef93bec8dda",
+   "a6a1c218290da01f9b7228090c9b5c2f8961b75b8d07dc6cf17059b55d1360f1",
+   "3ed6e45cdb367cf3acfa4973c394a7d2a0dd5ffd3c381daaa133a352e4994484",
+   "aec7d099c8fba2e4b35aef78ee2d9c5409fb3c5461d3b17eae7d471572138988",
+   "40f1add2365dd9ede38c8780a76bd80e6bb9136f56cdef6f485bce33d4be0b3a"
+  ],
+  "positions": "ae37d479007a284c89708da54e5c839c6f3990c896018ef51e7d2532603a93c1",
+  "measure": "f24cbec89e1fe958fae2af0d30ec8702c0f8fdd34c649d4723e844844062ab3e"
+ },
+ "STATEMENT standard, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "c00e39827a6c6867b953d91ac41b6e5c5a3c6c2cc6b6a6a50a76db6e348bd9df"
+  ],
+  "positions": "39196789c984ef80dad3c1a86b5e013296dc46fc1808d2b01285ca4611338f08",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT standard, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "bf9134e3a2a5119555bd1aaad2de0fed3ed8ed404d78a36236096eaef6f5dc63"
+  ],
+  "positions": "39196789c984ef80dad3c1a86b5e013296dc46fc1808d2b01285ca4611338f08",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT standard, 120 open items [page line off]": {
+  "pages": 4,
+  "perPage": [
+   "dcce1be2d101dcc930f83c2895e9f47d5b075f29fe4235522d174de634db7908",
+   "5aa83b9526bc555a16b5383467f4627dd9d7d300003201f87670ccacba43b9db",
+   "23aff7e400bedb9a5c87cedc4708631850e062b97517f7710b77560e72815ff9",
+   "4268025f009b47b9a40f3dc3914f3a7b4730b572f467fb3c3147ece94f3275f6"
+  ],
+  "positions": "fb0abdfcf4ccd10d71b2e67f12e3c6238088e808ed0b0be2f8f1399abbaa3270",
+  "measure": "6dad00a02a5ecf44b40fc97376901eaf37f9cd5c5e4a8f322f0b736a489e2d8b"
+ },
+ "STATEMENT standard, 120 open items [page line on]": {
+  "pages": 4,
+  "perPage": [
+   "e6cb82e6bf9229dc015606e23f900749e1de7484537fcab378f98b1446dccc55",
+   "274195db4b29737264baee4214621386340ad1b52a23985eb222a4f566a76341",
+   "ba7d313f6bdd4ad81faedcc87030dc7544bc03d4d1cbd3da83ff3c144395f173",
+   "297c47dd83a6437ce664abf293b6f9246c29759d1109796dfe55554dcb4ce88c"
+  ],
+  "positions": "89804a617322e7df2f6b0bf58ab374b54d436d4422a6e390117fb9d16634a0ba",
+  "measure": "473951929df411ad12313c040891c9aa2e9f29284149d1709cca0963442bd300"
+ },
+ "STATEMENT standard, Liberation Serif base 10 with a logo [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "c9e57d50f99601c04217a448d4ca5748f0e0cf03cc1e837fe8f369a250611292"
+  ],
+  "positions": "a366ba2c7cf21e9e0603ac7117473abe2e516b455224ea5cd84191b5989e9ea3",
+  "measure": "6d17d276ccb1ab6c1d900beb850cd53c99bcb55050753cb1deb6aa5633d5a2c3"
+ },
+ "STATEMENT standard, Liberation Serif base 10 with a logo [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "ffd271edf995a667544dba52e42d2e884d613ca68ea25b6e4af45292f54931a9"
+  ],
+  "positions": "a366ba2c7cf21e9e0603ac7117473abe2e516b455224ea5cd84191b5989e9ea3",
+  "measure": "6d17d276ccb1ab6c1d900beb850cd53c99bcb55050753cb1deb6aa5633d5a2c3"
+ },
+ "STATEMENT standard, 40 open items [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "dcce1be2d101dcc930f83c2895e9f47d5b075f29fe4235522d174de634db7908",
+   "b4187fd26e2a3eb3baa52c5ba1b45e0804db7942264a98b407ca6e796cec4f63"
+  ],
+  "positions": "94efdb05bb7909497df9fad74f6e4d73372c19dc8535e5efdf6f2a90d7006a1a",
+  "measure": "749f4ff87eec2ae0e96833e1cc510cd9818004b3c09222712dfa9c8339c90890"
+ },
+ "STATEMENT standard, 40 open items [page line on]": {
+  "pages": 2,
+  "perPage": [
+   "943437e757f8080217761971d58aaf70f59b4e92a9989768b5ba6bacf173c6d3",
+   "5f2210b298723b44ab0fbf640d2137f91f59f43294c47dabc0fa206b6fdc3f5b"
+  ],
+  "positions": "d6b071a5e7eaacb0cc2887b5de26f52604e5fcbdf4e0732fcf3af17b355e2ba4",
+  "measure": "f52b564f14f40d8d74deba196680418e8d7cda0059172b1dab0385b488b32575"
+ },
+ "STATEMENT standard, 60 open items [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "dcce1be2d101dcc930f83c2895e9f47d5b075f29fe4235522d174de634db7908",
+   "9387bcad02270ca8e99f27cca4ce0016fb9d2a0031cc19260fd757c499963b5e"
+  ],
+  "positions": "baf7325d8ddbf611bf61e1a20165ce5ca316fcd1093ee64bd2cddb39a0b86479",
+  "measure": "50d9234394f7470fb24dd5c05b8a5e3397b15bd6788e96f6ab8c916718efab9e"
+ },
+ "STATEMENT standard, 60 open items [page line on]": {
+  "pages": 2,
+  "perPage": [
+   "943437e757f8080217761971d58aaf70f59b4e92a9989768b5ba6bacf173c6d3",
+   "7355c8bc0e3a0a655bc00c4b90a0469e2e4f86c81ae960d9fe1e81a0e243d183"
+  ],
+  "positions": "32b350f5a3bde8f9b5bb92086daaa786a0fa949ef1ebaec542532e0866646c76",
+  "measure": "0b7985f1187fab27d02022b4dc668426df8f95972bfadcf1e7a239dc19eafdd3"
+ },
+ "STATEMENT standard, 80 open items [page line off]": {
+  "pages": 3,
+  "perPage": [
+   "dcce1be2d101dcc930f83c2895e9f47d5b075f29fe4235522d174de634db7908",
+   "7416d3f7b58659d9c8667b3241a0ff7528a76068f41147e6aa3f8b159d63741d",
+   "23d5435cd9d645d5f83ce4e4caaa658b8f5135f4a2a739d374be86ac1b4dc25e"
+  ],
+  "positions": "d5eb08836589effd3a76576926e3b59d563878ec590f31887562562ef96f1413",
+  "measure": "1577d4398e8c8204c9f5a614a366a10bfda789c664f51f38c2a0bced9753b971"
+ },
+ "STATEMENT standard, 80 open items [page line on]": {
+  "pages": 3,
+  "perPage": [
+   "45ecfeace9227ca07803843c9e0b7e4eaf373d93f27c6a8e3e4444774fbecf2c",
+   "27f0247f7330f844ad01531309222be7f95fecfca9a6b92376ec0e1c6601123e",
+   "62f2b6a0185c6ed28b775ff0e9c48a6008d016f888a445c35507be17e7cc09d2"
+  ],
+  "positions": "34510f141aff8528c63a780952f9091972a1ee3168da129e17cccb2af5b7e57a",
+  "measure": "33b97882adb80a66619bf2cf4f4efeee1f741e13da880cc04649418fd67bbe22"
+ },
+ "STATEMENT standard, open items 40 pt in, 40 open items [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "1153a7dda466baa4f8ad28a8756195dfe97a270becf5ea4f78973ca0becc1b98",
+   "a1b1f0216deeb848c7873c678c584b8a052d21c9c37ead7a54edaf962294c13b"
+  ],
+  "positions": "ce34eca2864c10d12a83f6145c355ee785d566f931409ceb4340ae79592c786a",
+  "measure": "749f4ff87eec2ae0e96833e1cc510cd9818004b3c09222712dfa9c8339c90890"
+ },
+ "STATEMENT standard, open items 40 pt in, 40 open items [page line on]": {
+  "pages": 2,
+  "perPage": [
+   "66b6c335dba10206403ffc8fdd773cf7f170269c33eee136e4a1212f80582b23",
+   "3db5f79a36fae1be2efb34ce8739fec9365cc6ddf9f6ebf88923a716a42cd3e4"
+  ],
+  "positions": "503512843ecef562a547662f978b844c64501141287e3b6bc9fc77d37f228bc7",
+  "measure": "f52b564f14f40d8d74deba196680418e8d7cda0059172b1dab0385b488b32575"
+ },
+ "STATEMENT standard, open items 40 pt in, 60 open items [page line off]": {
+  "pages": 2,
+  "perPage": [
+   "1153a7dda466baa4f8ad28a8756195dfe97a270becf5ea4f78973ca0becc1b98",
+   "dcacf72eaa044a3b8cba156cae8bf6d6144663150b34d5214aedcf54f364fa09"
+  ],
+  "positions": "ec3e43c23db707d25e59adaf563e53ee9d559e1576e9e31f7345fa54cee21499",
+  "measure": "50d9234394f7470fb24dd5c05b8a5e3397b15bd6788e96f6ab8c916718efab9e"
+ },
+ "STATEMENT standard, open items 40 pt in, 60 open items [page line on]": {
+  "pages": 2,
+  "perPage": [
+   "66b6c335dba10206403ffc8fdd773cf7f170269c33eee136e4a1212f80582b23",
+   "ca1450dc5edbdd42b63d11e1e01f9dcf3b562b8a164cdf8234aeb7903fafaaae"
+  ],
+  "positions": "8be3b326df710544f55319bf0254aa3d461daa7900118650ec636cc11ebd3db8",
+  "measure": "0b7985f1187fab27d02022b4dc668426df8f95972bfadcf1e7a239dc19eafdd3"
+ },
+ "STATEMENT standard, open items 40 pt in, 80 open items [page line off]": {
+  "pages": 3,
+  "perPage": [
+   "1153a7dda466baa4f8ad28a8756195dfe97a270becf5ea4f78973ca0becc1b98",
+   "beb69c1b43145940508336f0ba71578b26dfd26b05782e96682bd4914b1e5c7d",
+   "23d5435cd9d645d5f83ce4e4caaa658b8f5135f4a2a739d374be86ac1b4dc25e"
+  ],
+  "positions": "b498d9be6a414db5019b82bbc68a537adc83ecbb76b41afb99cab4b8fb1e4b60",
+  "measure": "1577d4398e8c8204c9f5a614a366a10bfda789c664f51f38c2a0bced9753b971"
+ },
+ "STATEMENT standard, open items 40 pt in, 80 open items [page line on]": {
+  "pages": 3,
+  "perPage": [
+   "f5cf6c23dc9c67a9331ee4761bd6d5c2d43a2a7bc6e7279f3cad574a201dec01",
+   "8ceae390762f0fc1244d99fd4b5f5539071f89d3c334b5c234951d4629014168",
+   "da8e408080129aa54b6a3c7ffc7c07e0ff1cc97dde69dfeab34e419d7afea160"
+  ],
+  "positions": "259f51d5add3e59307f901e20c6a9df92b29664d6813befa28aa2c5592b37d2b",
+  "measure": "33b97882adb80a66619bf2cf4f4efeee1f741e13da880cc04649418fd67bbe22"
+ },
+ "STATEMENT standard, open items 40 pt in, 120 open items [page line off]": {
+  "pages": 4,
+  "perPage": [
+   "1153a7dda466baa4f8ad28a8756195dfe97a270becf5ea4f78973ca0becc1b98",
+   "fa34828f7177266b78d27e19fa7018d140b334312e8976d90a4ba683136110eb",
+   "4478caf0f5ba884d25a0348cb2609abd6029dfcf49bd6ee353cdf185616be7d2",
+   "4268025f009b47b9a40f3dc3914f3a7b4730b572f467fb3c3147ece94f3275f6"
+  ],
+  "positions": "7dc30e9adab4a4e1e498b0b354ef1c28d4366c71ccfe594065498b0c3e3a2f55",
+  "measure": "6dad00a02a5ecf44b40fc97376901eaf37f9cd5c5e4a8f322f0b736a489e2d8b"
+ },
+ "STATEMENT standard, open items 40 pt in, 120 open items [page line on]": {
+  "pages": 4,
+  "perPage": [
+   "39ba7aec0233cb01b73b11a8d90385a1ff4b41ab00aa2d0750ff37302aad38c5",
+   "70cd74df00d6eb3670fe8932a5b5f050aece16dd945bcd3d2caa4d0766828d8a",
+   "5109ec4e1295676dd899261af6b83bbf3e2a0764334a02272ac200463ab1518d",
+   "7e1101294c03afaa73c5902df0e065611e7cb9742c209627259d96a3cb7c1a36"
+  ],
+  "positions": "06b173f974a73b099aa50d7909534ff7ebd5c8d1bd125f59b5a2f8646676c50e",
+  "measure": "473951929df411ad12313c040891c9aa2e9f29284149d1709cca0963442bd300"
+ },
+ "STATEMENT standard, bill_to 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "b7e4b27f393053e0fd2990ee3df8a765c95b46d47a8ea488a0f109b56f8e35fb"
+  ],
+  "positions": "21c029f77df2ab3f6bf278dabd12d335aa9c7b78404761b80932c866f3725b46",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT standard, bill_to 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "1854c7c6276a783775fc3e4b534bc5bc4ff1c6ff2a06715fbf537476a10498f7"
+  ],
+  "positions": "21c029f77df2ab3f6bf278dabd12d335aa9c7b78404761b80932c866f3725b46",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT standard, open_items 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "207a70946c9a8626cadcdebbd164eaec69aab6646be3f098e543d7ee9229dc42"
+  ],
+  "positions": "3a779251b4c9a23c669c1f16c9aa61dca6ea42aa9302a78724ae218eb28dbb8b",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT standard, open_items 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "0c2da6f38cfbe6db60cb685b99d7d0a4c6284b0ce437b145fd349cde7519b75a"
+  ],
+  "positions": "3a779251b4c9a23c669c1f16c9aa61dca6ea42aa9302a78724ae218eb28dbb8b",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT standard, aging 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "b3be8070d71c064aa6e2f2ae68675f89bbacc79c07dfc781026c28062f0a766b"
+  ],
+  "positions": "f51b48251c005db6d89cd9ad73d399dd97e0b14e91da18d3b761628245a1f0ee",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT standard, aging 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "b8a0eb189e581147858539433e1ca878d0bccafea86b7144379784c754772082"
+  ],
+  "positions": "f51b48251c005db6d89cd9ad73d399dd97e0b14e91da18d3b761628245a1f0ee",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT standard, finance_charge 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "b6832fef663f02791e06206301b67c2da2749d039140d2918620d561b8c1f268"
+  ],
+  "positions": "bdb114ebf044889cf23bd2b045e7b631ac157ee055355ba156d9ca2de57a9d56",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT standard, finance_charge 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "4b4802123a5783119fedddcd8a149f95799bde8c6cf73e3fe4cb63375ec3ab2a"
+  ],
+  "positions": "bdb114ebf044889cf23bd2b045e7b631ac157ee055355ba156d9ca2de57a9d56",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT standard, total 40 pt in, one-page record [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "d3b92791302a22ef33c1f31e2848317217e78e4a3a80fe374bf294c8ba3cc902"
+  ],
+  "positions": "2ff85d7acdc3d77295254c95fd6042c2299a5d0824bc05f901837ecfa6cc4240",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT standard, total 40 pt in, one-page record [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "e59e6f29dc8036f5c98bb5663cae14c27cba70df18c9608e61fefad000137291"
+  ],
+  "positions": "2ff85d7acdc3d77295254c95fd6042c2299a5d0824bc05f901837ecfa6cc4240",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ }
+}

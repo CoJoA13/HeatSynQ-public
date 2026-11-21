@@ -1,0 +1,1106 @@
+{
+ "TRAVELER lines x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "9d8fc05ef82e79679fd2b348e69010f7e2a48482ccd0103f19764b5fb50efb2e"
+  ],
+  "positions": "185bce70f788a0550f5e54d109f48b34ce45776527b54a7ea961ade8854ef3eb",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER lines x 24 w 317.36 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "f83aa36e4173d03478d8992d52d8208cbf8047498ee1d5b74aeff2926bcb50d9"
+  ],
+  "positions": "73baa520ea75909b7a341ba74932394c137157909e4c7470fdcc4883f84973de",
+  "measure": "220f2a5c3e1aadd56ff33fc56e8cd0b04a0792820d4bcc72fe4f5eeac77b66ec"
+ },
+ "TRAVELER lines x 270.64 w 317.36 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "d01b0ae09bd2ad2ec9bd87c82c6f14659403e4677ba42b45560859fe1d5eee07"
+  ],
+  "positions": "4fae95e6eea6a845cc4668e99b54f11d68ffc5e335bc4036111b81f38a953bf0",
+  "measure": "220f2a5c3e1aadd56ff33fc56e8cd0b04a0792820d4bcc72fe4f5eeac77b66ec"
+ },
+ "TRAVELER lines x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "4ff8ab47861d762ffba4754257c5d9ec8e1819c77c288628c389870ccf895071"
+  ],
+  "positions": "185bce70f788a0550f5e54d109f48b34ce45776527b54a7ea961ade8854ef3eb",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER lines x 24 w 317.36 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "c9ec098f43a991e5ec5ee7cf17d73449c96ebe2efea3632d8c10adc7e6a8db38"
+  ],
+  "positions": "73baa520ea75909b7a341ba74932394c137157909e4c7470fdcc4883f84973de",
+  "measure": "220f2a5c3e1aadd56ff33fc56e8cd0b04a0792820d4bcc72fe4f5eeac77b66ec"
+ },
+ "TRAVELER lines x 270.64 w 317.36 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "77f3c102ff8ccec9a9750e37210fabb51e5ebc531a9bdb5253d45272e11a0f4c"
+  ],
+  "positions": "4fae95e6eea6a845cc4668e99b54f11d68ffc5e335bc4036111b81f38a953bf0",
+  "measure": "220f2a5c3e1aadd56ff33fc56e8cd0b04a0792820d4bcc72fe4f5eeac77b66ec"
+ },
+ "TRAVELER quantities x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "9d8fc05ef82e79679fd2b348e69010f7e2a48482ccd0103f19764b5fb50efb2e"
+  ],
+  "positions": "185bce70f788a0550f5e54d109f48b34ce45776527b54a7ea961ade8854ef3eb",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER quantities x 24 w 493 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "a4b438b38f309bb8e37707af60c8ef2d88077967e1e7c57ff148ced72154da00"
+  ],
+  "positions": "185bce70f788a0550f5e54d109f48b34ce45776527b54a7ea961ade8854ef3eb",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER quantities x 95 w 493 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "a41abc7a08a73c980e803cc98e3b16c75d014e1dd77d968aa037eccdc9f40d0f"
+  ],
+  "positions": "b52337f6171c244525c2266293994762af4980008c0f36770b852299a3b38672",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER quantities x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "4ff8ab47861d762ffba4754257c5d9ec8e1819c77c288628c389870ccf895071"
+  ],
+  "positions": "185bce70f788a0550f5e54d109f48b34ce45776527b54a7ea961ade8854ef3eb",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER quantities x 24 w 493 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "ebe1867187a8d7f7dea4249cd9cf7f5934f231e04fb834d1893d814a06964cc9"
+  ],
+  "positions": "185bce70f788a0550f5e54d109f48b34ce45776527b54a7ea961ade8854ef3eb",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER quantities x 95 w 493 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "44945e059fe76c69ad50d94ecc52cec559b1b797ee1885cfe2a715b927b3a71f"
+  ],
+  "positions": "b52337f6171c244525c2266293994762af4980008c0f36770b852299a3b38672",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER inspections x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "9d8fc05ef82e79679fd2b348e69010f7e2a48482ccd0103f19764b5fb50efb2e"
+  ],
+  "positions": "185bce70f788a0550f5e54d109f48b34ce45776527b54a7ea961ade8854ef3eb",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER inspections x 24 w 348.08 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "ee8eb13508af587f00e6e4bda51b7f60107dbb528e7cb39cea1240350f9a8ad3"
+  ],
+  "positions": "185bce70f788a0550f5e54d109f48b34ce45776527b54a7ea961ade8854ef3eb",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER inspections x 239.92 w 348.08 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "02dc94be5380ad6c563f43c22bac26582b53471538632cca45102c29070a06d4"
+  ],
+  "positions": "feac1dede7065db14da6e4aa6747240579d4da591944d9c1f02e16772639b502",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER inspections x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "4ff8ab47861d762ffba4754257c5d9ec8e1819c77c288628c389870ccf895071"
+  ],
+  "positions": "185bce70f788a0550f5e54d109f48b34ce45776527b54a7ea961ade8854ef3eb",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER inspections x 24 w 348.08 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "ce7d72cf43ea5c83de5ba6c90eb33eec740050536e82a254111af5b1d4874995"
+  ],
+  "positions": "185bce70f788a0550f5e54d109f48b34ce45776527b54a7ea961ade8854ef3eb",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER inspections x 239.92 w 348.08 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "df24e073f9b69142f49c6e09421f86b60a058b90278f144aa8d784176ddcf15e"
+  ],
+  "positions": "feac1dede7065db14da6e4aa6747240579d4da591944d9c1f02e16772639b502",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER steps x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "9d8fc05ef82e79679fd2b348e69010f7e2a48482ccd0103f19764b5fb50efb2e"
+  ],
+  "positions": "185bce70f788a0550f5e54d109f48b34ce45776527b54a7ea961ade8854ef3eb",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER steps x 24 w 221 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "d37b73677e3fce5252b0ef51f505f38e8ccf9c665e9ecec0f4b89defd1b1c459"
+  ],
+  "positions": "133bfb7967c9af69e9b9a5a40e55f2e351921a1bae6be4beda7869ef997475f5",
+  "measure": "2a21da23f11dda7efb0d31adbf1a9addc8633f21048d10ca26808cf9c3dc1bc1"
+ },
+ "TRAVELER steps x 367 w 221 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "3b0996db7752a1d1a979fffb2efce95377da3948c3951ec28edd2e0b98ddc643"
+  ],
+  "positions": "498aacce19b3db1dd3eb4839f97a8f2c366b6b73b585fe08f14d748812c64834",
+  "measure": "2a21da23f11dda7efb0d31adbf1a9addc8633f21048d10ca26808cf9c3dc1bc1"
+ },
+ "TRAVELER steps x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "4ff8ab47861d762ffba4754257c5d9ec8e1819c77c288628c389870ccf895071"
+  ],
+  "positions": "185bce70f788a0550f5e54d109f48b34ce45776527b54a7ea961ade8854ef3eb",
+  "measure": "e7cefeda2fa87b3e43f605e8c2120282e011a1c2189e0e4812858cc117a2ced9"
+ },
+ "TRAVELER steps x 24 w 221 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "c98dfb3482d5b711492f4eec651fab1edbcdf50ee79c0262f7448943f86ef154"
+  ],
+  "positions": "133bfb7967c9af69e9b9a5a40e55f2e351921a1bae6be4beda7869ef997475f5",
+  "measure": "2a21da23f11dda7efb0d31adbf1a9addc8633f21048d10ca26808cf9c3dc1bc1"
+ },
+ "TRAVELER steps x 367 w 221 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "534588a84d8fb3d80ad45228b46a04422ebb4e196843ac0ddd277f121293d813"
+  ],
+  "positions": "498aacce19b3db1dd3eb4839f97a8f2c366b6b73b585fe08f14d748812c64834",
+  "measure": "2a21da23f11dda7efb0d31adbf1a9addc8633f21048d10ca26808cf9c3dc1bc1"
+ },
+ "SHIPPER field_strip x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "7c073ff39ea31701d5246fdf2ee70db10269208625c75fdd7a2935fb47124a97"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER field_strip x 24 w 377.59 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "e1456fff2112ef397086db1ed5a5e6e9558207d85ba5c9233ebc87557fb41f0a"
+  ],
+  "positions": "c78b668479858a239ac78ee47c4e8450db5c68e173c622506ad77d2c5cbe6bc4",
+  "measure": "42eced5185aea2253ad06bc0552ec359c4eb5806cffd2f79a9e359c27aadb052"
+ },
+ "SHIPPER field_strip x 210.41 w 377.59 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "2bed3ccdf72f89fe01763afa71dc1fe2acaf0159ea507035c087bf7360ccf2ae"
+  ],
+  "positions": "0614a75a7276b57a96da8ed777d4f9a10fc09eaf8b006494df49574bfc14b39c",
+  "measure": "42eced5185aea2253ad06bc0552ec359c4eb5806cffd2f79a9e359c27aadb052"
+ },
+ "SHIPPER field_strip x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "2a2643852bf3d99c53636b528b7b53b307231f4a4ec776c432db989763d91584"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER field_strip x 24 w 377.59 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "faf1884e3bb78acaaa71248cdf227597e31e2c39712f6d2e4e303adcd642e497"
+  ],
+  "positions": "c78b668479858a239ac78ee47c4e8450db5c68e173c622506ad77d2c5cbe6bc4",
+  "measure": "42eced5185aea2253ad06bc0552ec359c4eb5806cffd2f79a9e359c27aadb052"
+ },
+ "SHIPPER field_strip x 210.41 w 377.59 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "05b9afd4126919a072193792b1bdf99ec51190d1f63b89b86cc7ba389d5cc95d"
+  ],
+  "positions": "0614a75a7276b57a96da8ed777d4f9a10fc09eaf8b006494df49574bfc14b39c",
+  "measure": "42eced5185aea2253ad06bc0552ec359c4eb5806cffd2f79a9e359c27aadb052"
+ },
+ "SHIPPER lines x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "7c073ff39ea31701d5246fdf2ee70db10269208625c75fdd7a2935fb47124a97"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER lines x 24 w 225.36 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "853208a075a2478d7531700ef07255979ffaa21a3d4a3227e5dbddc0b44e37ff"
+  ],
+  "positions": "0cee5aef388cc8fc2a91e442777da6d16e78cb4ab1983d653c5ce5be0ca09d15",
+  "measure": "fd538360d83f49cb00ce8ebd67a3c21022d3e3073a1d06cb051376964f5abcf8"
+ },
+ "SHIPPER lines x 362.64 w 225.36 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "65cf8f0170fce2ab31df1c5ae2f0a7dfa30027aaac5595d52012fb62aa9d1e8c"
+  ],
+  "positions": "17097e26a3b58c75a5e04f717f6e7044b3b902d805b70b21605f7ed63d41211c",
+  "measure": "fd538360d83f49cb00ce8ebd67a3c21022d3e3073a1d06cb051376964f5abcf8"
+ },
+ "SHIPPER lines x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "2a2643852bf3d99c53636b528b7b53b307231f4a4ec776c432db989763d91584"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER lines x 24 w 225.36 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "15df46aa825f4529242db7687a5c3ada4bdfc52d912889d767593c8d04250082"
+  ],
+  "positions": "0cee5aef388cc8fc2a91e442777da6d16e78cb4ab1983d653c5ce5be0ca09d15",
+  "measure": "fd538360d83f49cb00ce8ebd67a3c21022d3e3073a1d06cb051376964f5abcf8"
+ },
+ "SHIPPER lines x 362.64 w 225.36 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "7578a2c0ab78b7309dea3fe2b0fad922f58e8130f87c8a8d814cfacb93a021a3"
+  ],
+  "positions": "17097e26a3b58c75a5e04f717f6e7044b3b902d805b70b21605f7ed63d41211c",
+  "measure": "fd538360d83f49cb00ce8ebd67a3c21022d3e3073a1d06cb051376964f5abcf8"
+ },
+ "SHIPPER containers x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "7c073ff39ea31701d5246fdf2ee70db10269208625c75fdd7a2935fb47124a97"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER containers x 24 w 504 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "ca245fe0bdd62a5bfebac9d055e13fb22ff2187e153a3d1e1bcf4ee17ee0c361"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER containers x 84 w 504 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "0f81ba628dbfdf7dc1a9e9aa4bd0833fcfd9229427a89fc52f12f7a1b8f96a34"
+  ],
+  "positions": "32afbd80d42af3b7ffb0f9e46c247e69f223eed19c6b014a58894f80e13ada63",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER containers x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "2a2643852bf3d99c53636b528b7b53b307231f4a4ec776c432db989763d91584"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER containers x 24 w 504 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "797cf34a69fe4514271bdc19c0343ab7708a2609a7137b4d60c142ed7e9a78d8"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER containers x 84 w 504 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "057fb1fd7ed5e24f7959848a7ed2f19d7fe19c9eb0a80d475bdcbabc505c0741"
+  ],
+  "positions": "32afbd80d42af3b7ffb0f9e46c247e69f223eed19c6b014a58894f80e13ada63",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER totals x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "7c073ff39ea31701d5246fdf2ee70db10269208625c75fdd7a2935fb47124a97"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER totals x 24 w 264.5 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "d4548c5481b958e89dee44ef57fb203b0a0eabffaee1f8435be22a9ea55d68dd"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER totals x 323.5 w 264.5 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "f3142ba23856f19108bc47684eae40b831ea54356f42289015073d246b62e124"
+  ],
+  "positions": "8b96ea3f3c55452becbb50f05842733b5ab3c37f8f3b9d14378658598b42bb31",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER totals x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "2a2643852bf3d99c53636b528b7b53b307231f4a4ec776c432db989763d91584"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER totals x 24 w 264.5 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "0ec3e2ddc9e01659c089f266dea496c9d31fe9abe9014d6916a9e1c71283b629"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "SHIPPER totals x 323.5 w 264.5 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "fbc2744ef100a389154c2300f41da75eeee3933fbc5f72bab1e7c1b5a7dbc95e"
+  ],
+  "positions": "8b96ea3f3c55452becbb50f05842733b5ab3c37f8f3b9d14378658598b42bb31",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER field_strip x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "7c073ff39ea31701d5246fdf2ee70db10269208625c75fdd7a2935fb47124a97"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER field_strip x 24 w 377.59 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "e1456fff2112ef397086db1ed5a5e6e9558207d85ba5c9233ebc87557fb41f0a"
+  ],
+  "positions": "c78b668479858a239ac78ee47c4e8450db5c68e173c622506ad77d2c5cbe6bc4",
+  "measure": "42eced5185aea2253ad06bc0552ec359c4eb5806cffd2f79a9e359c27aadb052"
+ },
+ "MOS_SHIPPER field_strip x 210.41 w 377.59 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "2bed3ccdf72f89fe01763afa71dc1fe2acaf0159ea507035c087bf7360ccf2ae"
+  ],
+  "positions": "0614a75a7276b57a96da8ed777d4f9a10fc09eaf8b006494df49574bfc14b39c",
+  "measure": "42eced5185aea2253ad06bc0552ec359c4eb5806cffd2f79a9e359c27aadb052"
+ },
+ "MOS_SHIPPER field_strip x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "2a2643852bf3d99c53636b528b7b53b307231f4a4ec776c432db989763d91584"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER field_strip x 24 w 377.59 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "faf1884e3bb78acaaa71248cdf227597e31e2c39712f6d2e4e303adcd642e497"
+  ],
+  "positions": "c78b668479858a239ac78ee47c4e8450db5c68e173c622506ad77d2c5cbe6bc4",
+  "measure": "42eced5185aea2253ad06bc0552ec359c4eb5806cffd2f79a9e359c27aadb052"
+ },
+ "MOS_SHIPPER field_strip x 210.41 w 377.59 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "05b9afd4126919a072193792b1bdf99ec51190d1f63b89b86cc7ba389d5cc95d"
+  ],
+  "positions": "0614a75a7276b57a96da8ed777d4f9a10fc09eaf8b006494df49574bfc14b39c",
+  "measure": "42eced5185aea2253ad06bc0552ec359c4eb5806cffd2f79a9e359c27aadb052"
+ },
+ "MOS_SHIPPER lines x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "7c073ff39ea31701d5246fdf2ee70db10269208625c75fdd7a2935fb47124a97"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER lines x 24 w 225.36 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "853208a075a2478d7531700ef07255979ffaa21a3d4a3227e5dbddc0b44e37ff"
+  ],
+  "positions": "0cee5aef388cc8fc2a91e442777da6d16e78cb4ab1983d653c5ce5be0ca09d15",
+  "measure": "fd538360d83f49cb00ce8ebd67a3c21022d3e3073a1d06cb051376964f5abcf8"
+ },
+ "MOS_SHIPPER lines x 362.64 w 225.36 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "65cf8f0170fce2ab31df1c5ae2f0a7dfa30027aaac5595d52012fb62aa9d1e8c"
+  ],
+  "positions": "17097e26a3b58c75a5e04f717f6e7044b3b902d805b70b21605f7ed63d41211c",
+  "measure": "fd538360d83f49cb00ce8ebd67a3c21022d3e3073a1d06cb051376964f5abcf8"
+ },
+ "MOS_SHIPPER lines x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "2a2643852bf3d99c53636b528b7b53b307231f4a4ec776c432db989763d91584"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER lines x 24 w 225.36 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "15df46aa825f4529242db7687a5c3ada4bdfc52d912889d767593c8d04250082"
+  ],
+  "positions": "0cee5aef388cc8fc2a91e442777da6d16e78cb4ab1983d653c5ce5be0ca09d15",
+  "measure": "fd538360d83f49cb00ce8ebd67a3c21022d3e3073a1d06cb051376964f5abcf8"
+ },
+ "MOS_SHIPPER lines x 362.64 w 225.36 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "7578a2c0ab78b7309dea3fe2b0fad922f58e8130f87c8a8d814cfacb93a021a3"
+  ],
+  "positions": "17097e26a3b58c75a5e04f717f6e7044b3b902d805b70b21605f7ed63d41211c",
+  "measure": "fd538360d83f49cb00ce8ebd67a3c21022d3e3073a1d06cb051376964f5abcf8"
+ },
+ "MOS_SHIPPER containers x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "7c073ff39ea31701d5246fdf2ee70db10269208625c75fdd7a2935fb47124a97"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER containers x 24 w 504 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "ca245fe0bdd62a5bfebac9d055e13fb22ff2187e153a3d1e1bcf4ee17ee0c361"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER containers x 84 w 504 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "0f81ba628dbfdf7dc1a9e9aa4bd0833fcfd9229427a89fc52f12f7a1b8f96a34"
+  ],
+  "positions": "32afbd80d42af3b7ffb0f9e46c247e69f223eed19c6b014a58894f80e13ada63",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER containers x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "2a2643852bf3d99c53636b528b7b53b307231f4a4ec776c432db989763d91584"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER containers x 24 w 504 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "797cf34a69fe4514271bdc19c0343ab7708a2609a7137b4d60c142ed7e9a78d8"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER containers x 84 w 504 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "057fb1fd7ed5e24f7959848a7ed2f19d7fe19c9eb0a80d475bdcbabc505c0741"
+  ],
+  "positions": "32afbd80d42af3b7ffb0f9e46c247e69f223eed19c6b014a58894f80e13ada63",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER totals x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "7c073ff39ea31701d5246fdf2ee70db10269208625c75fdd7a2935fb47124a97"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER totals x 24 w 264.5 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "d4548c5481b958e89dee44ef57fb203b0a0eabffaee1f8435be22a9ea55d68dd"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER totals x 323.5 w 264.5 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "f3142ba23856f19108bc47684eae40b831ea54356f42289015073d246b62e124"
+  ],
+  "positions": "8b96ea3f3c55452becbb50f05842733b5ab3c37f8f3b9d14378658598b42bb31",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER totals x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "2a2643852bf3d99c53636b528b7b53b307231f4a4ec776c432db989763d91584"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER totals x 24 w 264.5 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "0ec3e2ddc9e01659c089f266dea496c9d31fe9abe9014d6916a9e1c71283b629"
+  ],
+  "positions": "a8057a5e17b93358a548e64ce4b901efe90b531fdb61b8f6dff2c77c35f5a114",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "MOS_SHIPPER totals x 323.5 w 264.5 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "fbc2744ef100a389154c2300f41da75eeee3933fbc5f72bab1e7c1b5a7dbc95e"
+  ],
+  "positions": "8b96ea3f3c55452becbb50f05842733b5ab3c37f8f3b9d14378658598b42bb31",
+  "measure": "a02976143c9ff97b0fe9ff084f268e1007fc7f8c66417f6f206a5c3d9686a7dd"
+ },
+ "BOL freight x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "00e2f8d89098fbc3e74aaa7e58b7ff575bc13ee58cfb8be74cb9a5ce6ac35f92"
+  ],
+  "positions": "b0e705a3f15133b4a0d268fae761d651b8be64de9238999f520557c79955e0e6",
+  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+ },
+ "BOL freight x 24 w 467.4 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "aeb7b136b7098df76391829e0288ede22857cbde3df5f5fcb1c0f4fdd4b2ce9e"
+  ],
+  "positions": "b0e705a3f15133b4a0d268fae761d651b8be64de9238999f520557c79955e0e6",
+  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+ },
+ "BOL freight x 120.6 w 467.4 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "b8b94f52422511f275b98a5a882695955bfe1013420f8f61df1216b84343a17a"
+  ],
+  "positions": "53d08ceb825a52b03b68167bd1373a185a193e4ae3d3ab03753212720dacd2d2",
+  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+ },
+ "BOL freight x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "be9549d472d4ae16ff4ea98f8b5f57c5b607fefa7b023cc87dc32f69c42c5aa7"
+  ],
+  "positions": "b0e705a3f15133b4a0d268fae761d651b8be64de9238999f520557c79955e0e6",
+  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+ },
+ "BOL freight x 24 w 467.4 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "602d17a91c9878ebe4fd92c8e0a3e88b10d0719e69f91ac29635a0c33935d9c6"
+  ],
+  "positions": "b0e705a3f15133b4a0d268fae761d651b8be64de9238999f520557c79955e0e6",
+  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+ },
+ "BOL freight x 120.6 w 467.4 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "70ca589604fd49b93e59dfa4ad4c6accbac3d24f166ccc19d22852ae287b7085"
+  ],
+  "positions": "53d08ceb825a52b03b68167bd1373a185a193e4ae3d3ab03753212720dacd2d2",
+  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+ },
+ "CERT parts x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "33ab1f600d9416a2cb6c342b23a157ba25d45fc74a30b2e7b9ced4819d5ec1dd"
+  ],
+  "positions": "a8b15e995dbc5ead0e873fc11c53d9bc2d4ebd95c2455bae2d864d2cbb073235",
+  "measure": "5db0c427905cfbeea160301393ae92a8a129baca9b1d88d5261795fe19bf8cca"
+ },
+ "CERT parts x 24 w 230.47 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "4eab6b62c9105f67a410667c2527f4ca4a72f00e8a0fcb489dfb3a4b9c492246"
+  ],
+  "positions": "124fb80d699150480bc8a5ba2974098ca7ea1278e31bd4c6122580407e601ef5",
+  "measure": "37287c4200728ecc1db4641b8451ebda907dad7ab5ef1b3cdeaceeee6b30320f"
+ },
+ "CERT parts x 357.53 w 230.47 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "4ee3f91b8615db3d0ddec1771aab33eb6ee50cd244be151eb74b1bfbeee6b861"
+  ],
+  "positions": "8ee73583792f49ea9fb3108a488b5bf3b1fe0870ad370834fc6249f4dc64dd47",
+  "measure": "37287c4200728ecc1db4641b8451ebda907dad7ab5ef1b3cdeaceeee6b30320f"
+ },
+ "CERT parts x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "8434b63095c3886bfd685f75b7cc49defe24c8825d84bea6ea15aaf8a35b4a32"
+  ],
+  "positions": "a8b15e995dbc5ead0e873fc11c53d9bc2d4ebd95c2455bae2d864d2cbb073235",
+  "measure": "56ab387fdcea14fec64024339b22cde737b7508e8ec708f55eed754df416a600"
+ },
+ "CERT parts x 24 w 230.47 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "b6b64ae2d78d847584e4071606914b632d3fef588e0e1fb7a832eb3fd57dc8b9"
+  ],
+  "positions": "124fb80d699150480bc8a5ba2974098ca7ea1278e31bd4c6122580407e601ef5",
+  "measure": "e721c4134adc81034ca82d9711ae76c8c67f2bb5bc67198ccfa6df12476cef18"
+ },
+ "CERT parts x 357.53 w 230.47 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "777de68cf0bd6b1c2cc59c90e12f6fba5765eb94aa86f148ab23314b929e8528"
+  ],
+  "positions": "8ee73583792f49ea9fb3108a488b5bf3b1fe0870ad370834fc6249f4dc64dd47",
+  "measure": "e721c4134adc81034ca82d9711ae76c8c67f2bb5bc67198ccfa6df12476cef18"
+ },
+ "INVOICE column_header x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "8cc4ee4d0948ef6eaa07a945729e4c4b29faa11e066390943b1571db543f959f"
+  ],
+  "positions": "5c09949004ee62fa2122a83619c630b756ad16392bea47600f097453a6783043",
+  "measure": "7df60266dfdcc5fa0dbd956ce20c73190df1cd30d28a98ae2f9aa57ed2f0b57a"
+ },
+ "INVOICE column_header x 24 w 291.37 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "b514984f4df16d1969965f9eb97de24bbce5bd259c1f251dc98027fc5b3692ce"
+  ],
+  "positions": "9ed05270e06adb6999c0eaf789e12da5b04759d327a14dcb0f16999de0b4d245",
+  "measure": "bcad7605120a1f6c24a9b2bf33194c48c8e056b965109099dbdae9c07ee27e31"
+ },
+ "INVOICE column_header x 296.63 w 291.37 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "c7bddc164bfcda9f8f0600eda99d3708e9c337c7060220897755b8d28c06cd45"
+  ],
+  "positions": "6f539d4f4868a63fe4593e41e53010ec65faedf19ddb41ed1dc053e40612e996",
+  "measure": "bcad7605120a1f6c24a9b2bf33194c48c8e056b965109099dbdae9c07ee27e31"
+ },
+ "INVOICE column_header x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "71ed314489303b8757b65e9bdcc1c5350cdee1dc394801bd08dc0e64d8cde9f5"
+  ],
+  "positions": "5c09949004ee62fa2122a83619c630b756ad16392bea47600f097453a6783043",
+  "measure": "be678b522eb26443fbb58bc12d73992ff1755bc6e6576f3d0e5b5ebd5c0411e3"
+ },
+ "INVOICE column_header x 24 w 291.37 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "a0ab3e536fcebb47af755c6e0c5f950035104d7f2f960fab13d96505230af38c"
+  ],
+  "positions": "9ed05270e06adb6999c0eaf789e12da5b04759d327a14dcb0f16999de0b4d245",
+  "measure": "6b2889d535d5a69b7283eef4e36c17aa8d284ae2afdd2bd28b850caf588b14ac"
+ },
+ "INVOICE column_header x 296.63 w 291.37 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "0d5f058afd1d66e7a69eafac49abc12820f3f6949fee556f496d94bf5549db4e"
+  ],
+  "positions": "6f539d4f4868a63fe4593e41e53010ec65faedf19ddb41ed1dc053e40612e996",
+  "measure": "6b2889d535d5a69b7283eef4e36c17aa8d284ae2afdd2bd28b850caf588b14ac"
+ },
+ "INVOICE parties x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "8cc4ee4d0948ef6eaa07a945729e4c4b29faa11e066390943b1571db543f959f"
+  ],
+  "positions": "5c09949004ee62fa2122a83619c630b756ad16392bea47600f097453a6783043",
+  "measure": "7df60266dfdcc5fa0dbd956ce20c73190df1cd30d28a98ae2f9aa57ed2f0b57a"
+ },
+ "INVOICE parties x 24 w 198.7 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "1087fd363fbc8e0f166af3d496c4c0cd4fe630d0c9fb254c458636a0cc9a40c0"
+  ],
+  "positions": "916a548f8c1cb5eb2bf75e1eff0abf85ceb0edb77328d75267ec86ca0801ff13",
+  "measure": "5359588525c337c62159e668af43654469e9a581b837d1d9ae93265f42b7e9a8"
+ },
+ "INVOICE parties x 389.3 w 198.7 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "11d522f18edc27b6660642e83f7c20032025d335e4abfa1237cf82ed61246fd5"
+  ],
+  "positions": "2169b97795e6f201d2fafbbdab6947037129daeec41e3b659d27e71be2be8e9c",
+  "measure": "5359588525c337c62159e668af43654469e9a581b837d1d9ae93265f42b7e9a8"
+ },
+ "INVOICE parties x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "71ed314489303b8757b65e9bdcc1c5350cdee1dc394801bd08dc0e64d8cde9f5"
+  ],
+  "positions": "5c09949004ee62fa2122a83619c630b756ad16392bea47600f097453a6783043",
+  "measure": "be678b522eb26443fbb58bc12d73992ff1755bc6e6576f3d0e5b5ebd5c0411e3"
+ },
+ "INVOICE parties x 24 w 198.7 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "107e21fe23af87752fd1c9bb13d071413988df4f0d989d2faffd18f002a03d60"
+  ],
+  "positions": "916a548f8c1cb5eb2bf75e1eff0abf85ceb0edb77328d75267ec86ca0801ff13",
+  "measure": "33d7abaa5d1dce02536f507cd66d760e5b32e42b76d1a269e932521aa6e1d4d7"
+ },
+ "INVOICE parties x 389.3 w 198.7 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "fdf9d3bae884d4d197d0761d54af2366d2486f13532d3561a9c867acb6711a03"
+  ],
+  "positions": "2169b97795e6f201d2fafbbdab6947037129daeec41e3b659d27e71be2be8e9c",
+  "measure": "33d7abaa5d1dce02536f507cd66d760e5b32e42b76d1a269e932521aa6e1d4d7"
+ },
+ "INVOICE parts x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "8cc4ee4d0948ef6eaa07a945729e4c4b29faa11e066390943b1571db543f959f"
+  ],
+  "positions": "5c09949004ee62fa2122a83619c630b756ad16392bea47600f097453a6783043",
+  "measure": "7df60266dfdcc5fa0dbd956ce20c73190df1cd30d28a98ae2f9aa57ed2f0b57a"
+ },
+ "INVOICE parts x 24 w 291.5 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "596c2013c52ab74553c70b09516b0e14c23167fcfc71ba3c28419c6b421ac08d"
+  ],
+  "positions": "41fb2bcf00bbce3304e6457fd0b78f5bf05ed17f9bb325f3e9fda40b4388843e",
+  "measure": "c817a285c11ff9758cdd573d694e08a5f1416d43fb58b08180f599ee2c1d5031"
+ },
+ "INVOICE parts x 296.5 w 291.5 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "5d8248e11457f59ef100ac3a9270efbc1d4c112f7758aeaa6776758fd99ae701"
+  ],
+  "positions": "c29ffb111331c1c6a61915f6f111ce4f89648f6750db418d28e892a55f653027",
+  "measure": "c817a285c11ff9758cdd573d694e08a5f1416d43fb58b08180f599ee2c1d5031"
+ },
+ "INVOICE parts x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "71ed314489303b8757b65e9bdcc1c5350cdee1dc394801bd08dc0e64d8cde9f5"
+  ],
+  "positions": "5c09949004ee62fa2122a83619c630b756ad16392bea47600f097453a6783043",
+  "measure": "be678b522eb26443fbb58bc12d73992ff1755bc6e6576f3d0e5b5ebd5c0411e3"
+ },
+ "INVOICE parts x 24 w 291.5 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "d716b7677dc3fb187a971f5b0e6605ef9ff5d91baa7495841ede3dbbfb3a7506"
+  ],
+  "positions": "41fb2bcf00bbce3304e6457fd0b78f5bf05ed17f9bb325f3e9fda40b4388843e",
+  "measure": "07269d9815b52862e68f23cf81c24269a5a01a59b0ae15bba6f77a86cac71334"
+ },
+ "INVOICE parts x 296.5 w 291.5 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "862ca03d1bb4e6dcccc2930da94f5d5d39af28ab31868c351745fa08de60c2b4"
+  ],
+  "positions": "c29ffb111331c1c6a61915f6f111ce4f89648f6750db418d28e892a55f653027",
+  "measure": "07269d9815b52862e68f23cf81c24269a5a01a59b0ae15bba6f77a86cac71334"
+ },
+ "INVOICE price x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "8cc4ee4d0948ef6eaa07a945729e4c4b29faa11e066390943b1571db543f959f"
+  ],
+  "positions": "5c09949004ee62fa2122a83619c630b756ad16392bea47600f097453a6783043",
+  "measure": "7df60266dfdcc5fa0dbd956ce20c73190df1cd30d28a98ae2f9aa57ed2f0b57a"
+ },
+ "INVOICE price x 24 w 270 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "d097aecdd5f1a591c55c538ca6b1631f91495ce9a1b7255eef5213cde8bd5227"
+  ],
+  "positions": "5c09949004ee62fa2122a83619c630b756ad16392bea47600f097453a6783043",
+  "measure": "7df60266dfdcc5fa0dbd956ce20c73190df1cd30d28a98ae2f9aa57ed2f0b57a"
+ },
+ "INVOICE price x 318 w 270 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "36872786511da8ec144afd63020833f50b0cc9070ec59e11460234c64c86c869"
+  ],
+  "positions": "5f7eb827f9d5a7d9713c9e48ff4498a6a1b5db0db609b825b0844a0bf4ccbcd4",
+  "measure": "7df60266dfdcc5fa0dbd956ce20c73190df1cd30d28a98ae2f9aa57ed2f0b57a"
+ },
+ "INVOICE price x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "71ed314489303b8757b65e9bdcc1c5350cdee1dc394801bd08dc0e64d8cde9f5"
+  ],
+  "positions": "5c09949004ee62fa2122a83619c630b756ad16392bea47600f097453a6783043",
+  "measure": "be678b522eb26443fbb58bc12d73992ff1755bc6e6576f3d0e5b5ebd5c0411e3"
+ },
+ "INVOICE price x 24 w 270 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "fa0900176cd7a563207c7cf64319e30c8afb2c448961dc9864cd051a11d55294"
+  ],
+  "positions": "5c09949004ee62fa2122a83619c630b756ad16392bea47600f097453a6783043",
+  "measure": "be678b522eb26443fbb58bc12d73992ff1755bc6e6576f3d0e5b5ebd5c0411e3"
+ },
+ "INVOICE price x 318 w 270 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "cef435fa3078742c65c61197bf51a5cd33d887cdcf1d81117c51bf3f9de71775"
+  ],
+  "positions": "5f7eb827f9d5a7d9713c9e48ff4498a6a1b5db0db609b825b0844a0bf4ccbcd4",
+  "measure": "be678b522eb26443fbb58bc12d73992ff1755bc6e6576f3d0e5b5ebd5c0411e3"
+ },
+ "QUOTE column_header x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "39a717985f09c2676adc834aca77c4a40608f45f3cbcea1914875493f306d374"
+  ],
+  "positions": "b7fd0ca7bb62828965049a25bf56b315e526cf7e47a7f6c7e0cd28976d458242",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE column_header x 24 w 290.21 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "ad0826628a466b09ada8bef02e3cb78b2373f419f1a07ef3f0078e0051856606"
+  ],
+  "positions": "b7da45345af0ca5e86d309582473b082b59dba619129fc6b9210e13aaad3ac6e",
+  "measure": "51851a92723cfb461d725f4dda93e0be2fa0eadffdfa6e6f80af7a6c39d2e5f1"
+ },
+ "QUOTE column_header x 297.79 w 290.21 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "731d820ee50dbed23d83217e9f90aa2ab8eef304016c8d474af9bf842bf0faa8"
+  ],
+  "positions": "0061be746e93e1f3cff2df7fdf062252a38f2edcc4ef1a7f0cbcdfa5541e6d01",
+  "measure": "51851a92723cfb461d725f4dda93e0be2fa0eadffdfa6e6f80af7a6c39d2e5f1"
+ },
+ "QUOTE column_header x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "a183ce29815d4bb8f0f2538a7fbe7b52578e5dadde1d4e671787d561e353113f"
+  ],
+  "positions": "b7fd0ca7bb62828965049a25bf56b315e526cf7e47a7f6c7e0cd28976d458242",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE column_header x 24 w 290.21 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "3511abc98f165aee8625be4f780af75b5cd611ad74d04452d6a66dc8229026a1"
+  ],
+  "positions": "b7da45345af0ca5e86d309582473b082b59dba619129fc6b9210e13aaad3ac6e",
+  "measure": "51851a92723cfb461d725f4dda93e0be2fa0eadffdfa6e6f80af7a6c39d2e5f1"
+ },
+ "QUOTE column_header x 297.79 w 290.21 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "cd7b51520593e20cbb0dcce257948bdecd15b8cd84298c165bd84683edafd7a6"
+  ],
+  "positions": "0061be746e93e1f3cff2df7fdf062252a38f2edcc4ef1a7f0cbcdfa5541e6d01",
+  "measure": "51851a92723cfb461d725f4dda93e0be2fa0eadffdfa6e6f80af7a6c39d2e5f1"
+ },
+ "QUOTE lines x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "39a717985f09c2676adc834aca77c4a40608f45f3cbcea1914875493f306d374"
+  ],
+  "positions": "b7fd0ca7bb62828965049a25bf56b315e526cf7e47a7f6c7e0cd28976d458242",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE lines x 24 w 272 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "7988f129445ab563c054a84043c1c789f3c2f9e8927fe772b71e428609504588"
+  ],
+  "positions": "5df4fc22482c4b4b2e374061dba782e6e93936786ee4954076096686613f0a6c",
+  "measure": "08c07aaaf2b970724fed9d4dfd911a49e49b900d13c8f0e253cf8736b9cb3602"
+ },
+ "QUOTE lines x 316 w 272 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "71b098496792b88b619d38d6300b4caad8d78c4bc6e6dd2a81edfab7b4445d13"
+  ],
+  "positions": "7a55ef99621db8e27fc4a656dc805427464a7b7416b68f49b28bcb7b2c294b7e",
+  "measure": "08c07aaaf2b970724fed9d4dfd911a49e49b900d13c8f0e253cf8736b9cb3602"
+ },
+ "QUOTE lines x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "a183ce29815d4bb8f0f2538a7fbe7b52578e5dadde1d4e671787d561e353113f"
+  ],
+  "positions": "b7fd0ca7bb62828965049a25bf56b315e526cf7e47a7f6c7e0cd28976d458242",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE lines x 24 w 272 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "8798363f686b07a65176d43e670008d2a0f5ff4bc285bbe38445e4c354bdb893"
+  ],
+  "positions": "5df4fc22482c4b4b2e374061dba782e6e93936786ee4954076096686613f0a6c",
+  "measure": "08c07aaaf2b970724fed9d4dfd911a49e49b900d13c8f0e253cf8736b9cb3602"
+ },
+ "QUOTE lines x 316 w 272 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "4c270369b98110ee8c4fbbb88bf53e3e10760715663aeb8c955853dfcba9375d"
+  ],
+  "positions": "7a55ef99621db8e27fc4a656dc805427464a7b7416b68f49b28bcb7b2c294b7e",
+  "measure": "08c07aaaf2b970724fed9d4dfd911a49e49b900d13c8f0e253cf8736b9cb3602"
+ },
+ "QUOTE closing x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "39a717985f09c2676adc834aca77c4a40608f45f3cbcea1914875493f306d374"
+  ],
+  "positions": "b7fd0ca7bb62828965049a25bf56b315e526cf7e47a7f6c7e0cd28976d458242",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE closing x 24 w 286 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "ab902aab516952829223a91c2f92b38d9252ddefc9e65f316bd4a69e9d0a56bd"
+  ],
+  "positions": "3ef2aa341a6a4387f7936d0f6c7d6299ab161ccc43a4582c3d5ad3f93d366bf8",
+  "measure": "7671c1485235a8917c61ee129e99313385868d656c5a46718167724cc33e3016"
+ },
+ "QUOTE closing x 302 w 286 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "31c437cfceb83e0e744cd6cc41296efd7cfadfba5acdc5175d431d3e2eb768f9"
+  ],
+  "positions": "00c6dcad3b4cc810de88bec188d734047bcc4f4e6c721d2dd36fcc940a0c66cc",
+  "measure": "7671c1485235a8917c61ee129e99313385868d656c5a46718167724cc33e3016"
+ },
+ "QUOTE closing x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "a183ce29815d4bb8f0f2538a7fbe7b52578e5dadde1d4e671787d561e353113f"
+  ],
+  "positions": "b7fd0ca7bb62828965049a25bf56b315e526cf7e47a7f6c7e0cd28976d458242",
+  "measure": "6c19dab7fc2b2b4a433add5a02e076faf768f8f5208cee46244926c4aa56bb30"
+ },
+ "QUOTE closing x 24 w 286 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "afd6eb9e73052883e4cd99946029b15974d398cf49b6b6e3726061f9a4f2bba5"
+  ],
+  "positions": "3ef2aa341a6a4387f7936d0f6c7d6299ab161ccc43a4582c3d5ad3f93d366bf8",
+  "measure": "7671c1485235a8917c61ee129e99313385868d656c5a46718167724cc33e3016"
+ },
+ "QUOTE closing x 302 w 286 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "f05a9ad2e144462f1368a0aa9e55614432bb03fb04bb67330f61d8ca35aa53e9"
+  ],
+  "positions": "00c6dcad3b4cc810de88bec188d734047bcc4f4e6c721d2dd36fcc940a0c66cc",
+  "measure": "7671c1485235a8917c61ee129e99313385868d656c5a46718167724cc33e3016"
+ },
+ "STATEMENT aging x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "c00e39827a6c6867b953d91ac41b6e5c5a3c6c2cc6b6a6a50a76db6e348bd9df"
+  ],
+  "positions": "39196789c984ef80dad3c1a86b5e013296dc46fc1808d2b01285ca4611338f08",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT aging x 24 w 345.32 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "58fa2b2896941d6dce5db122305c505e75d1a0474dcc842c5277f29b1bffec4f"
+  ],
+  "positions": "39196789c984ef80dad3c1a86b5e013296dc46fc1808d2b01285ca4611338f08",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT aging x 242.68 w 345.32 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "9e23266a3ce2ab54445322aa59edd083ece418cff69b53ea5906e8f9d841c4c9"
+  ],
+  "positions": "3336c7cb726279a538f274c9c61db0659eda5780e3b5994168d261c444fca44c",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT aging x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "bf9134e3a2a5119555bd1aaad2de0fed3ed8ed404d78a36236096eaef6f5dc63"
+  ],
+  "positions": "39196789c984ef80dad3c1a86b5e013296dc46fc1808d2b01285ca4611338f08",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT aging x 24 w 345.32 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "d8b64e72e0f69e0af48d7231df0780a3922f50e1f4238c42d09fdfcacfc0dce7"
+  ],
+  "positions": "39196789c984ef80dad3c1a86b5e013296dc46fc1808d2b01285ca4611338f08",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT aging x 242.68 w 345.32 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "c1b1eee5f5abfae782cdac2f9fbaa366efb275003babf929b6858e60dd5d727c"
+  ],
+  "positions": "3336c7cb726279a538f274c9c61db0659eda5780e3b5994168d261c444fca44c",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT open_items x 24 w 564 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "c00e39827a6c6867b953d91ac41b6e5c5a3c6c2cc6b6a6a50a76db6e348bd9df"
+  ],
+  "positions": "39196789c984ef80dad3c1a86b5e013296dc46fc1808d2b01285ca4611338f08",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT open_items x 24 w 219.1 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "09fc15161e1da63d33be8bd5b3126b0a9b99493c73c80d2e9b33a1d0bf6a5227"
+  ],
+  "positions": "e1a025b615b9e12acf884b28f9d594a58eff075d0dc0abc3b13cc0e34098aba0",
+  "measure": "d9f2aa24daa98f13d2c4a79f800ed53135abe335fdbee56e6f49bb15eba7e645"
+ },
+ "STATEMENT open_items x 368.9 w 219.1 [page line off]": {
+  "pages": 1,
+  "perPage": [
+   "efb8542300da660a31b1acf79e80d7fb7a705c4478681b3ccabfbc7cbc2f11d8"
+  ],
+  "positions": "447026bcee6c5e1bf51ac8a64156f58afdc44363c879b33c4a7e7108d21b8422",
+  "measure": "d9f2aa24daa98f13d2c4a79f800ed53135abe335fdbee56e6f49bb15eba7e645"
+ },
+ "STATEMENT open_items x 24 w 564 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "bf9134e3a2a5119555bd1aaad2de0fed3ed8ed404d78a36236096eaef6f5dc63"
+  ],
+  "positions": "39196789c984ef80dad3c1a86b5e013296dc46fc1808d2b01285ca4611338f08",
+  "measure": "190be6c636f4adffc0f4b261c5bc8766c4e52136db24f47770399e7724bbf262"
+ },
+ "STATEMENT open_items x 24 w 219.1 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "6b71f635c1857918be83078e6f86c7628279e7f7fe00dcea8f21ca8bf89345c6"
+  ],
+  "positions": "e1a025b615b9e12acf884b28f9d594a58eff075d0dc0abc3b13cc0e34098aba0",
+  "measure": "d9f2aa24daa98f13d2c4a79f800ed53135abe335fdbee56e6f49bb15eba7e645"
+ },
+ "STATEMENT open_items x 368.9 w 219.1 [page line on]": {
+  "pages": 1,
+  "perPage": [
+   "c9453d773d96d6d6e9ea9af0b349df987fb54039cb8e01d75a26e05fcd8607a6"
+  ],
+  "positions": "447026bcee6c5e1bf51ac8a64156f58afdc44363c879b33c4a7e7108d21b8422",
+  "measure": "d9f2aa24daa98f13d2c4a79f800ed53135abe335fdbee56e6f49bb15eba7e645"
+ }
+}

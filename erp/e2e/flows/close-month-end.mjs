@@ -1,0 +1,549 @@
+// Flow 18 (last, Phase 5C, Task 9): the month-end close + QuickBooks Online summary export, end to
+// end (5C design spec §4.1/§4.3/§6/§7). Sets the four Admin -> Billing plant-default GL accounts
+// through the real UI, seeds a shipped -> invoiced order against its own fixture customer (the
+// `invoice-shipped-order.mjs`/`receivables-apply-age-statement.mjs` precedent), takes a payment
+// with a partial application and a small write-off (no early-pay discount — #69, owner ruling
+// 2026-08-19, earns one only for a payment that SETTLES the invoice, and this 600.00 check cannot
+// settle 1,000.00; the flow asserts the offer's absence), opens
+// `/receivables/close`, confirms the preliminary schedule reconciles (variance 0), closes the
+// current month, exports the GL delta, downloads the CSV and confirms it balances, then reopens the
+// month, VOIDS the write-off application (the reachable correction unit — see the note below on why
+// "void the payment" itself is not: `voidPayment` refuses on a POSTED batch, and the batch must stay
+// POSTED for its cash to count in the close at all; §4.1/§6 name `voidApplication` as the
+// post-reopen correction path), re-closes, re-exports, and confirms a non-empty, exactly-balanced
+// REVERSING delta scoped to that one event.
+//
+// WHY "THIS MONTH", NOT A FIXED "JULY" (unlike the task brief's own sample wording): every A/R
+// mutation this flow drives (order/invoice/payment/application) is dated by the SERVER as today —
+// none of the UI screens this flow touches expose a way to backdate them — so the only month
+// reachable through the real UI, ever, is the current one. `year`/`month` are computed from the
+// same wall-clock moment the fixtures and the app both use.
+//
+// WHY THIS FLOW BACKFILLS TWO PHASE 5B FIXTURES (see `e2e/lib/db-fixtures.ts`'s `arOpGlAccountName`
+// and `closePaymentType` comments): `resolveReadiness`/`buildCurrentJournal` (gl-export.ts) scan
+// EVERY finalized invoice / posted payment dated in the target month GLOBALLY, not per-customer.
+// `receivables-apply-age-statement.mjs`'s own invoice stays FINALIZED for the rest of a run (unlike
+// `invoice-shipped-order.mjs`'s, which ends Unlocked and so drops out of scope) and runs earlier in
+// `FLOWS`, so by the time this flow reaches Export, that invoice's step code and payment type are
+// ALSO in this month's scope — without a GL account on each, this flow's own export would be
+// refused by a gap that isn't its own fixture's to fix. `db-fixtures.ts`'s `create()` backfills both
+// once, before any flow runs, so no flow's own assertions (dollar amounts, UI text) are disturbed.
+//
+// WHY THE FIRST EXPORT'S CSV IS ONLY ASSERTED BALANCED, NOT AN EXACT TOTAL, BUT THE SECOND ONE IS:
+// the FIRST export of a brand-new month posts EVERY in-scope event as "new" — including the AR
+// flow's own invoice/payment/discount/write-off, which ran earlier in this same calendar month — so
+// its total is not this flow's own to predict (that flow no longer takes a discount either, but it
+// still contributes its own invoice, payment and write-off). The SECOND export (after reopening and
+// voiding just THIS flow's own write-off application) is exact: every other event stayes UNCHANGED between the
+// two exports (present in both the prior-posted and current-live maps) and so emits nothing, leaving
+// the reversing delta scoped to exactly the one event this flow itself voided — a precise,
+// deterministic assertion, not a flaky one.
+//
+// A PRE-FLIGHT GUARD (below) refuses to run at all if a `ClosePeriod` for the target month ALREADY
+// exists — this flow only ever touches a period it creates itself; see `db-fixtures.ts`'s
+// `deleteClosePeriodFixture` comment for why a broader self-heal sweep is deliberately not built.
+import assert from "node:assert/strict";
+import { assertNeverVisible, waitForValue } from "../lib/ui.mjs";
+import { answerModal, modalBody, modalTitle, waitForModal } from "../lib/modal.mjs";
+import { openRecordTab } from "../lib/record-tabs.mjs";
+import { batchStatus } from "../lib/receivables.mjs";
+import { routeRequests } from "../route-keep-alive.mjs";
+import { createOrderViaUi, startNewShipment, orderPanel, waitForShipmentPage } from "../lib/orders.mjs";
+import { glanceValue, invoicesSection as registerSection, openInvoicingView } from "../lib/invoicing.mjs";
+
+const CHECK_AMOUNT = "600.00";
+const PAYMENT_AMOUNT = "400.00";
+const WRITE_OFF_AMOUNT = "30.00";
+const WRITE_OFF_AMOUNT_CENTS = 3000;
+const WRITE_OFF_REASON =
+  "E2E close-month-end flow: small collection adjustment, demonstrating the write-off UX for the demo.";
+const VOID_REASON =
+  "E2E close-month-end flow: correcting a mistaken write-off before re-closing, demonstrating the " +
+  "reopen -> correct -> re-close -> re-export reversing delta for the demo.";
+
+/** Both `/invoicing`'s two sections are plain `<section>`s, each headed by its own `<h2>` — the
+ *  `invoice-shipped-order.mjs`/`receivables-apply-age-statement.mjs` `sectionByHeading` precedent. */
+function sectionByHeading(page, headingText) {
+  return page.locator("section").filter({ has: page.getByRole("heading", { name: headingText, exact: true }) });
+}
+
+/** Polls `locator.count()` until it reaches `min` or `timeoutMs` elapses — for a list that grows
+ *  after a mutation (a new closed-period row, a new export-batch list item) where no single
+ *  network response is the "done" signal on its own (the close screen bumps a `refresh` counter
+ *  that re-pulls THREE endpoints, not one). */
+async function waitForCount(locator, min, timeoutMs = 15000) {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const n = await locator.count();
+    if (n >= min) return n;
+    if (Date.now() > deadline) assert.fail(`Timed out waiting for at least ${min} item(s) — last saw ${n}`);
+    await new Promise((r) => { setTimeout(r, 200); });
+  }
+}
+
+/** The closed-period row for `label` ("August 2026") — keyed on Close.tsx's
+ *  `data-testid="closed-period-row"` (#90; the old `ancestor::div[contains(@class,'p-3')]` xpath
+ *  broke on any padding retune), narrowed to the row whose `<span class="font-medium">` holds the
+ *  period label. */
+function periodRow(page, label) {
+  return page.locator('[data-testid="closed-period-row"]')
+    .filter({ has: page.locator("span.font-medium", { hasText: label }) });
+}
+
+/** Sums the Debit/Credit columns of a `GL_EXPORT_COLUMNS` CSV (`Date,Account,Debit,Credit,Memo`)
+ *  in integer cents — a small quote-aware line splitter, not a full CSV library, since this
+ *  harness's own fixture account names/memos never contain a comma or a quote (verified against
+ *  `renderCsv`'s own `esc()`, which only engages for those two characters plus newlines). */
+function parseCsvLine(line) {
+  const fields = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i += 1; } else { inQuotes = false; }
+      } else {
+        cur += c;
+      }
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ",") {
+      fields.push(cur);
+      cur = "";
+    } else {
+      cur += c;
+    }
+  }
+  fields.push(cur);
+  return fields;
+}
+
+function sumCsv(text) {
+  const lines = text.split("\n").filter((l) => l.length > 0);
+  assert.ok(lines.length > 0, "Empty CSV — expected at least a header row");
+  const rows = lines.slice(1).map(parseCsvLine);
+  let debitCents = 0;
+  let creditCents = 0;
+  for (const r of rows) {
+    if (r[2]) debitCents += Math.round(Number(r[2]) * 100);
+    if (r[3]) creditCents += Math.round(Number(r[3]) * 100);
+  }
+  return { rowCount: rows.length, debitCents, creditCents };
+}
+
+/**
+ * Posts an OPEN receipt batch (the close screen's own "N open receipt batch(es) ... not yet posted
+ * — post first if it belongs in this close" nudge, `close-periods.ts`'s `computeSchedule`: an
+ * UNPOSTED batch's payment total is excluded from `paymentTotal` even though its cash already
+ * counts in the aging `Unapplied` column — leaving it unposted is the one reliable way to make the
+ * roll-forward-vs-aging variance nonzero). A no-op if already posted (the At a glance card's Status
+ * already reads "Posted") — defensive, not expected to trigger here. `batchId` is null-safe
+ * so callers can pass `ctx.created.receivablesBatchId` without an extra guard at the call site.
+ */
+async function postOpenBatch(page, ctx, batchId) {
+  if (!batchId) return;
+  await page.goto(`${ctx.baseURL}/receivables/batches/${batchId}`);
+  const heading = page.getByRole("heading", { name: /^Batch #\d+/ });
+  await heading.waitFor({ state: "visible", timeout: 15000 });
+  // The status is the At a glance card's (PR 7 of the UX redesign), not a chip in the heading.
+  if (await batchStatus(page) === "Posted") return;
+  // Post asks through the modal (ruling 5; src/lib/receipt-batch-page.ts splits the sentence):
+  // the dialog is in the DOM after the click, so it is answered after it, with no listener to arm.
+  const posted = page.waitForResponse((res) =>
+    new URL(res.url()).pathname === `/api/receivables/batches/${batchId}`
+    && res.request().method() === "PATCH" && res.ok());
+  await page.getByRole("button", { name: "Post batch", exact: true }).click();
+  assert.match(await modalTitle(page), /^Post batch #\d+\?$/, "Post asks the ruled question as the modal's title");
+  await answerModal(page);
+  await posted;
+  assert.equal(await batchStatus(page), "Posted", "the card's Status reads Posted once the PATCH lands");
+}
+
+/** Sets one Admin -> Billing GL-default `<select>` by ACCESSIBLE NAME (never `getByLabel`, the
+ *  HANDOFF §5a trap — every `<select>` on this page is wrapped directly by its own `<label>` text,
+ *  which `getByLabel`'s computation pollutes with every option's rendered text; `getByRole`'s own
+ *  accessible-name computation does not have this problem) and waits for the PUT this page's
+ *  `save()` fires on every `onChange` to resolve before returning, so two selects never race each
+ *  other into a serialization conflict on the shared `BillingConfig` singleton row (`setBillingConfig`
+ *  runs Serializable with no retry when an FK is being assigned).
+ */
+async function setBillingGlAccount(page, ctx, labelText, glAccountId) {
+  const saved = page.waitForResponse((res) =>
+    new URL(res.url()).pathname === "/api/admin/billing" && res.request().method() === "PUT" && res.ok());
+  await page.getByRole("combobox", { name: labelText, exact: true }).selectOption(glAccountId);
+  await saved;
+}
+
+export async function run(page, shot, ctx) {
+  const { fixtures } = ctx;
+
+  // --- Target period: THIS month (see the file header for why). Deliberately NOT recorded on
+  // `ctx.created` here — `run.mjs`'s `finally { teardown() }` cleans up `ctx.created` on EVERY
+  // exit path, pass or fail, including a guard failure below. If a REAL ClosePeriod already covers
+  // this month (a developer/owner closed it through the live UI — the demo doc's own "watching it
+  // live" section invites exactly this), the guard correctly refuses to POST, but recording the
+  // year/month here regardless would still hand cleanup's id-driven `deleteClosePeriodFixture` a
+  // target it did not create, and `ClosePeriod` is `@@unique([year,month])` — cleanup would
+  // hard-delete a real period + its GlExportBatch/GlPosting/audit rows. `ctx.created.
+  // closePeriodYear`/`Month` are set ONLY after THIS flow's own `closePeriod` POST below actually
+  // succeeds (see that block), so a guard failure — or anything that throws before this flow closes
+  // the month itself — leaves them `null` and cleanup never touches a period it didn't create. ---
+  const now = new Date();
+  const year = now.getUTCFullYear();
+  const month = now.getUTCMonth() + 1; // 1-based
+
+  // --- Pre-flight guard: refuse to run at all if a ClosePeriod already covers this month — this
+  // flow only ever touches a period it creates itself (see the file header / db-fixtures.ts). ---
+  const existingPeriodsRes = await page.request.get(`${ctx.baseURL}/api/receivables/close`, { maxRetries: 1 });
+  assert.equal(existingPeriodsRes.ok(), true, "GET /api/receivables/close must succeed");
+  const existingPeriods = await existingPeriodsRes.json();
+  assert.equal(
+    existingPeriods.some((p) => p.year === year && p.month === month), false,
+    `Refusing to run: a ClosePeriod already exists for ${year}-${month} — this flow only ever ` +
+    "touches a period it creates itself. Investigate (GET /api/receivables/close) before re-running.",
+  );
+
+  // --- Admin -> Billing: the four plant-default GL accounts the close/export needs. ---
+  await page.goto(`${ctx.baseURL}/admin/billing`);
+  await page.getByRole("heading", { name: "Accounting", exact: true }).waitFor({ state: "visible" });
+  await setBillingGlAccount(page, ctx, "A/R", fixtures.closeArGlAccountId);
+  await setBillingGlAccount(page, ctx, "Discounts", fixtures.closeDiscountGlAccountId);
+  await setBillingGlAccount(page, ctx, "Write-offs", fixtures.closeWriteOffGlAccountId);
+  await setBillingGlAccount(page, ctx, "Sales tax", fixtures.closeSalesTaxGlAccountId);
+  await shot("billing-gl-defaults-set");
+
+  // --- Seed a shipped -> invoiced order (the invoice-shipped-order.mjs precedent). One priced
+  // OPERATION, unitPrice 100.00 x qty 10 = 1000.00 (`surchargeOptOut` + `taxable: false` keep this
+  // exact). ---
+  const order = await createOrderViaUi(page, ctx, {
+    customerCode: fixtures.closeCustomerCode,
+    lines: [{ partNumber: fixtures.closePartNumber, qty: 10 }],
+  });
+  await shot("order-created");
+
+  await startNewShipment(page, ctx, fixtures.closeCustomerId, [order]);
+  const panel = orderPanel(page, `#${order.number}`);
+  await waitForValue(panel.getByLabel("Line 1 ship-now quantity", { exact: true }), "10");
+  await page.getByRole("button", { name: "Save shipment", exact: true }).click();
+  await waitForShipmentPage(page);
+  await shot("shipment-saved");
+
+  // --- /invoicing: create, then finalize. ---
+  await page.goto(`${ctx.baseURL}/invoicing`);
+  await page.getByRole("heading", { name: "Invoicing", exact: true }).waitFor({ state: "visible" });
+  const readySection = sectionByHeading(page, "Ready to invoice");
+  const readyRow = readySection.locator("tr").filter({ has: page.getByText(String(order.number), { exact: true }) });
+  await readyRow.waitFor({ state: "visible", timeout: 15000 });
+  await readyRow.locator('input[type="checkbox"]').check();
+
+  const created = page.waitForResponse((res) =>
+    new URL(res.url()).pathname === "/api/invoices" && res.request().method() === "POST" && res.ok());
+  await page.getByRole("button", { name: "Create invoices", exact: true }).click();
+  await created;
+
+  await openInvoicingView(page, "Register"); // PR 6: the register is behind its view
+  const invoicesSection = registerSection(page);
+  const invoiceRow = invoicesSection.locator("tr")
+    .filter({ has: page.getByText(String(order.number), { exact: true }) });
+  await invoiceRow.waitFor({ state: "visible", timeout: 15000 });
+  await invoiceRow.getByRole("link").click();
+
+  const invoiceHeading = page.getByRole("heading", { name: new RegExp(`Invoice.*${order.number}`) });
+  await invoiceHeading.waitFor({ state: "visible", timeout: 20000 });
+  await shot("invoice-draft");
+
+  // The total is the At a glance card's Invoice total row (PR 6).
+  assert.equal(await glanceValue(page, "Invoice total").textContent(), "$1,000.00",
+    "the close fixture's one priced operation (100.00 x 10, no surcharge/tax) must total 1000.00");
+
+  await page.getByRole("button", { name: "Finalize invoice", exact: true }).click();
+  await page.getByText("Finalized", { exact: true }).waitFor({ state: "visible", timeout: 15000 });
+  await shot("invoice-finalized");
+
+  // --- /receivables: a deposit batch, a check payment, and an apply: a partial PAYMENT + a small
+  // WRITE_OFF (fixture math: check 600.00, PAYMENT 400.00, WRITE_OFF 30.00 -> applied 430.00, open
+  // 570.00, on-account 200.00 — the receivables-apply-age-statement.mjs fixture-math precedent, own
+  // numbers). No DISCOUNT: #69 offers one only to a payment that can settle the invoice. ---
+  const today = new Date().toISOString().slice(0, 10);
+
+  await page.goto(`${ctx.baseURL}/receivables`);
+  await page.getByRole("heading", { name: "Receivables", exact: true }).waitFor({ state: "visible" });
+  await page.getByLabel("Deposit date", { exact: true }).fill(today);
+  await page.getByRole("button", { name: "Create batch", exact: true }).click();
+
+  const batchHeading = page.getByRole("heading", { name: /^Batch #\d+/ });
+  await batchHeading.waitFor({ state: "visible", timeout: 15000 });
+  // Recorded for cleanup's id-driven backstop — see the `receivablesBatchId` precedent
+  // (receivables-apply-age-statement.mjs / run.mjs's `state.created` comment). A SEPARATE field
+  // (`closeBatchId`), never `receivablesBatchId`, so the two A/R flows' backstops cannot clobber
+  // each other.
+  ctx.created.closeBatchId = page.url().split("/").pop();
+  // #163: no Control total was entered, so this deposit has been proved against NOTHING and the
+  // Balance tile must say so rather than showing the 0.00 that reads as "balances perfectly"
+  // (receivables-apply-age-statement.mjs makes the same assertion on its own batch).
+  await page.getByText("Not proved — no control total", { exact: true })
+    .waitFor({ state: "visible", timeout: 15000 });
+  await shot("batch-created");
+
+  await page.locator("label", { hasText: "Payer customer" }).locator("select").selectOption(fixtures.closeCustomerId);
+  await page.locator("label", { hasText: "Payment type" }).locator("select").selectOption(fixtures.closePaymentTypeId);
+  await page.getByLabel("Amount", { exact: true }).fill(CHECK_AMOUNT);
+  await page.getByLabel("Check #", { exact: true }).fill("E2E-CLOSE-1001");
+  await page.getByLabel("Received date", { exact: true }).fill(today);
+  await page.getByRole("button", { name: "Add payment", exact: true }).click();
+
+  const paymentRow = page.locator("tr").filter({ has: page.getByText(fixtures.closePaymentTypeName, { exact: true }) });
+  await paymentRow.waitFor({ state: "visible", timeout: 15000 });
+  await shot("payment-added");
+
+  await paymentRow.getByRole("button", { name: "Apply", exact: true }).click();
+  // The ApplyPanel's OWN candidate-grid table, found via its unique "Write-off" COLUMN header's
+  // nearest ancestor table (the receivables-apply-age-statement.mjs precedent for this exact trap).
+  const candidateTable = page.getByRole("columnheader", { name: "Write-off", exact: true })
+    .locator("xpath=ancestor::table[1]");
+  const invoiceCandidateRow = candidateTable.locator("tbody tr")
+    .filter({ has: page.getByText(String(order.number), { exact: true }) });
+  await invoiceCandidateRow.waitFor({ state: "visible", timeout: 15000 });
+
+  await invoiceCandidateRow.getByLabel(`${order.number} amount`, { exact: true }).fill(PAYMENT_AMOUNT);
+  // #69: the Discount cell renders its "Take …" checkbox only when the server offers a figure, and
+  // a 600.00 check cannot settle a 1,000.00 invoice — so there is nothing to check. Asserted, not
+  // merely skipped: this flow took the discount before the ruling, and the absent affordance is the
+  // visible half of the rule (receivables-apply-age-statement.mjs makes the same assertion).
+  assert.equal(await invoiceCandidateRow.locator('input[type="checkbox"]').count(), 0,
+    "no early-pay discount may be offered on a payment that cannot settle the invoice (#69)");
+  // #155 arm 2: what the cell says INSTEAD. The checkbox's absence is no longer the cell's whole
+  // content — an empty Discount column could not tell "nothing is on offer" from "20.00 is within
+  // reach". Text, never a disabled control, so the count assertion above stays true. The 980.00 is
+  // the server's figure (the 1,000.00 open net of the 20.00 it earns), and the sentence says
+  // "applying … here" rather than "remit …" because the guard tests the receipt's UNAPPLIED cash.
+  await invoiceCandidateRow.getByText("Applying $980.00 here would earn $20.00.", { exact: true })
+    .waitFor({ state: "visible", timeout: 15000 });
+  await invoiceCandidateRow.getByLabel(`${order.number} write-off amount`, { exact: true }).fill(WRITE_OFF_AMOUNT);
+  await invoiceCandidateRow.getByLabel(`${order.number} write-off reason`, { exact: true }).fill(WRITE_OFF_REASON);
+  await shot("apply-panel-filled");
+
+  const applied = page.waitForResponse((res) =>
+    new URL(res.url()).pathname === "/api/receivables/applications" && res.request().method() === "POST" && res.ok());
+  // The toggle button reads "Hide" once expanded, so this is the ONLY "Apply" button left on screen.
+  await page.getByRole("button", { name: "Apply", exact: true }).click();
+  await applied;
+  await page.getByText("Payment $600.00 · Applied $400.00 · On account $200.00", { exact: true })
+    .waitFor({ state: "visible", timeout: 15000 });
+  await shot("applied");
+
+  // --- Post every OPEN batch this run itself created that carries a payment dated this month —
+  // this flow's own batch, and `receivables-apply-age-statement.mjs`'s (Phase 5B), which runs
+  // earlier in `FLOWS` and leaves its own batch OPEN. Real month-end prep, not a workaround: the
+  // close screen's own preliminary report flags exactly this ("N open receipt batch(es) ... post
+  // first if it belongs in this close"), and `computeSchedule` only counts a POSTED batch's cash —
+  // an open one's payment is invisible to `paymentTotal` while its on-account cash is still visible
+  // to the aging `Unapplied` column, so leaving either batch open makes the variance nonzero. Never
+  // touches a batch this run did not itself create (`postOpenBatch`'s ids come only from
+  // `ctx.created`, the harness's own "never touch a stranger's dev-DB row" discipline). ---
+  await postOpenBatch(page, ctx, ctx.created.closeBatchId);
+  await postOpenBatch(page, ctx, ctx.created.receivablesBatchId);
+
+  // --- /receivables/close: the preliminary schedule for THIS month, confirmed to reconcile
+  // (variance 0) via the SAME endpoint the screen itself reads — a robust numeric check, not a DOM
+  // text scrape, since OTHER e2e flows' own finalized invoices dated this same month legitimately
+  // ride along in the GLOBAL schedule total (see the file header). ---
+  const query = `year=${year}&month=${month}`;
+  await page.goto(`${ctx.baseURL}/receivables/close?${query}`);
+  await page.getByRole("heading", { name: "Month-End Close", exact: true }).waitFor({ state: "visible" });
+  await page.getByText(/^Continuity schedule/).waitFor({ state: "visible", timeout: 15000 });
+  await shot("preliminary-schedule");
+
+  const preliminaryRes = await page.request.get(`${ctx.baseURL}/api/receivables/close/preliminary?${query}`, { maxRetries: 1 });
+  assert.equal(preliminaryRes.ok(), true, "GET .../close/preliminary must succeed");
+  const preliminary = await preliminaryRes.json();
+  assert.equal(preliminary.unpostedBatchCount, 0,
+    `every batch dated this month must be posted before the schedule can reconcile — ` +
+    `${preliminary.unpostedBatchCount} still open`);
+  assert.equal(preliminary.schedule.variance, 0,
+    `preliminary schedule must reconcile (variance 0) — got ${JSON.stringify(preliminary.schedule)}`);
+
+  const readinessRes = await page.request.get(`${ctx.baseURL}/api/receivables/close/readiness?${query}`, { maxRetries: 1 });
+  assert.equal(readinessRes.ok(), true, "GET .../close/readiness must succeed");
+  const readinessGaps = await readinessRes.json();
+  assert.equal(readinessGaps.length, 0,
+    `readiness must be clear before export — gaps: ${JSON.stringify(readinessGaps)}`);
+  await page.getByText("No GL account gaps for this period", { exact: false })
+    .waitFor({ state: "visible", timeout: 15000 });
+
+  // --- #649: switching the period must not leave THIS month's figures, or Close, under the other
+  // month's heading while the other month's reads are out. The other month's preliminary GET is
+  // held through `routeRequests` (never a raw route: the keep-alive rule, #340); while it is held the
+  // schedule section reads Loading…, the Ending A/R row is gone, and Close is disabled with
+  // "Loading…". The hold is released, the period switched back, and this month's table waits
+  // for its own read again. The other month stays within this year, because the step moves the
+  // Month picker alone: in January the previous month is December of LAST year, whose request this
+  // hold would never see, so January holds February instead (the response after the release does
+  // not matter, the screen switches straight back). ---
+  const otherMonth = month === 1 ? 2 : month - 1;
+  const otherPreliminary = `**/api/receivables/close/preliminary?year=${year}&month=${otherMonth}`;
+  let releaseOther = () => {};
+  const otherHeld = new Promise((resolve) => { releaseOther = resolve; });
+  const stopHolding = await routeRequests(page, otherPreliminary, async (route) => {
+    await otherHeld;
+    await route.continue();
+  });
+  const endingRow = page.getByRole("cell", { name: "Ending A/R", exact: true });
+  await endingRow.waitFor({ state: "visible" });
+  // The one <select> on this screen is the Month picker (the Year is a text box since #649).
+  const monthSelect = page.locator("select").first();
+  try {
+    await monthSelect.selectOption(String(otherMonth));
+    const closeButton = page.getByRole("button", { name: "Close period", exact: true });
+    await page.getByRole("heading", { name: /^Continuity schedule/ }).locator("xpath=..").getByText("Loading…", { exact: true })
+      .waitFor({ state: "visible", timeout: 15000 });
+    await assertNeverVisible(endingRow,
+      "the previous month's schedule must not stay on screen under the new month's heading while its read is held (#649)", 1000);
+    assert.equal(await closeButton.isDisabled(), true, "Close period must be disabled while the new month's read is held (#649)");
+    assert.equal(await closeButton.getAttribute("title"), "Loading…", "Close period's reason while the read is held is Loading… (#649)");
+  } finally {
+    releaseOther();
+    await stopHolding();
+  }
+  await monthSelect.selectOption(String(month));
+  await endingRow.waitFor({ state: "visible", timeout: 15000 });
+  await page.getByText("No GL account gaps for this period", { exact: false })
+    .waitFor({ state: "visible", timeout: 15000 });
+
+  // --- Close the month. ---
+  const closed = page.waitForResponse((res) =>
+    new URL(res.url()).pathname === "/api/receivables/close" && res.request().method() === "POST" && res.ok());
+  await page.getByRole("button", { name: "Close period", exact: true }).click();
+  await closed;
+  // Recorded ONLY now that THIS flow's own close has actually committed — see the file-header
+  // comment on why this can't be set any earlier (a guard failure must leave cleanup with nothing
+  // to delete). `deleteClosePeriodFixture`'s own belt-and-suspenders `closedById` check (db-
+  // fixtures.ts) means even this is redundant against ever touching a period this flow didn't
+  // close, not just a lucky ordering.
+  ctx.created.closePeriodYear = year;
+  ctx.created.closePeriodMonth = month;
+
+  const label = `${["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"][month - 1]} ${year}`;
+  // The period cards are on the Closed periods tab (src/lib/close-tabs.ts); the close itself was
+  // the header's button, reachable from either tab.
+  await openRecordTab(page, "Closed periods");
+  const row = periodRow(page, label);
+  await row.waitFor({ state: "visible", timeout: 15000 });
+  await row.getByText("CLOSED", { exact: true }).waitFor({ state: "visible", timeout: 15000 });
+  await shot("period-closed");
+
+  // --- Export to GL, download the CSV, and confirm it balances. ---
+  const exportedOnce = page.waitForResponse((res) =>
+    /\/api\/receivables\/close\/[^/]+\/export$/.test(new URL(res.url()).pathname)
+    && res.request().method() === "POST" && res.ok());
+  await row.getByRole("button", { name: "Export GL summary", exact: true }).click();
+  await exportedOnce;
+  await waitForCount(row.locator("ul li"), 1);
+  await shot("exported-first");
+
+  const firstFileHref = await row.locator("ul li").first().getByRole("link", { name: "File", exact: true }).getAttribute("href");
+  const firstCsvRes = await page.request.get(new URL(firstFileHref, ctx.baseURL).toString(), { maxRetries: 1 });
+  assert.equal(firstCsvRes.ok(), true, "the first export's CSV file must download");
+  const firstCsv = sumCsv(await firstCsvRes.text());
+  assert.ok(firstCsv.rowCount > 0, "the first export's CSV must not be empty");
+  assert.equal(firstCsv.debitCents, firstCsv.creditCents,
+    `the first export's CSV must balance — debit ${firstCsv.debitCents} vs credit ${firstCsv.creditCents} cents`);
+
+  // --- Reopen the month, void the write-off application (the reachable correction unit — see the
+  // file header), re-close, re-export, and confirm a non-empty, EXACTLY-balanced reversing delta
+  // scoped to that one 30.00 event (uncontaminated by any other flow's own events — see the file
+  // header on why this second assertion, unlike the first, can be exact). ---
+  // One dialog asks and takes the reason (#649), the modal since PR 7 of the UX redesign (ruling
+  // 5): the period's question is its title, the reason box takes the reason, and the dialog is
+  // answered after the click (no listener to arm). The title is asserted so a reworded question
+  // is caught here and not by a hang.
+  await row.getByRole("button", { name: `Reopen ${label}`, exact: true }).click();
+  assert.equal(await modalTitle(page), `Reopen ${label}?`,
+    "the Reopen dialog must open with the period's question (one dialog, no confirm first)");
+  await answerModal(page, { reason: "E2E close-month-end flow: reopening to correct a write-off, demonstrating the reopen UX for the demo." });
+  await row.getByText("REOPENED", { exact: true }).waitFor({ state: "visible", timeout: 15000 });
+  await shot("period-reopened");
+
+  await page.goto(`${ctx.baseURL}/receivables/batches/${ctx.created.closeBatchId}`);
+  await batchHeading.waitFor({ state: "visible", timeout: 15000 });
+  const paymentRowAgain = page.locator("tr").filter({ has: page.getByText(fixtures.closePaymentTypeName, { exact: true }) });
+  await paymentRowAgain.waitFor({ state: "visible", timeout: 15000 });
+  await paymentRowAgain.getByRole("button", { name: "Apply", exact: true }).click();
+
+  // The EXISTING-applications table (with per-row Void buttons) is a DIFFERENT table from BOTH the
+  // outer Payments table AND the candidate grid, but its OWN "Type"/"Invoice"/"Amount" column
+  // headers are each individually ambiguous with one or the other (the outer Payments table has its
+  // own "Type" column; the candidate grid has its own "Invoice"/"Amount" columns) — a columnheader
+  // `ancestor::table[1]` lookup here resolves to TWO tables, not one (caught live: the outer
+  // Payments table IS a literal DOM ancestor of this table, since ApplyPanel renders inside its
+  // `<td colSpan={8}>`, so the outer table's OWN direct "Type" header is a SECOND, unrelated match).
+  // Located instead via the ApplyPanel's OWN root div, itself found by its unique summary line (the
+  // exact text already asserted above), then that div's FIRST nested `<table>` — the applications
+  // table always renders (JSX order) before the candidate grid's own table.
+  const applyPanel = page.locator("div.mt-2.rounded.border.bg-surface-50.p-3")
+    .filter({ has: page.getByText("Payment $600.00 · Applied $400.00 · On account $200.00", { exact: true }) });
+  const applicationsTable = applyPanel.locator("table").first();
+  const writeOffRow = applicationsTable.locator("tbody tr")
+    .filter({ has: page.getByText("Write-off", { exact: true }) });
+  await writeOffRow.waitFor({ state: "visible", timeout: 15000 });
+  await shot("write-off-application-before-void");
+
+  const voided = page.waitForResponse((res) =>
+    /\/api\/receivables\/applications\/[^/]+$/.test(new URL(res.url()).pathname)
+    && res.request().method() === "DELETE" && res.ok());
+  await writeOffRow.getByRole("button", { name: "Void", exact: true }).click();
+  assert.match(await modalTitle(page), /^Void the Write-off application of \$30\.00 against invoice/);
+  await answerModal(page, { reason: VOID_REASON });
+  await voided;
+  await shot("write-off-application-voided");
+
+  await page.goto(`${ctx.baseURL}/receivables/close?${query}`);
+  await page.getByRole("heading", { name: "Month-End Close", exact: true }).waitFor({ state: "visible" });
+
+  const rePrelimRes = await page.request.get(`${ctx.baseURL}/api/receivables/close/preliminary?${query}`, { maxRetries: 1 });
+  const rePrelim = await rePrelimRes.json();
+  assert.equal(rePrelim.schedule.variance, 0,
+    `preliminary schedule must still reconcile after the void — got ${JSON.stringify(rePrelim.schedule)}`);
+
+  const reClosed = page.waitForResponse((res) =>
+    new URL(res.url()).pathname === "/api/receivables/close" && res.request().method() === "POST" && res.ok());
+  await page.getByRole("button", { name: "Close period", exact: true }).click();
+  await reClosed;
+  await openRecordTab(page, "Closed periods");
+  const rowAgain = periodRow(page, label);
+  await rowAgain.getByText("CLOSED", { exact: true }).waitFor({ state: "visible", timeout: 15000 });
+  await shot("period-re-closed");
+
+  const exportedTwice = page.waitForResponse((res) =>
+    /\/api\/receivables\/close\/[^/]+\/export$/.test(new URL(res.url()).pathname)
+    && res.request().method() === "POST" && res.ok());
+  await rowAgain.getByRole("button", { name: "Export GL summary", exact: true }).click();
+  // The second export reverses the one voided write-off, so the screen asks first in the owner's
+  // words (R25, #705), counting that one event.
+  await waitForModal(page, "an export that reverses an exported event must ask first");
+  assert.equal(await modalTitle(page), "Reverse earlier postings?");
+  assert.equal(await modalBody(page), "This export reverses 1 event already exported and posts it again.");
+  await answerModal(page);
+  await exportedTwice;
+  await waitForCount(rowAgain.locator("ul li"), 2); // newest export batch is first (exportNumber desc)
+  await shot("exported-second");
+
+  const secondFileHref = await rowAgain.locator("ul li").first().getByRole("link", { name: "File", exact: true }).getAttribute("href");
+  const secondCsvRes = await page.request.get(new URL(secondFileHref, ctx.baseURL).toString(), { maxRetries: 1 });
+  assert.equal(secondCsvRes.ok(), true, "the second export's CSV file must download");
+  const secondCsv = sumCsv(await secondCsvRes.text());
+  assert.ok(secondCsv.rowCount > 0, "the reversing delta must be non-empty");
+  assert.equal(secondCsv.debitCents, secondCsv.creditCents,
+    `the reversing delta must balance — debit ${secondCsv.debitCents} vs credit ${secondCsv.creditCents} cents`);
+  // Uncontaminated by any other flow's own events (see the file header): every OTHER in-scope event
+  // is unchanged between the two exports and so emits nothing, leaving the delta scoped to exactly
+  // the one 30.00 write-off this flow itself voided.
+  assert.equal(secondCsv.debitCents, WRITE_OFF_AMOUNT_CENTS,
+    `the reversing delta must equal exactly the voided write-off (${WRITE_OFF_AMOUNT_CENTS} cents) — ` +
+    `got debit ${secondCsv.debitCents} cents`);
+  assert.equal(secondCsv.creditCents, WRITE_OFF_AMOUNT_CENTS,
+    `the reversing delta must equal exactly the voided write-off (${WRITE_OFF_AMOUNT_CENTS} cents) — ` +
+    `got credit ${secondCsv.creditCents} cents`);
+}

@@ -1,0 +1,302 @@
+// The unsaved-edit guard, as a client-safe leaf (no src/server imports — the permission-ui.ts /
+// nav.ts precedent). Pure logic plus a module-level registry; the DOM wiring lives in Shell.tsx
+// and the per-section registration in useUnsavedSection, so the decisions below are unit-testable
+// without a DOM (tests/unsaved-guard.test.ts).
+//
+// WHY THIS EXISTS. A detail page runs TWO save models side by side, and always has. On the order
+// hub, PO number / VS order # / Customer job # / Notes save on BLUR — no button, no confirmation —
+// while Containers, Serials, Charges and Loads each need an explicit "Save X" click. That split is
+// deliberate and is NOT redesigned here: the blur-save/mutation-gate discipline is §5.13, with
+// save-scope.ts, drain-queue.ts and use-edit-guard.ts built around it. What was missing is that
+// nothing on screen distinguished the two, and `beforeunload` appeared nowhere in src/ — so an
+// edited-but-unsaved grid was discarded SILENTLY the moment anyone clicked a nav link, having just
+// been taught by the fields above it that this page saves itself. Making the rail sticky (!270) put
+// those links within reach at every scroll position, which makes the loss easier to trigger, not
+// harder.
+//
+// The registry is module-level with a listener Set — the invalidateBackupBanner/invalidateSetupBanner
+// idiom — because the sections that go dirty and the Shell that guards navigation are in different
+// component trees with no common owner short of the root layout.
+//
+// WHAT HOLDS THE COVERAGE: tests/unsaved-registration-sweep.test.ts, not a convention. Every editor
+// whose Save control gates on a dirty flag must register, the census is walked from src/ rather than
+// hand-listed, and an exemption is an allowlist entry with a reason. The shared SaveButton registers
+// for its own consumers, but that alone never covered the editors that do not use it.
+
+/**
+ * What one registered section contributes: the human `label` the prompt names, and an optional
+ * `scope` naming the ROWS it holds.
+ *
+ * **Why a scope exists at all (#293/#294).** A gate could previously ask only "is anything dirty"
+ * or "is anything outside these LABELS dirty", and both are too coarse for a control that destroys
+ * one region of the page. The order hub mounts one serials editor PER LINE and every one of them
+ * registers the identical label `"Serials"` — so "are this line's serials dirty", the only question
+ * `removeLine` actually needs answered, could not be asked. Relabelling per line was the obvious
+ * fix and is the wrong one: the traveler print gate matches labels by exact string equality
+ * (`unsavedPresentExcluding`), so per-line labels would silently stop it recognising the section it
+ * exists to ignore.
+ *
+ * So the label stays the human name and the scope carries identity. A scope is opaque here and its
+ * shape is the caller's business; the convention at the call sites is `kind:id`
+ * (`serials:<lineId>`, `shipment-order:<shipperOrderId>`) so two kinds can never collide on a bare
+ * id. Sections that no control destroys piecemeal leave it undefined and are simply never in scope.
+ */
+type DirtySection = { label: string; scope?: string; recoverable?: boolean };
+
+/** Sections currently holding unsaved edits, keyed so one section going clean cannot clear another
+ *  (two grids on one page are routine). */
+const dirtySections = new Map<string, DirtySection>();
+const listeners = new Set<() => void>();
+
+function notify(): void {
+  for (const fn of listeners) fn();
+}
+
+/**
+ * Record that `key` holds unsaved edits, shown to the user as `label` and — when the rows belong to
+ * one destroyable region — carrying `scope`. Re-marking the same key replaces its entry rather than
+ * accumulating entries.
+ *
+ * `recoverable` says the work under this registration is also held by a draft the draft store
+ * keeps after a departure, so the leave prompt says it stays rather than that it is discarded
+ * (R24, #704). The quote page's two halves are the case: both are kept in its Quote draft, under
+ * labels of their own. A section registered under a label the draft store also lists needs no
+ * flag, since the prompt reads the store's labels too (`currentRecoverableLabels`).
+ *
+ * The idempotence check compares every field. It used to be `get(key) === label`, which an object
+ * value would make false on every render (a fresh object is never `===` a stored one), and that
+ * would notify on every render of every dirty section — a re-render storm behind a guard whose
+ * whole point is to be quiet until something changes.
+ */
+export function markUnsaved(key: string, label: string, scope?: string, recoverable = false): void {
+  const current = dirtySections.get(key);
+  if (current !== undefined && current.label === label && current.scope === scope && (current.recoverable ?? false) === recoverable) return;
+  dirtySections.set(key, recoverable ? { label, scope, recoverable } : { label, scope });
+  notify();
+}
+
+/** Record that `key` is clean. A key that was never marked is a no-op — and deliberately does NOT
+ *  notify, so an unmount storm on a page with nothing dirty costs no re-renders. */
+export function clearUnsaved(key: string): void {
+  if (!dirtySections.delete(key)) return;
+  notify();
+}
+
+/** The labels of every section holding unsaved edits — de-duplicated and sorted, so a page with
+ *  two dirty grids produces a stable sentence rather than one that depends on mount order. */
+export function unsavedLabels(): string[] {
+  return [...new Set([...dirtySections.values()].map((s) => s.label))].sort();
+}
+
+/** The labels of the dirty sections registered as `recoverable`, sorted (R24, #704). */
+export function recoverableUnsavedLabels(): string[] {
+  return [...new Set([...dirtySections.values()].filter((s) => s.recoverable).map((s) => s.label))].sort();
+}
+
+/** How many sections hold unsaved edits. A NUMBER rather than the label array because this is the
+ *  `useSyncExternalStore` snapshot behind the Shell's reactive arming: a fresh array each call
+ *  would read as a new snapshot on every render and loop. */
+export function unsavedCount(): number {
+  return dirtySections.size;
+}
+
+/** Subscribe to registry changes; returns the unsubscribe. */
+export function subscribeUnsaved(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+}
+
+/** Everything about a click that decides whether it will replace what is on screen. Gathered from
+ *  the DOM event by the caller so this predicate stays pure and testable. */
+export type NavIntent = {
+  /** The anchor's href, or null when the click was not on a link at all. */
+  href: string | null;
+  sameOrigin: boolean;
+  /** The path currently open, for the same-page comparisons below. */
+  currentPath: string;
+  /** ctrl/meta/shift/alt — the click opens elsewhere and leaves this page alone. */
+  modifierKey: boolean;
+  newTab: boolean;
+  download: boolean;
+  defaultPrevented: boolean;
+  /** Explicit plain-anchor document load: beforeunload owns its confirmation. Omission retains
+   *  the click guard, so an unmarked link cannot silently bypass client navigation protection. */
+  documentNavigation?: boolean;
+};
+
+/**
+ * Whether a click should be interrupted to warn about unsaved edits.
+ *
+ * Deliberately narrow. It fires ONLY for a click that genuinely replaces what is on screen, because
+ * a guard that also fires on downloads, new tabs and in-page anchors is one people learn to click
+ * through — and a prompt nobody reads protects nothing. The caller has already established that
+ * something is actually dirty; this answers only "will this click take the page away".
+ */
+export function shouldGuardNavigation(i: NavIntent): boolean {
+  if (i.href === null) return false;
+  if (i.defaultPrevented || i.modifierKey || i.newTab || i.download) return false;
+  // Native document links reach beforeunload even on the same origin. Never disarm that listener:
+  // cancellation or a navigation that does not unload must leave the next departure protected.
+  if (i.documentNavigation === true) return false;
+  // Cross-origin leaves the app entirely, where the browser's own beforeunload prompt takes over —
+  // guarding here as well would ask twice.
+  if (!i.sameOrigin) return false;
+  // A bare hash, or a hash on the path already open, is an in-page jump: nothing is lost.
+  if (i.href.startsWith("#")) return false;
+  const [path] = i.href.split("#");
+  // An `/api/` link is an export or a document, not a page this app navigates to: the route answers
+  // Content-Disposition or opens a viewer, and THIS page stays exactly where it is. Prompting there
+  // is a false positive, and a prompt that fires when nothing is at stake is the one people learn
+  // to dismiss — which costs the prompts that matter (Codex P2 on !272, found on BlockerPanel's
+  // "Export list to Excel"). Compared with the trailing slash so `/apiary` stays a page.
+  if (path === "/api" || path.startsWith("/api/")) return false;
+  // Re-entering the page already open discards nothing either.
+  return leavesCurrentPage(path, i.currentPath);
+}
+
+/**
+ * Whether navigating to `href` actually takes the operator off `currentPath`.
+ *
+ * Extracted so the click guard above and Shell's PROGRAMMATIC navigations answer it identically.
+ * `router.push` to the page already open does not unmount the editor, so the edits survive and a
+ * discard prompt there warns about nothing — and searching for the order you already have open is
+ * a common lookup, so that false prompt fires often enough to teach people to click through
+ * (Codex P2 on !272). Takes a bare path: callers that may hold a fragment strip it first, as
+ * `shouldGuardNavigation` does.
+ */
+export function leavesCurrentPage(path: string, currentPath: string): boolean {
+  return path !== "" && path !== currentPath;
+}
+
+/**
+ * Whether anything OUTSIDE `ignoreLabels` is holding unsaved edits.
+ *
+ * A DENY list, not an allow list, and that direction is the whole point. The traveler print gate
+ * needs "is anything the traveler actually prints unsaved" — `readTravelerData` reads order lines,
+ * containers, loads and the order's PO, and never serials or charges, so a dirty Charges grid was
+ * disabling a print it cannot affect (Codex P2 on !272). The PO box is a blur-save that registers
+ * no section, so this predicate never sees it, and a print that races its save can archive the old
+ * PO: the owner accepted that on 2026-10-17 (#518), as the print gate in the order hub's
+ * `DocumentsSection.tsx` records. Naming the sections that DO matter would fail OPEN the day
+ * someone renames one or adds a grid: the gate would silently stop covering it. Naming the ones
+ * that provably do not means an unrecognised section still blocks, and the failure is a spurious
+ * refusal someone notices rather than filed paper nobody does.
+ */
+export function unsavedPresentExcluding(ignoreLabels: readonly string[]): boolean {
+  for (const { label } of dirtySections.values()) if (!ignoreLabels.includes(label)) return true;
+  return false;
+}
+
+/**
+ * The two scope names in use, as functions rather than as strings typed twice.
+ *
+ * A scope only works if the section that REGISTERS it and the control that ASKS about it spell it
+ * identically, and nothing about a mismatch is loud: `unsavedPresentInScope` would simply answer
+ * false and the refusal would quietly stop refusing. That is the failure a shared leaf removes
+ * outright — the `permission-constants.ts` precedent — so the string exists once and both ends
+ * import it. The `kind:` prefix keeps two kinds from colliding on a bare id.
+ */
+export const serialsScope = (lineId: string): string => `serials:${lineId}`;
+export const shipmentOrderScope = (shipperOrderId: string): string => `shipment-order:${shipperOrderId}`;
+
+/**
+ * Whether anything registered under exactly this `scope` is holding unsaved edits.
+ *
+ * The counterpart to `unsavedPresentExcluding`, and the opposite direction: that one is a DENY list
+ * answering "is anything I did not exclude dirty", which fails safe by over-reporting. This one
+ * asks about a NAMED region and reports nothing else, because it backs a refusal on a control that
+ * destroys exactly that region — `removeLine` takes one line's serials, `removeOrderFromShipper`
+ * takes one order's three grids. Widening it to the page would refuse those controls over sections
+ * the write provably cannot touch (Containers, Charges and Loads carry no `lineId` at all), and a
+ * guard that fires over nothing is the guard people learn to click through.
+ *
+ * An UNKNOWN scope answers false, and that is the honest answer rather than a fail-open: this asks
+ * "is this named region dirty", and a region nothing registered is not dirty. What keeps it from
+ * silently covering nothing is the sweep — a `gate` verdict is proved per control, so a scope that
+ * stops matching any registration leaves the gate computed but refusing nothing, which reds.
+ */
+export function unsavedPresentInScope(scope: string): boolean {
+  for (const section of dirtySections.values()) if (section.scope === scope) return true;
+  return false;
+}
+
+/** What the leave prompt says of a recoverable section's work (R24, the owner's sentence). */
+export const DRAFTS_STAY = "They stay under Drafts in this tab until you save or discard them.";
+
+/**
+ * The prompt. It NAMES the dirty sections: "you have unsaved changes" is the wording everyone
+ * clicks through, and the section name is the difference between a warning and a speed bump.
+ *
+ * **`writeInFlight` is what stops it lying (#276).** A section's dirty flag means "differs from the
+ * server as loaded", so it stays set for the whole duration of its own save — `grid.reset()` runs
+ * only after the response lands. That put every save inside a window where this prompt offered to
+ * DISCARD changes that were committing regardless, on all fourteen registered editors rather than
+ * only the `/shipping/new` case #276 was filed about. The request cannot be un-sent, and aborting
+ * would not help: `submitWithConflictRetry` sends a `clientRequestId` so a retry lands as the SAME
+ * write rather than a second one.
+ *
+ * So the wording changes rather than the behaviour. #276 proposed REFUSING instead — a blocking
+ * mode — and that was not taken (owner ruling, 2026-09-06): `api()` sets no timeout, so a stalled
+ * request would refuse every nav click, the search and sign-out with nothing to clear it, and **a
+ * guard the operator cannot clear is worse than no guard**. The truthful prompt strands nobody and
+ * still lets the operator leave.
+ *
+ * **THE IN-FLIGHT ARM ADDS A FACT; IT MUST NOT REPLACE ONE.** The counter behind `writeInFlight` is
+ * app-wide and unattributed — it knows a request is open, never which of these sections issued it.
+ * So the navigation sentence says both things: the open request finishes regardless, AND anything
+ * not yet saved is discarded. A first draft said only the first, and on the order hub — save Containers,
+ * then leave while Charges is still dirty — it told the operator that Charges would survive. It
+ * would not. That trades a false "this will be discarded", which keeps people on the page, for a
+ * false "this will be saved", which invites them off it: strictly worse than the bug being fixed.
+ *
+ * It says "a request", not "a save", for the same honesty: one route answers a POST without writing
+ * (`/api/templates/[id]/preview`), and calling that a save would be a second small lie rather than a
+ * reason to start allowlisting routes.
+ *
+ * `writeInFlight` is passed IN rather than read from a module, so this stays a pure function the
+ * suite can exercise both ways without a DOM (`environment: "node"`).
+ *
+ * In-page destroyers pass `action`, a complete question naming what they replace or discard (#300).
+ * They still name the dirty sections and say a running request cannot be cancelled, but must not
+ * claim the operator leaves or cannot see the result. The caller owns the loss wording: Re-split
+ * replaces Loads while other dirty grids survive, so the navigation catch-all would lie here.
+ *
+ * The navigation form is told which of `labels` are recoverable (R24, #704): a section whose draft
+ * the draft store keeps after a departure, which no navigation discards (the design retains a draft
+ * after any departure it cannot attribute). The caller passes them, from the store's labels and the
+ * registrations marked `recoverable`; left empty, every section is plain and the sentence is
+ * today's. The `action` form takes none: an in-page destroyer names its own loss.
+ */
+export function confirmMessage(labels: string[], writeInFlight = false, action?: string, recoverable: readonly string[] = []): string {
+  const subjectOf = (named: readonly string[]) =>
+    named.length === 1
+      ? `${named[0]} has`
+      : `${named.slice(0, -1).join(", ")} and ${named[named.length - 1]} have`;
+  const subject = subjectOf(labels);
+  if (action) {
+    const pending = writeInFlight
+      ? ", and a request is still running — continuing will not cancel it. " : ". ";
+    return `${subject} unsaved changes${pending}${action}`;
+  }
+  const kept = labels.filter((label) => recoverable.includes(label));
+  if (kept.length) {
+    // R24 (owner ruling 2026-10-22, its sentence 2026-11-02; #704): a recoverable section's work
+    // stays under Drafts in this tab, so its clause says so, and a plain-registry section's clause
+    // keeps saying it is discarded. Neither group is promised the other's outcome. The running
+    // request's clause keeps #276's first fact; its second, that anything not yet saved is
+    // discarded, is the plain clause's, said only when a plain section is named.
+    const lost = labels.filter((label) => !recoverable.includes(label));
+    if (!lost.length && !writeInFlight) return `${subjectOf(kept)} unsaved changes. Leave the page? ${DRAFTS_STAY}`;
+    return [
+      ...(lost.length ? [`${subjectOf(lost)} unsaved changes, and leaving discards them.`] : []),
+      `${subjectOf(kept)} unsaved changes.`, DRAFTS_STAY,
+      ...(writeInFlight ? ["A request is still running — leaving will not cancel it, and you will not see the result."] : []),
+      "Leave the page?",
+    ].join(" ");
+  }
+  if (writeInFlight) {
+    return `${subject} unsaved changes, and a request is still running — leaving will not cancel it, `
+      + `and you will not see the result. Anything not yet saved is discarded. Leave the page?`;
+  }
+  return `${subject} unsaved changes. Leave the page and discard them?`;
+}

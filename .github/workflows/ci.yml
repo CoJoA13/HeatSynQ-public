@@ -23,7 +23,9 @@ env:
 jobs:
   ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Measured on the hosted runner 2026-11-21: 28.8 minutes on the first push to main and 21.2 on
+    # a Dependabot pull request, nearly all of it the Gates step. 45 leaves half again over the slower.
+    timeout-minutes: 45
     services:
       postgres:
         image: postgres:18

@@ -33,8 +33,8 @@
 // The bill of lading (BOL canvas PR 2) adds three more, each read from the profile through the leaf,
 // never from a document type or a field key: a field the profile draws on a rule (`ruleOf`,
 // `ruledFields`) is drawn as the form prints it, its label beside a rule under the rest of the box
-// ("beside", the label cut where the box is narrow and the rule kept at least a grid step), a rule
-// across the box with the label under it at the small size ("under"), or its label beside two rules
+// ("beside", the label cut where the box is narrow and the rule kept at least a grid step; the
+// carrier's too since owner ruling R1 of 2026-11-24 retired the "under" drawing), or its label beside two rules
 // its `column` long ("lines", the caption not drawn); a list block (`isListBlock`: the Consignee's
 // ref/PO and TRV lists, and the shipping ticket's serial list, owner ruling (b) of 2026-11-10) as its
 // heading and one line over the hatch, with no column-header strip; and a column table that keeps
@@ -148,7 +148,7 @@ export function CanvasStage({
     fontFamily: `"${family}"`, fontSize: style.size * scale, fontWeight: style.bold ? 700 : 400, textAlign: style.align,
     lineHeight: 1.15, whiteSpace: "pre",
   });
-  /** The contract's small size: a rule's caption, a table's heading, strip and rows, an empty table's words. */
+  /** The contract's small size: a table's heading, strip and rows, an empty table's words. */
   const small = { fontFamily: `"${family}"`, fontSize: contract.fonts.smallSize * scale, lineHeight: 1.2 };
 
   function commitMove(item: CanvasItem, dx: number, dy: number) {
@@ -217,14 +217,6 @@ export function CanvasStage({
           const words = label === "" ? (field?.name ?? item.key) : label;
           const tone = label === "" ? "text-ink-500 italic" : "text-ink-900";
           const line = item.style.size * 1.15 * scale;
-          if (ruled.draw === "under") {
-            return (
-              <div className="flex flex-col">
-                <span className={`block ${RULE_LINE}`} style={{ height: line }} />
-                <div className={`truncate text-center ${tone}`} style={small}>{words}</div>
-              </div>
-            );
-          }
           const shownLabel = <div className={`min-w-0 truncate ${tone}`} style={text(item.style)}>{words}</div>;
           if (ruled.draw === "lines") {
             const width = (ruled.column ?? 0) * scale;

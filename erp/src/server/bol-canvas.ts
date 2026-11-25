@@ -64,11 +64,13 @@ function unmargined(node: Content): Content {
  *  - write-in rule (`delivering_carrier`, `vehicle_initials`, `vehicle_no`, `shipper_per`,
  *    `agent_per`, `po_address`): the label at the item's style beside a blank rule taking the rest of
  *    the box, after the flow's gap (the signatures' 6 pt, the others' 4).
- *  - carrier line (`carrier_name`): the carrier at the item's style over a rule the box's width, the
- *    label under it as the flow's 6.5 pt caption (one space when there is no carrier).
- *  - ship-from line (`ship_from`): the flow's four columns at the item's size, the date bold always
- *    and the item's bold on the other three, its alignment not read; every `ship_from` item prints the
- *    date knob's date.
+ *  - carrier line (`carrier_name`): the flow's `carrierPair`, the label in the flow's 70 pt column at
+ *    its 9 pt bold, the carrier (one space when there is none) at the item's style on a rule taking the
+ *    rest of the box (owner ruling R1, 2026-11-24: the label printed under the rule before; the
+ *    item's style stays the name's, so a stored item prints its name as it did).
+ *  - ship-from line (`ship_from`): the flow's one sentence at the item's size, the date bold always
+ *    and the item's bold on the rest, its alignment not read; every `ship_from` item prints the date
+ *    knob's date (owner ruling R2, 2026-11-24: four columns before).
  *  - consignee block (`consigned_to`): the flow's two consignee rows, the label at the item's style,
  *    the caption beside the first line taking the box's width past the second rule.
  *
@@ -109,7 +111,9 @@ function fieldContent(ctx: Ctx, d: BolData, item: FieldItem, flow: BolFlowBuilde
     case "shipper_per":
     case "agent_per": return ruled(W.signLabel, W.signGap, null);
     case "po_address": return ruled(W.poAddressLabel, W.rowGap, null);
-    case "carrier_name": return inBox(flow.carrierStack(d.carrierName, label, width, style));
+    case "carrier_name": return inBox({
+      columns: flow.carrierPair(d.carrierName, label, width - W.carrierLabel - W.rowGap, style), columnGap: W.rowGap,
+    });
     // The date knob's slot: every ship-from item prints it.
     case "ship_from": return inBox(unmargined(flow.shipFromLine(ctx, d, size, bold)));
     case "consigned_to": {

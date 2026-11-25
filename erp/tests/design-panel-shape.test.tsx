@@ -300,12 +300,11 @@ describe("the stage", () => {
     expect(pro).toContain(`>${bolLabel("pro_number")}<`);
     expect(count(pro, RULE)).toBe(1);
     expect(pro.indexOf(`>${bolLabel("pro_number")}<`)).toBeLessThan(pro.indexOf(RULE));
-    // The carrier's name: the rule across the box, the label under it at the small size.
+    // The carrier's name: its label beside the rule, as the write-ins' (owner ruling R1, 2026-11-24).
     const carrier = bolItem(html, "Carrier name");
-    expect(ruleOf(byId(layout, "field-carrier_name"), BOL_CONTRACT)?.draw).toBe("under");
+    expect(ruleOf(byId(layout, "field-carrier_name"), BOL_CONTRACT)?.draw).toBe("beside");
     expect(count(carrier, RULE)).toBe(1);
-    expect(carrier.indexOf(RULE)).toBeLessThan(carrier.indexOf(`>${bolLabel("carrier_name")}<`));
-    expect(carrier).toContain(`font-size:${BOL_CONTRACT.fonts.smallSize * SCALE}px`);
+    expect(carrier.indexOf(`>${bolLabel("carrier_name")}<`)).toBeLessThan(carrier.indexOf(RULE));
     // Consigned to: its label beside two rules in the profile's column, the caption not drawn.
     const consigned = bolItem(html, "Consigned to");
     const column = ruleOf(byId(layout, "field-consigned_to"), BOL_CONTRACT)!.column!;

@@ -907,7 +907,7 @@ describe("the bill-of-lading contract", () => {
     expect(labels.bol_number).toBe("Shipper's Bill of Lading No.");
     expect(labels.consignee_ref).toBe("Consignee's Ref/PO No.");
     expect(labels.scac_code).toBe("Carrier's Code (SCAC)");
-    expect(labels.carrier_name).toBe("(Name of Carrier)");
+    expect(labels.carrier_name).toBe("Name of Carrier"); // owner ruling R1, 2026-11-24
     expect(labels.trv_no).toBe("TRV NO.");
     expect(labels.vehicle_initials).toBe("Car or Vehicle Initials");
     expect(labels.collect_checkbox).toBe("CHECK BOX IF COLLECT");
@@ -1406,7 +1406,7 @@ describe("the canvas profile (design 2026-11-08 §4.1)", () => {
       destination: 70 + 4 + CANVAS_GRID, destination_state: 16 + 4 + CANVAS_GRID, destination_zip: 18 + 4 + CANVAS_GRID,
       delivering_carrier: 80 + 4 + CANVAS_GRID, vehicle_initials: 105 + 4 + CANVAS_GRID, vehicle_no: 22 + 4 + CANVAS_GRID,
       shipper_per: 60 + 6 + CANVAS_GRID, agent_per: 60 + 6 + CANVAS_GRID, po_address: 165 + 4 + CANVAS_GRID,
-      ship_from: 100 + 30 + 180 + 3 * 6 + CANVAS_GRID,
+      carrier_name: 70 + 4 + CANVAS_GRID,
       consigned_to: 70 + 4 + 180 + 4 + CANVAS_GRID,
       trv: 55 + CANVAS_GRID,
     });

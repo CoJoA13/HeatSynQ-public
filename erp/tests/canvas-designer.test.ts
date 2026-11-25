@@ -885,7 +885,7 @@ describe("the boxed fields", () => {
 describe("the ruled fields, the list blocks and what a block keeps beside its strip (design 2026-11-09 §4.1)", () => {
   it("ruleOf: a field the profile draws on a rule, as its paper prints it, and nothing else", () => {
     expect(ruleOf(bolField("pro_number"), BOL_CONTRACT)).toEqual({ key: "pro_number", draw: "beside" });
-    expect(ruleOf(bolField("carrier_name"), BOL_CONTRACT)).toEqual({ key: "carrier_name", draw: "under" });
+    expect(ruleOf(bolField("carrier_name"), BOL_CONTRACT)).toEqual({ key: "carrier_name", draw: "beside" });
     expect(ruleOf(bolField("consigned_to"), BOL_CONTRACT)?.draw).toBe("lines");
     // A field the profile does not name prints bare.
     expect(ruleOf(bolField("title"), BOL_CONTRACT)).toBeNull();
@@ -1124,18 +1124,18 @@ describe("an item's least width in the designer (design 2026-11-09 §4.1 additio
   it("a field stops at its least width, an item with no entry at one grid step", () => {
     expect(resizeBox(bolField("pro_number", { box: { x: 338, y: 24, w: 244, h: 10 } }), "e", -500, 0, BOL_CONTRACT).w).toBe(118.5);
     expect(BOL_LEAST_WIDTHS.pro_number).toBe(118.5);
-    // Pin: the carrier's name has no entry.
+    // The carrier's label column and gap and one grid step (owner ruling R1, 2026-11-24).
     expect(resizeBox(bolField("carrier_name", { box: { x: 24, y: 4, w: 300, h: 12 } }), "e", -500, 0, BOL_CONTRACT).w)
-      .toBe(CANVAS_GRID);
+      .toBe(78.5);
   });
   it("a field narrower than its floor, floored by a resize, stays inside the side margins", () => {
-    expect(BOL_LEAST_WIDTHS.ship_from).toBe(332.5);
+    expect(BOL_LEAST_WIDTHS.consigned_to).toBe(262.5);
     // East: the floored right side would pass the right margin (588), so the left side moves instead.
-    expect(resizeBox(bolField("ship_from", { box: { x: 408, y: 40, w: 180, h: 12 } }), "e", 9, 0, BOL_CONTRACT))
-      .toEqual({ x: 588 - 332.5, y: 40, w: 332.5, h: 12 });
+    expect(resizeBox(bolField("consigned_to", { box: { x: 408, y: 40, w: 180, h: 12 } }), "e", 9, 0, BOL_CONTRACT))
+      .toEqual({ x: 588 - 262.5, y: 40, w: 262.5, h: 12 });
     // West: the floored left side would pass the left margin (24), so the right side moves instead.
-    expect(resizeBox(bolField("ship_from", { box: { x: 24, y: 40, w: 180, h: 12 } }), "w", -9, 0, BOL_CONTRACT))
-      .toEqual({ x: 24, y: 40, w: 332.5, h: 12 });
+    expect(resizeBox(bolField("consigned_to", { box: { x: 24, y: 40, w: 180, h: 12 } }), "w", -9, 0, BOL_CONTRACT))
+      .toEqual({ x: 24, y: 40, w: 262.5, h: 12 });
   });
   it("the freight block stops at its columns and its sidebar, the width rule 9 accepts", () => {
     const freight = bolTable("freight");
@@ -1182,9 +1182,9 @@ describe("an item's least width in the designer (design 2026-11-09 §4.1 additio
     expect(placed.box.w).toBe(Math.max(180, BOL_LEAST_WIDTHS[key] ?? 0));
     expect(() => validateCanvasLayout(layoutOf([placed]), BOL_CONTRACT)).not.toThrow();
   });
-  it("a new ship-from, consigned-to and pro number field: 332.5, 262.5 and 180", () => {
+  it("a new ship-from, consigned-to and pro number field: 180 (the sentence has no fixed part, R2), 262.5 and 180", () => {
     const width = (key: string) => placeNew(layoutOf([]), BOL_CONTRACT, entry("field", key)).box.w;
-    expect([width("ship_from"), width("consigned_to"), width("pro_number")]).toEqual([332.5, 262.5, 180]);
+    expect([width("ship_from"), width("consigned_to"), width("pro_number")]).toEqual([180, 262.5, 180]);
   });
 });
 

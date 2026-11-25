@@ -209,6 +209,20 @@
  * install it refuses (#991 ledger). Cite this as licence for nothing: a print-time rule tightens again only on an owner
  * ruling that names it, after the same listing.
  *
+ * THE TENTH CASE (owner rulings R1 and R2 of 2026-11-24, design
+ * docs/superpowers/specs/2026-11-24-bol-captions-ship-from-design.md): the bill of lading prints every line's
+ * name to its left. The `carrier_name` default label changes from "(Name of Carrier)" to "Name of Carrier"
+ * (W14's kind: a version with the label box empty prints the new words; a typed label prints as typed, and the
+ * stored-template listing names one typed as the old wording), and prints beside its rule in the consignee
+ * labels' column, where it printed as a caption under it; on a canvas its family is a ruled pair with a least
+ * width (78.5 pt) a stored box narrower than which is refused at print, read off the listing before the merge.
+ * The freight sidebar's furniture ("Signature of consignor", "RECEIVED $", "Agent or Cashier", "Per", "$")
+ * prints beside its rules, and the Ship-from line is one sentence, its address on one line (`oneLineAddress`,
+ * src/lib/line-break.ts), where it was four fixed columns; both on every stored bill of lading template,
+ * published ones included, from its next print. tests/bol.test.ts and tests/bol-canvas.test.ts hold the
+ * rendered pages. Cite this as licence for nothing: these lines change again only on an owner ruling that
+ * names them.
+ *
  * THE CANVAS KEY (owner rulings of 2026-11-07, #926; built in three PRs: #929 the model, #930 the
  * paper, #931 the designer; widened to the shipping ticket by the design of 2026-11-08, approved on
  * #935, to the bill of lading by the design of 2026-11-09, approved on #941, to the
@@ -522,9 +536,10 @@ export type CanvasRequired =
   | { kind: "table"; key: string; reason: string }
   | { kind: "field"; key: string; reason: string };
 /** A field the stage draws on a rule, as the paper prints it (design 2026-11-09 §4.1; owner ruling
- *  (a), 2026-11-10): "beside", its label beside a rule under the rest of the box; "under", a rule
- *  across the box with the label under it; "lines", its label beside two rules `column` points long. */
-export type CanvasRuledField = { key: string; draw: "beside" | "under" | "lines"; column?: number };
+ *  (a), 2026-11-10): "beside", its label beside a rule under the rest of the box; "lines", its label
+ *  beside two rules `column` points long. ("under", a rule with the label under it, was the carrier's
+ *  until owner ruling R1 of 2026-11-24 printed every label beside its rule.) */
+export type CanvasRuledField = { key: string; draw: "beside" | "lines"; column?: number };
 /** What the shared canvas code reads from a document (design 2026-11-08 §4.1): the tables a layout
  *  may place, the items it must hold and nothing may cover, whether it may place a barcode, the
  *  fields it never places as a field item, the fields that print in a border, the fields the stage

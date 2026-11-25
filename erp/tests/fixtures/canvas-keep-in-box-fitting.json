@@ -578,50 +578,50 @@
  "BOL freight x 24 w 564 [page line off]": {
   "pages": 1,
   "perPage": [
-   "00e2f8d89098fbc3e74aaa7e58b7ff575bc13ee58cfb8be74cb9a5ce6ac35f92"
+   "8de05046e97fda8eecf78c3b624ca323d4d399fd79a270671facd5426246c128"
   ],
-  "positions": "b0e705a3f15133b4a0d268fae761d651b8be64de9238999f520557c79955e0e6",
-  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+  "positions": "75942abbc0c91c0ffbcce94351118c1249cda6b94b8e628931a5d01cee2a0f65",
+  "measure": "ae7ee20772ea5fac293ebcd7aa94dd0b0d764d8790686cd33d02bad3a63a7d9c"
  },
  "BOL freight x 24 w 467.4 [page line off]": {
   "pages": 1,
   "perPage": [
-   "aeb7b136b7098df76391829e0288ede22857cbde3df5f5fcb1c0f4fdd4b2ce9e"
+   "9f40c74042be6c6e9b9c0125df42f90d2a56ed88d1dc9c03bed030f7c301d648"
   ],
-  "positions": "b0e705a3f15133b4a0d268fae761d651b8be64de9238999f520557c79955e0e6",
-  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+  "positions": "75942abbc0c91c0ffbcce94351118c1249cda6b94b8e628931a5d01cee2a0f65",
+  "measure": "ae7ee20772ea5fac293ebcd7aa94dd0b0d764d8790686cd33d02bad3a63a7d9c"
  },
  "BOL freight x 120.6 w 467.4 [page line off]": {
   "pages": 1,
   "perPage": [
-   "b8b94f52422511f275b98a5a882695955bfe1013420f8f61df1216b84343a17a"
+   "7d41af1218b288aebb252339d5778fa3f80c6758d7413ef0e8209531760fab45"
   ],
-  "positions": "53d08ceb825a52b03b68167bd1373a185a193e4ae3d3ab03753212720dacd2d2",
-  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+  "positions": "f8ee38a1bc844644aab0d6c744b2958485618dc0f4276eee81b84a8137a69a3c",
+  "measure": "ae7ee20772ea5fac293ebcd7aa94dd0b0d764d8790686cd33d02bad3a63a7d9c"
  },
  "BOL freight x 24 w 564 [page line on]": {
   "pages": 1,
   "perPage": [
-   "be9549d472d4ae16ff4ea98f8b5f57c5b607fefa7b023cc87dc32f69c42c5aa7"
+   "9a2a55bbe50302f471f7dfffcef4472b0fa736a9980221989bf606b785fa7ccb"
   ],
-  "positions": "b0e705a3f15133b4a0d268fae761d651b8be64de9238999f520557c79955e0e6",
-  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+  "positions": "75942abbc0c91c0ffbcce94351118c1249cda6b94b8e628931a5d01cee2a0f65",
+  "measure": "ae7ee20772ea5fac293ebcd7aa94dd0b0d764d8790686cd33d02bad3a63a7d9c"
  },
  "BOL freight x 24 w 467.4 [page line on]": {
   "pages": 1,
   "perPage": [
-   "602d17a91c9878ebe4fd92c8e0a3e88b10d0719e69f91ac29635a0c33935d9c6"
+   "fabd9926f5ab046aa5c69d6e18a18857d1e243b55b3b5a5c85375c7db38c5e17"
   ],
-  "positions": "b0e705a3f15133b4a0d268fae761d651b8be64de9238999f520557c79955e0e6",
-  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+  "positions": "75942abbc0c91c0ffbcce94351118c1249cda6b94b8e628931a5d01cee2a0f65",
+  "measure": "ae7ee20772ea5fac293ebcd7aa94dd0b0d764d8790686cd33d02bad3a63a7d9c"
  },
  "BOL freight x 120.6 w 467.4 [page line on]": {
   "pages": 1,
   "perPage": [
-   "70ca589604fd49b93e59dfa4ad4c6accbac3d24f166ccc19d22852ae287b7085"
+   "e49a415c6f3b542f0162e6528cb985e4b00824a4ad082b82bb82d6c1214ba048"
   ],
-  "positions": "53d08ceb825a52b03b68167bd1373a185a193e4ae3d3ab03753212720dacd2d2",
-  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+  "positions": "f8ee38a1bc844644aab0d6c744b2958485618dc0f4276eee81b84a8137a69a3c",
+  "measure": "ae7ee20772ea5fac293ebcd7aa94dd0b0d764d8790686cd33d02bad3a63a7d9c"
  },
  "CERT parts x 24 w 564 [page line off]": {
   "pages": 1,

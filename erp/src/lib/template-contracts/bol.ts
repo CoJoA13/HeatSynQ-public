@@ -87,21 +87,22 @@ export const BOL_LEAST_WIDTHS: Record<string, number> = {
   destination: 78.5, destination_state: 24.5, destination_zip: 26.5,            // 70/16/18 + 4
   delivering_carrier: 88.5, vehicle_initials: 113.5, vehicle_no: 30.5,         // 80/105/22 + 4
   shipper_per: 70.5, agent_per: 70.5, po_address: 173.5,                       // 60 + 6, 60 + 6, 165 + 4
-  ship_from: 332.5,                                                            // 100 + 30 + 180 + 3 × 6
   consigned_to: 262.5,                                                         // 70 + 4 + 180 + 4
+  carrier_name: 78.5,                                                          // 70 + 4 (owner ruling R1, 2026-11-24)
   trv: 59.5,                                                                   // 55, no column gap
 };
 
 /** The fields the stage draws on a rule, as bol.ts prints them (design 2026-11-09 §4.1; owner ruling
- *  (a), 2026-11-10): the form rules and the write-in rules beside their label, the carrier's name
- *  over its rule, the consignee's label beside its two 180 pt rules (the flow's `consignedRule`). A
- *  literal here; tests/bol-canvas.test.ts holds it to the server's families and widths. */
+ *  (a), 2026-11-10): the form rules, the write-in rules and the carrier's name beside their label (the
+ *  carrier's since owner ruling R1, 2026-11-24, its label printed under the rule before), the
+ *  consignee's label beside its two 180 pt rules (the flow's `consignedRule`). A literal here;
+ *  tests/bol-canvas.test.ts holds it to the server's families and widths. */
 const BOL_RULED_FIELDS: CanvasRuledField[] = [
   ...[
     "pro_number", "bol_number", "scac_code", "destination", "destination_state", "destination_zip", // the form rules
     "delivering_carrier", "vehicle_initials", "vehicle_no", "shipper_per", "agent_per", "po_address", // the write-ins
+    "carrier_name",
   ].map((key): CanvasRuledField => ({ key, draw: "beside" })),
-  { key: "carrier_name", draw: "under" },
   { key: "consigned_to", draw: "lines", column: 180 },
 ];
 
@@ -176,11 +177,12 @@ export const BOL_CONTRACT: TemplateContract = {
       ],
     },
     {
-      // carrierBlock — the carrier's name over its rule.
+      // carrierBlock — the carrier's label beside its rule, the name on it.
       key: "carrier", name: "Carrier", hideable: true, reorderable: true,
       fields: [
         {
-          key: "carrier_name", name: "Carrier name", defaultLabel: "(Name of Carrier)",
+          // Owner ruling R1, 2026-11-24: printed beside its line, so no longer a parenthesised caption.
+          key: "carrier_name", name: "Carrier name", defaultLabel: "Name of Carrier",
           removable: true,
         },
       ],

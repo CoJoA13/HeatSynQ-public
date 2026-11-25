@@ -20,6 +20,7 @@ import { textWidthOf } from "@/lib/tag-font-metrics";
 import { renderPdf } from "@/server/pdf/render";
 import { NO_REPORTS, savedShipmentTotalsInput, shipmentTotals } from "@/lib/shipment-totals";
 import { BOL_DEFAULT_CONFIG, validateConfig, type TemplateConfig } from "@/lib/template-contracts/index";
+import type { FontFamily } from "@/lib/template-contracts/types";
 import {
   getDocument, listDocumentsForOrder, listDocumentsForShipper, VOIDED_PRINT,
 } from "@/server/documents";
@@ -210,7 +211,8 @@ describe("buildBolDefinition", () => {
     expect(text).toContain("Carrier's Code (SCAC)");
     expect(text).toContain("GFMC");
     expect(text).toContain("Demo Foundry Truck");
-    expect(text).toContain("(Name of Carrier)");
+    expect(text).toContain("Name of Carrier");
+    expect(text).not.toContain("(Name of Carrier)");
     expect(text).toContain("RECEIVED, subject to");                 // the UDSBL boilerplate opens
     expect(text).toContain("100 Example Way");              // ship-from = company settings
     expect(text).toContain("Jul - 06 - 2026");                      // the sample's own date style
@@ -235,7 +237,7 @@ describe("buildBolDefinition", () => {
     expect(text).toContain("Class or Rate");
     expect(text).toContain("Check Column");
     expect(text).toContain("Subject to Section 7");
-    expect(text).toContain("(Signature of consignor)");
+    expect(text).toContain("Signature of consignor");
     expect(text).toContain("Freight charges are PREPAID unless marked collect");
     expect(text).toContain("CHECK BOX IF COLLECT");
     expect(text).toContain("RECEIVED $");
@@ -254,6 +256,141 @@ describe("buildBolDefinition", () => {
   it("marks the collect box only for COLLECT terms (spec §10.2's prepaid/collect block)", () => {
     expect(allText(buildBolDefinition(sampleBol({ freightTerms: "COLLECT" })))).toContain("X");
     expect(allText(buildBolDefinition(sampleBol({ freightTerms: "PREPAID" })))).not.toContain("X");
+  });
+});
+
+// ---- the carrier's label beside its line (owner ruling R1, 2026-11-24) ----
+
+describe("buildBolDefinition: the carrier's label prints beside its line (owner ruling R1, 2026-11-24)", () => {
+  /** Page 1's horizontal strokes (top-down), each as its start x, length and y. */
+  const horizontals = (pdf: Buffer) => strokedLines(pdf)[0]
+    .filter((s) => Math.abs(s.y1 - s.y2) < 0.01 && Math.abs(s.x2 - s.x1) > 0.01)
+    .map((s) => ({ x: Math.min(s.x1, s.x2), length: Math.abs(s.x2 - s.x1), y: s.y1 }));
+  /** The carrier's rule: the one stroke from 98 (24 + the 70 pt label column + the 4 pt gap), 260 long. */
+  const carrierRule = (pdf: Buffer) => {
+    const rules = horizontals(pdf).filter((r) => Math.abs(r.x - 98) < 0.01 && Math.abs(r.length - 260) < 0.01);
+    expect(rules).toHaveLength(1);
+    return rules[0];
+  };
+
+  it("prints \"Name of Carrier\" at the left margin, on the baseline of the carrier's name centred on its rule", async () => {
+    const pdf = await renderPdf(buildBolDefinition(sampleBol()));
+    const runs = textRunsWithY(pdf)[0];
+    const label = runs.find((r) => r.text === "Name ")!;
+    expect(label.x).toBeCloseTo(24, 1);
+    const name = runs.find((r) => r.text === "Demo ")!;
+    expect(Math.abs(name.y - label.y)).toBeLessThan(1.5);
+    const rule = carrierRule(pdf);
+    // The rule lies under the name's baseline (baselines count from the page's bottom, strokes from its top).
+    expect(rule.y - (792 - name.y)).toBeGreaterThan(0);
+    expect(rule.y - (792 - name.y)).toBeLessThan(5);
+    // Centred: the name's words sit about the rule's middle.
+    const last = runs.find((r) => r.text === "Truck")!;
+    const middle = (name.x + last.x + textWidthOf("Truck", "Roboto", "bold", 10)) / 2;
+    expect(Math.abs(middle - (rule.x + rule.length / 2))).toBeLessThan(1);
+    expect(runs.some((r) => r.text.startsWith("(Name"))).toBe(false);
+  });
+
+  it("prints the label beside a blank rule when the shipment has no carrier", async () => {
+    const pdf = await renderPdf(buildBolDefinition(sampleBol({ carrierName: "" })));
+    expect(textRunsWithY(pdf)[0].find((r) => r.text === "Name ")!.x).toBeCloseTo(24, 1);
+    carrierRule(pdf);
+  });
+});
+
+// ---- the sidebar's labels beside their lines (owner ruling R1, 2026-11-24) ----
+
+describe("buildBolDefinition: the sidebar's labels sit beside their lines (owner ruling R1, 2026-11-24)", () => {
+  /** The sidebar's left edge: the content's right edge (588) less the 170 pt sidebar. */
+  const SIDEBAR_X = 588 - 170;
+  const LABELS = [
+    { words: "Signature of consignor", size: 5.5, bold: false },
+    { words: "RECEIVED $", size: 6.5, bold: true },
+    { words: "Agent or Cashier", size: 5.5, bold: false },
+    { words: "Per", size: 6.5, bold: false },
+    { words: "$", size: 6.5, bold: false },
+  ] as const;
+  const withFamily = (family: FontFamily): TemplateConfig => {
+    const c = structuredClone(BOL_DEFAULT_CONFIG);
+    c.fonts = { ...c.fonts, family };
+    return validateConfig("BOL", c);
+  };
+
+  it.each(["Roboto", "Roboto Mono", "Liberation Serif"] as const)("%s: each label prints on one line at the sidebar's edge, its line beside it, the row 160 pt", async (family) => {
+    const pdf = await renderPdf(buildBolDefinition(sampleBol(), withFamily(family)));
+    const runs = textRunsWithY(pdf)[0];
+    const strokes = strokedLines(pdf)[0].filter((s) => Math.abs(s.y1 - s.y2) < 0.01 && Math.abs(s.x2 - s.x1) > 0.01);
+    for (const label of LABELS) {
+      const first = label.words.split(" ")[0];
+      // The label's first word at the sidebar's edge: a run reading it alone, or its first word and a space.
+      const opening = runs.filter((r) => r.text.trim() === first && Math.abs(r.x - SIDEBAR_X) < 0.5);
+      expect(opening, `${family}: "${label.words}"`).toHaveLength(1);
+      const { x, y } = opening[0];
+      const width = textWidthOf(label.words, family, label.bold ? "bold" : "normal", label.size);
+      // One line: the label's words are the runs on its baseline inside its width.
+      const line = runs.filter((r) => r.y === y && r.x >= x - 0.01 && r.x < x + width).map((r) => r.text).join("").trim();
+      expect(line, family).toBe(label.words);
+      // Its line starts past its words, within the 4 pt gap and a point of rounding, ends 160 pt from the
+      // sidebar's edge, and lies just under the words' baseline (strokes count from the top, runs from the bottom).
+      const beside = strokes.filter((s) => {
+        const from = Math.min(s.x1, s.x2);
+        return from >= x + width - 0.01 && from <= x + width + 5 && Math.abs(Math.max(s.x1, s.x2) - (x + 160)) < 0.01
+          && s.y1 - (792 - y) > 0 && s.y1 - (792 - y) < 6;
+      });
+      expect(beside, `${family}: "${label.words}"'s line`).toHaveLength(1);
+    }
+    expect(runs.some((r) => r.text.startsWith("(Signature"))).toBe(false);
+    expect(pageCount(pdf)).toBe(1);
+  });
+
+  it("keeps the sidebar's other words, each below its row", async () => {
+    const text = allText(buildBolDefinition(sampleBol())).join("\n");
+    expect(text).toContain("to apply in prepayment of the charges on the property described hereon.");
+    expect(text).toContain("(The signature here acknowledges only the amount prepaid.)");
+    expect(text).toContain("Charges Advanced:");
+    expect(text).not.toContain("(Signature of consignor)");
+  });
+});
+
+// ---- the ship-from sentence (owner ruling R2, 2026-11-24) ----
+
+describe("buildBolDefinition: the ship-from line is one sentence (owner ruling R2, 2026-11-24)", () => {
+  const TWO_LINE = { name: "Example Heat Treating - Alabama, LLC", address: "1450 Furnace Road\nCleveland, OH 44101" };
+  /** The first page's runs (pdfkit draws one a word) at the y of the run that opens the ship-from
+   *  sentence, left to right. */
+  const sentenceRuns = (pdf: Buffer) => {
+    const runs = textRunsWithY(pdf)[0];
+    const opening = runs.find((run) => run.text.startsWith("at "));
+    assert(opening, "no run opens the ship-from sentence");
+    return runs.filter((run) => Math.abs(run.y - opening.y) < 0.5).sort((a, b) => a.x - b.x);
+  };
+
+  it("prints the address on one line, then the date in bold, then From and the company, on one line", async () => {
+    const pdf = await renderPdf(buildBolDefinition(sampleBol({ company: TWO_LINE })));
+    const line = sentenceRuns(pdf).map((run) => run.text).join("").replace(/\s+/g, " ").trim();
+    expect(line).toBe("at 1450 Furnace Road, Cleveland, OH 44101 Jul - 06 - 2026 From Example Heat Treating - Alabama, LLC");
+    const date = runFonts(pdf).find((run) => run.text.startsWith("Jul"))!;
+    expect(date.font).toMatch(/-(Medium|Bold)$/); // Roboto's bold face is its Medium
+    const address = runFonts(pdf).find((run) => run.text.startsWith("Furnace"))!;
+    expect(address.font).not.toMatch(/-(Medium|Bold)$/);
+  });
+
+  it("leaves no column's gap before the date: the date starts within 30 pt of the address's end", async () => {
+    const pdf = await renderPdf(buildBolDefinition(sampleBol({ company: TWO_LINE })));
+    const runs = sentenceRuns(pdf);
+    const at = runs.findIndex((run) => run.text.startsWith("Jul"));
+    const before = runs.slice(0, at);
+    const addressEnd = Math.max(...before.map((run) => run.x + textWidthOf(run.text.trimEnd(), "Roboto", "normal", 8.5)));
+    expect(runs[at].x - addressEnd).toBeLessThan(30);
+  });
+
+  it("wraps a sentence too long for the page as a sentence, inside the right margin", async () => {
+    const address = `${"Unit 12, ".repeat(30)}Cleveland, OH 44101`;
+    const pdf = await renderPdf(buildBolDefinition(sampleBol({ company: { ...TWO_LINE, address } })));
+    // pdfkit draws one run a word: the address's words are its "Unit " runs.
+    const runs = textRunsWithY(pdf)[0].filter((run) => run.text === "Unit " || run.text === "12, ");
+    expect(new Set(runs.map((run) => Math.round(run.y))).size).toBeGreaterThan(1);
+    for (const run of runs) expect(run.x + textWidthOf(run.text.trimEnd(), "Roboto", "normal", 8.5)).toBeLessThanOrEqual(588.5);
   });
 });
 
@@ -391,9 +528,9 @@ describe("the collect checkbox fits its 14 pt column, #557", () => {
    *  baseline counted from the BOTTOM of the page (`textRunsWithY`'s frame). */
   const FAMILIES = [
     { family: "Roboto", config: () => undefined, advance: 4.4194,
-      box: [363.65, 377.45], rules: [364.05, 377.05], receivedY: 393.52 },
+      box: [354.03, 367.83], rules: [354.43, 367.43], receivedY: 404.14 },
     { family: "Liberation Serif", config: serif, advance: 5.0552,
-      box: [343.82, 357.18], rules: [344.22, 356.78], receivedY: 414.03 },
+      box: [334.63, 347.98], rules: [335.03, 347.58], receivedY: 424.23 },
   ];
   const CASES = FAMILIES.flatMap((f) => (["PREPAID", "COLLECT"] as const).map((freightTerms) => ({ ...f, freightTerms })));
 

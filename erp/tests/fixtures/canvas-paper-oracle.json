@@ -1098,94 +1098,94 @@
  "BOL standard, one-page record [page line off]": {
   "pages": 1,
   "perPage": [
-   "00e2f8d89098fbc3e74aaa7e58b7ff575bc13ee58cfb8be74cb9a5ce6ac35f92"
+   "8de05046e97fda8eecf78c3b624ca323d4d399fd79a270671facd5426246c128"
   ],
-  "positions": "b0e705a3f15133b4a0d268fae761d651b8be64de9238999f520557c79955e0e6",
-  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+  "positions": "75942abbc0c91c0ffbcce94351118c1249cda6b94b8e628931a5d01cee2a0f65",
+  "measure": "ae7ee20772ea5fac293ebcd7aa94dd0b0d764d8790686cd33d02bad3a63a7d9c"
  },
  "BOL standard, one-page record [page line on]": {
   "pages": 1,
   "perPage": [
-   "be9549d472d4ae16ff4ea98f8b5f57c5b607fefa7b023cc87dc32f69c42c5aa7"
+   "9a2a55bbe50302f471f7dfffcef4472b0fa736a9980221989bf606b785fa7ccb"
   ],
-  "positions": "b0e705a3f15133b4a0d268fae761d651b8be64de9238999f520557c79955e0e6",
-  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+  "positions": "75942abbc0c91c0ffbcce94351118c1249cda6b94b8e628931a5d01cee2a0f65",
+  "measure": "ae7ee20772ea5fac293ebcd7aa94dd0b0d764d8790686cd33d02bad3a63a7d9c"
  },
  "BOL standard, 1000-word freight [page line off]": {
   "pages": 5,
   "perPage": [
-   "06530b667c2eaefc15a3ddfa8a61cd812ec0cbf97a57bb0d701be4f493ff9ba8",
+   "fd12b2f0295a0c4a2afc715d27dfc589568fec0b1ad8da8131a3ccf6b68a65cc",
    "aea8e310b85338f108102579d5bc6836bae93e818d1244575966fa752ffd68b3",
    "53ab8be50413ed588ca1196b9f45df97707e036783101b9d1dcd2bb044e5cdc4",
    "53ab8be50413ed588ca1196b9f45df97707e036783101b9d1dcd2bb044e5cdc4",
    "920cac1f1cbd621a640e34445374838d16d3d6d457b28a799edeb822b0470c7b"
   ],
   "positions": "bce4b45299c312b46f339911aaf8f4fe971042f946d512727e7e81b4446899a5",
-  "measure": "595238c75d95d979c84422ff208a452ed7e8d5948563719c50f49a92e1e17b35"
+  "measure": "aa5ed77cd6e48480522b281969cd28e46d52353aeed397512ae65b20ed76b816"
  },
  "BOL standard, 1000-word freight [page line on]": {
   "pages": 5,
   "perPage": [
-   "1690145fd1273738dc8eed07202a5bc071c9e2de6870fe0e929e6b4a5fb58edb",
+   "6b0d1bb8e6fd38a4cbd3f3a5e153a4cdf48ccecc17e3f9e2ebff043af28fcb6c",
    "ba23453d53c7aa78c6a04b68942f6e39ba1d69cb325471b3a37f65647d22d8b1",
    "8f2b1e3f2da890d1f773ea77d6f997fccaaa2415e351cf3542461c92c8035197",
    "914a466182cf0ba588a233d53ca848a93100b3c9c27d63e64a8ab0fba404ea88",
    "6917e20cbedb3c7ffe1aa2728d906bc9de42bc0dd24cd8c25712d06a08dfe704"
   ],
   "positions": "74e73064a90c4467b5273795c346ca97d37d6624c3af81f64ddc9b0e0f698a45",
-  "measure": "934ae0bc712c96abc79f1af323dacc5a569155b3db99eb1329747b392f89a6c9"
+  "measure": "36b02603d731999f04c132176ac81842bbebfc82f42eddd5fdb81c92781931f4"
  },
  "BOL standard, long-word record [page line off]": {
   "pages": 1,
   "perPage": [
-   "cc86974ff1540afb2a55fda420c00efcfff9875b4a60e94ea940ababfc24bb9d"
+   "4d13a6ef0663f71f8a8395ccf755ae5db96c35d0b88a9edfac7f6542cdd5be2d"
   ],
-  "positions": "b0e705a3f15133b4a0d268fae761d651b8be64de9238999f520557c79955e0e6",
-  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+  "positions": "75942abbc0c91c0ffbcce94351118c1249cda6b94b8e628931a5d01cee2a0f65",
+  "measure": "ae7ee20772ea5fac293ebcd7aa94dd0b0d764d8790686cd33d02bad3a63a7d9c"
  },
  "BOL standard, long-word record [page line on]": {
   "pages": 1,
   "perPage": [
-   "d00a8b58bdea5833e196b1b53cb299b9fe2323e27c14d3edcd08c8379ad56fd2"
+   "981fc622bd69694841ce77880dae2dbaa9f17203777f12a584a9cc8a84420409"
   ],
-  "positions": "b0e705a3f15133b4a0d268fae761d651b8be64de9238999f520557c79955e0e6",
-  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+  "positions": "75942abbc0c91c0ffbcce94351118c1249cda6b94b8e628931a5d01cee2a0f65",
+  "measure": "ae7ee20772ea5fac293ebcd7aa94dd0b0d764d8790686cd33d02bad3a63a7d9c"
  },
  "BOL standard, Liberation Serif base 10 with a logo [page line off]": {
   "pages": 1,
   "perPage": [
-   "026aad2592e0b7f0d5ed1f1bae31cc9f03ec846533fa174e3fcb0859feca7b6a"
+   "e5784f497bf823bfda11da410a8b12a4458f6cbe8016752ff7fde9487353dd59"
   ],
-  "positions": "3f4cf3bc6282f4a732420fe8ee7afca6f315418e6b85bf25a86545d976bc1af9",
-  "measure": "9c01dadce405181ffe271f491567fb81cc14e1e5b61dd2ded8ca4705c8b2b288"
+  "positions": "be3a4a4713534cef343155fd44a1f7df6334a51ec1d1513b3b7f3be971712413",
+  "measure": "3bba937e754d00044d49c079beed75a3ff51b5ebf714d85189a1bdf63dfd6fb0"
  },
  "BOL standard, Liberation Serif base 10 with a logo [page line on]": {
   "pages": 1,
   "perPage": [
-   "6d75f7d24e0fee017c5996fa79b3cffb9e05453367624b3bc30227da4ad4839a"
+   "e0c497a4fb1f2f7ade51bbc87e30f4c0b4b0f505280afa3015159e8c786973fd"
   ],
-  "positions": "3f4cf3bc6282f4a732420fe8ee7afca6f315418e6b85bf25a86545d976bc1af9",
-  "measure": "9c01dadce405181ffe271f491567fb81cc14e1e5b61dd2ded8ca4705c8b2b288"
+  "positions": "be3a4a4713534cef343155fd44a1f7df6334a51ec1d1513b3b7f3be971712413",
+  "measure": "3bba937e754d00044d49c079beed75a3ff51b5ebf714d85189a1bdf63dfd6fb0"
  },
  "BOL consignee ref full width, 1500 POs [page line off]": {
   "pages": 3,
   "perPage": [
    "e0ba92cb322daac8cf669bb02aad74c2d6dbc29448ed9d250d417ca450a14e77",
-   "fa7832689c3212ce63f800b1ca58ee6dc39a8b1671be3c7e11f9cbb6e0da556d",
-   "81fae9726ff6c8c692c456a528caee4b9643a9b389c877b1d9129d056a9e1073"
+   "eeae909d91241a209857307d648ebcce1944dbcda34eac0a90d78bb9624eb1ef",
+   "801b10c400aacb9c947fc2f36216d691e26135f211cfcd7d7b4f83164a3697bf"
   ],
-  "positions": "16d739671a6d5c2f3828b444bcea6eec9f0f3052d4e12b16e23002d68b4665a2",
-  "measure": "ccf4e7092e3415ff416940bd6de688b9fda934bb3283470ce0c812db75df75c2"
+  "positions": "bb113468060d60e83c388a4c83b4b6429026860cd9b145bc78eb0b3235a22fdf",
+  "measure": "6ac2aa5433d4d2f39ea8cf1f3883ecd3da9dd4a82d21e27e9397f3031c5276bc"
  },
  "BOL consignee ref full width, 1500 POs [page line on]": {
   "pages": 3,
   "perPage": [
    "761aac92970f06c7ad82ed91f70fff2fd941ad1cf29420306c5280ba48a4571d",
-   "df4ab48b90eb8c17da04b137a9720075bcfe0bc3ef6e4ee0cf79d9e749897c95",
-   "5b9207b5e8dff69394de965c04d3dc4d37677fe2827410bfbeed9c0c4375b650"
+   "f96769ef311f37b54def0e0960cb3d411b53f8a2fe59bd82387bdccd4baca0fd",
+   "f54efcfe0768226f38399e9c48e428b93ec7fa294c62e978a1682dbc5f255664"
   ],
-  "positions": "281b7ec071f12a96fbf42f4cefdcb254580108f9fc555a09201ec876a1b5977e",
-  "measure": "f7e83dcd4f1b9c97ec785b69f89fc29aeba74e37178be3901ea9e408157a7941"
+  "positions": "6e4bb03108c26ddc1b0014e484c05263acf523cc65c02f22946ccd453f32c200",
+  "measure": "82ac33beddc2c9cf3c1fcf60fa7bd4465ce9d5696dce049d2f57d8268f60c6b5"
  },
  "BOL standard (consignee ref 338/244), 1500 POs [page line off]": {
   "pages": 8,
@@ -1196,11 +1196,11 @@
    "9ff7387e1a774e5d7389633b5ec749710b53fff9234e2743e32001ef59fed93c",
    "e8ff69871d5ab701a40ad8ffaa0edb243ca9174331da4d12762d3e84f340f6cb",
    "f325afe4086868a312303b82b8c4cbe819d126b12fb6ad6eea184259bb7c9bdc",
-   "d0452708fef9270b6fe9d149218cbf37c6efa44d2effffe3926f0a61b7322745",
-   "81fae9726ff6c8c692c456a528caee4b9643a9b389c877b1d9129d056a9e1073"
+   "b69c00c55c6a9062d2bf20fdf60d083587a892715162ab341d6a9d61e0f50167",
+   "801b10c400aacb9c947fc2f36216d691e26135f211cfcd7d7b4f83164a3697bf"
   ],
-  "positions": "95fbef7be54a40f34c47ac3552eae320cdf2deaf451de1f9a7506e882e7b2b9c",
-  "measure": "ee5b6056e89d59759104b8a2f7d83d31f60ccbabd635f82381efcf915908e961"
+  "positions": "88c59d0bea9547767e5ba039671f3ff08e7b832ea61018eeb4456e9f4b166bb7",
+  "measure": "9437ead347f9014bea4240a6b5a56ef0ed9504d5acabb40bc333118f701012e9"
  },
  "BOL standard (consignee ref 338/244), 1500 POs [page line on]": {
   "pages": 8,
@@ -1211,119 +1211,119 @@
    "5ebee99590dd8b8d9464e6c4c3f751caf527ad475eb33e2afece34b1bec167d4",
    "b28930f4d6612e58e116dee43f02b511a4d7e893fd7b242a29da3c736b313a52",
    "0b71ad5894fa2d9cf63e0f6833c557ff2310cf3fc12def74165bd8f920685e59",
-   "6655b33ffb763dbbc4265a23656df16928a46701ef62ea657865456f9b01c376",
-   "c3d3a76d3b178cd78fbfbb9a7ec90f23bb8ef9d735205d91b3ef18b09797455d"
+   "1abed98d80f15ec3ceddcfe803c29d1ed152529a6871f49b5faef64d8db787b4",
+   "56868cb5e72a6108e1e425d669eb021c3baefcb6d7f881d956ba2ae29e119603"
   ],
-  "positions": "30689ede0a29907ca15c15879721a5fffcf71737262f13af00caa8163532532d",
-  "measure": "2f4c84127ab528235a05d85216bdd4a1f82e81cefc3912bf91c6012b3c492136"
+  "positions": "3646967967cdffd6de63bbc5f7470ba7b90691e5134304672fd14db52200f5a0",
+  "measure": "13952677f94c5236ab9f44deb6c725d2d9c98ff8fa39219b7d11ea6b5fc08ed3"
  },
  "BOL consignee ref 64/484, 1500 POs [page line off]": {
   "pages": 3,
   "perPage": [
    "5cdcefd8365455325d570634305c7c5cabb9afe1aca0a0fc9b2d65f69cf16617",
    "a45e80a358a6b8a4d5a93e9fdf51b15f22253e01c6844c21a356a94258e975b3",
-   "da017ba7b127a43f97eb9ad3902dcdd2eb3e59a37f7bea56451d4ab66206df4b"
+   "a4e887b6b4388baca57cbf79f3c4b455fc517f148e474e539f7b3dfdb050b62b"
   ],
-  "positions": "b490249d80f37a8bdf7f5f148d020f5df15ae6e07030bb43605a1cd54b7d5f9d",
-  "measure": "43eac77ed7fc87de4a6a50a3996f9ed2856bdec4b7c063f841b0eec71fa12a8e"
+  "positions": "c4cf28d2c8be430388b9128c40fe71a8b6aec4a97b9eed26f16247b00cb3f305",
+  "measure": "b281e53349bd67fbe1d00fa7b2696e6d3f5b9d7feca4860fe9e5255b9d206a2f"
  },
  "BOL consignee ref 64/484, 1500 POs [page line on]": {
   "pages": 3,
   "perPage": [
    "ca6730926cbb0bbab6ea8653b2421a7cfa9978660e8df216ffa3f9b3f009c650",
    "9a04af55be083a3d18cc90736de18b63048b92082dc4fba47dc7de6308f787cc",
-   "f1a9b951749c418863b56644f93e3890bcd60de1e713737b92a0032cee2e3979"
+   "5dd52f864bc4a52674984f908b0e7d3c9c11ee89718f57117ace4e30a17bd680"
   ],
-  "positions": "b09a93e284c3af0a66e14c407498d9adc6404de5a47f2e62fb9aa191db0944c7",
-  "measure": "508409f5e97108124c048a7e5fc115d78cfe74e02517291a936fa70e2d9764ef"
+  "positions": "178e81eb65ed08d39f52ec447246fcd1e80ba0ee66864a3b99e9731930be8a60",
+  "measure": "cc0b41d1a35ec582a3153c8a1dc12f3da7cb6da50a1d84bdec35b6faecff8153"
  },
  "BOL freight first, 400-word freight [page line off]": {
   "pages": 2,
   "perPage": [
-   "d93f156728b915ee4e562c2704116b8b4131667208341cbcd373429c733c5f31",
+   "588d702e9ffc4aeb5834796a17eb6919a9feccca830f43c029bb101b5fb20344",
    "24af83f5a0c120d51563d3c76f7429a44b2d436f84b945c56c0bac2cf40a0844"
   ],
   "positions": "1316ffc8966d332021a3506a9092fa8dcda38dc7836bbb9c494a906f4189dbaf",
-  "measure": "63a53ebed22fce11300fed62c86a597629bd5bdffe76c42502251e5992e52d11"
+  "measure": "8b40f19095c79a5846790f72249c50014d342b082da003035afc4b92dd7adc39"
  },
  "BOL freight first, 400-word freight [page line on]": {
   "pages": 2,
   "perPage": [
-   "b78fe479d9d10e05ed7b4c75607995a884d3de39b210b6d2e30f31a8cd2dcc2f",
+   "83f122452ea99f36e70c7351a60946d790ac3439e8028815ba484c40804e721b",
    "dbc538ae1f9f96aad7f815d15f83937ca564319530c03d99f6980a4d1a49c8ef"
   ],
   "positions": "72c3518982369515761c1474db18fa666058b28666b43762c7a224b2d438ea41",
-  "measure": "e023794e35e42a1495fae609f1a4428c1578046b413b0c3284565a0f7045b025"
+  "measure": "550e6ae4d795fba7701f998819692c3a8039bf2e538b9f994b25b27a23cbbee0"
  },
  "BOL freight first, freight 40 pt in, 400-word freight [page line off]": {
   "pages": 4,
   "perPage": [
-   "7f3c137443291a8dadc3759b216a6024e6a3e9e9c8d19adf764d1f7cb8c0a60f",
+   "819b8a362b0c1213c17c5c5ad8d3a0e969da8d79782831c83ada3a9659b6ea38",
    "ebd78d92f2b736764ddbda8a0872218948c03098d58f023f934432f9e07fa029",
    "91599b2cec14fa07c830548a0c7e7e0b7927cc33e2c8a95f1f32504c9212aac5",
    "d15ed0674314f19678f41840882190c7aeac9ffb47cc68e943b8b1ccbc98d150"
   ],
   "positions": "30103b7c42892a9a84f43690d3a00fc82e8413042746a97e8a2c43b8e56a510b",
-  "measure": "aea5b2cb9b306d4da7a1218c9644d47a5737abf98a16dfd273e4112dd96fdd7c"
+  "measure": "3c23824a7b03ed3878d941f7c07a5f93f2ee4d4de6c26cf48264073c6b359cd1"
  },
  "BOL freight first, freight 40 pt in, 400-word freight [page line on]": {
   "pages": 4,
   "perPage": [
-   "3b1d7f5c0a8040042f7f63d6fd6990d85b1a162d767c68b52b59f7a82d3bfc64",
+   "e66872bd748a786e22f53719775f496335212e78530f39ab05e4c990ea466a0f",
    "1f223decda38c39b71d181eaa2bf21206292022388ec4b11c1bda4b023474328",
    "b97085790a1b13831b7e6cdcb789c1eed09d65faf9f73fd162dfba06adcf1edd",
    "9eddca289cfef156fe6cb171cd6baaca4eeff510ab4f0588fd633830497ccc7f"
   ],
   "positions": "63f6d9b7543c6d3565d464aaaad6bd546673ae02b43770a88a6862f9d9fa32bb",
-  "measure": "2aaf7dd3645a292c62e7c04f664ca8079b059f17febcaf879b5a6b6f3ad1ebbc"
+  "measure": "d45719eaed7951b2afe76b94d58930c42f6c55e3da0ae40c8f0ed0db7a9b1238"
  },
  "BOL standard, consignee_ref 40 pt in, one-page record [page line off]": {
   "pages": 1,
   "perPage": [
-   "adecc5c4f097637dbad24359fa194ca80fdc03660361dbf4142a6def71d8ed25"
+   "c87f595d83c775aecbfb07c8b1d4a7d3310f231f7c29a488af8c81f05dc09ec8"
   ],
-  "positions": "b9f7b42f9fe12118d40c71306f27f12f377558158e557778ee04e3cbd3c11194",
-  "measure": "52b75fbb9f8bb06596dc96cbc2319a25ffb8ae155978e3413ed8f8f358233f10"
+  "positions": "0e63dee221f55ad4f2b8a410ae9d6941bc43360e6aef73daf4bceed782a9842e",
+  "measure": "86053ffcf3f50c6ee558950133712991cf048abb7a68553a25c556c0f3538434"
  },
  "BOL standard, consignee_ref 40 pt in, one-page record [page line on]": {
   "pages": 1,
   "perPage": [
-   "12c5c1a7361a14f94f7173de57682a4a22f228ca883333825cd4f08f05d27d68"
+   "d361133f9310bbea3ef408feaf887ecc2932a46749be114fb5cac93dbb2e5a61"
   ],
-  "positions": "b9f7b42f9fe12118d40c71306f27f12f377558158e557778ee04e3cbd3c11194",
-  "measure": "52b75fbb9f8bb06596dc96cbc2319a25ffb8ae155978e3413ed8f8f358233f10"
+  "positions": "0e63dee221f55ad4f2b8a410ae9d6941bc43360e6aef73daf4bceed782a9842e",
+  "measure": "86053ffcf3f50c6ee558950133712991cf048abb7a68553a25c556c0f3538434"
  },
  "BOL standard, trv 40 pt in, one-page record [page line off]": {
   "pages": 1,
   "perPage": [
-   "568512adf83008b2c33ba21535f79b2086b1c0085b74f6cc464a8d0c807b3952"
+   "c8f1815b57b2608daf371218023938d74dd14b7a9ccfdf09c2b6d214c184d9c6"
   ],
-  "positions": "7bc03c54d90cb2274362d8cdc3f2e1dc52aa067e95f581fc329e5ff9da241f88",
-  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+  "positions": "0f130a77623714e17d82e8489ba9fbd2cfc43c3670e1f7d107e12fea53417839",
+  "measure": "ae7ee20772ea5fac293ebcd7aa94dd0b0d764d8790686cd33d02bad3a63a7d9c"
  },
  "BOL standard, trv 40 pt in, one-page record [page line on]": {
   "pages": 1,
   "perPage": [
-   "f5aba984a71b3268d739916d3fb9462495c68521798a3664eaf4e564a484ee0d"
+   "7015be8df2ec04b560610068769c2478a5789e8763e5f048e199626c3c30fc46"
   ],
-  "positions": "7bc03c54d90cb2274362d8cdc3f2e1dc52aa067e95f581fc329e5ff9da241f88",
-  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+  "positions": "0f130a77623714e17d82e8489ba9fbd2cfc43c3670e1f7d107e12fea53417839",
+  "measure": "ae7ee20772ea5fac293ebcd7aa94dd0b0d764d8790686cd33d02bad3a63a7d9c"
  },
  "BOL standard, freight 40 pt in, one-page record [page line off]": {
   "pages": 1,
   "perPage": [
-   "6a21ca000350ce4222c5257b167fe355ad3580ef0b752700d52f33a320ddc20f"
+   "3bd9f211c4e2c9a8cae59a6c76c6a6f4e027daae7d40f0a3a3d93c791db8405a"
   ],
-  "positions": "5e239f332f9aef313a7295f8ca85217ccbd97bf305890fa9613dad307c956f39",
-  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+  "positions": "4803034a207fdd98c5b09801d221a01b86250cd066e53367b243cea030f7ed14",
+  "measure": "ae7ee20772ea5fac293ebcd7aa94dd0b0d764d8790686cd33d02bad3a63a7d9c"
  },
  "BOL standard, freight 40 pt in, one-page record [page line on]": {
   "pages": 1,
   "perPage": [
-   "cc75fe9712a12a57e65cf9a352606871b9bdf73bae72639d4dda57765fbd11cb"
+   "41f9db70351728731c7881cf6c23a4e0d7a095ccee1b2c93a95b875c5021db5d"
   ],
-  "positions": "5e239f332f9aef313a7295f8ca85217ccbd97bf305890fa9613dad307c956f39",
-  "measure": "67fce962ec2a1ad510b81c84a77a1c89f2cc407de695487219d87df1bf642ab0"
+  "positions": "4803034a207fdd98c5b09801d221a01b86250cd066e53367b243cea030f7ed14",
+  "measure": "ae7ee20772ea5fac293ebcd7aa94dd0b0d764d8790686cd33d02bad3a63a7d9c"
  },
  "CERT standard, one-page record [page line off]": {
   "pages": 1,

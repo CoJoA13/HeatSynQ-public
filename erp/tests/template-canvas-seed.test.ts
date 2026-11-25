@@ -1349,6 +1349,8 @@ describe("seedBolLayout: a bill of lading draft seeds its canvas from a shipment
     expect(bolBlock(layout, "trv").box).toMatchObject({ x: 24, w: 564 });
     expect(bolBlock(layout, "freight").box).toMatchObject({ x: 24, w: 564 });
     expect(fieldItem(layout, "bol_number")).toMatchObject({ repeat: true, anchor: { kind: "page-top" } });
+    // The carrier's label column, its gap and its 260 pt rule, from the left margin (owner ruling R1, 2026-11-24).
+    expect(fieldItem(layout, "carrier_name")!.box).toMatchObject({ x: 24, w: 334 });
     expect(layout.items.filter((i) => i.repeat).map((i) => (i.kind === "field" ? i.key : i.kind))).toEqual(["bol_number"]);
     // The freight block's columns are the config's, its Collect checkbox toggle after them.
     expect(bolBlock(layout, "freight").columns.map((c) => c.key))
@@ -1523,10 +1525,10 @@ describe("seedBolLayout: a bill of lading draft seeds its canvas from a shipment
   // canvas sentence. The property clause's lengths are measured at the boundary (the issue's two
   // reproductions, the paragraphs joined by "\n", base size 7.5 in both: the issue's 749.02 is the Sans
   // figure at 7.5); the sweep below states the invariant itself.
-  const withPropertyLines = (lines: number, family: FontFamily, pageFooter: boolean): TemplateConfig => {
+  const withPropertyLines = (lines: number, family: FontFamily, pageFooter: boolean, baseSize = 7.5): TemplateConfig => {
     const config = bolCfg();
     config.fonts.family = family;
-    config.fonts.baseSize = 7.5;
+    config.fonts.baseSize = baseSize;
     config.pageFooter = pageFooter;
     config.textBlocks.bol_property_text = [
       BOL_DEFAULT_CONFIG.textBlocks.bol_property_text, ...Array.from({ length: lines }, (_, i) => `Paragraph ${i + 1}.`),
@@ -1565,16 +1567,22 @@ describe("seedBolLayout: a bill of lading draft seeds its canvas from a shipment
   };
   /** A layout's items without their ids, which each seed draws afresh. */
   const bolStackOf = (layout: CanvasLayout) => layout.items.map((item) => ({ ...item, id: "" }));
+  // Re-measured for owner ruling R1 of 2026-11-24 (the carrier's caption and the sidebar's moved beside
+  // their rules, the paper a little shorter): at base 7.5 no whole clause line now lands the flow's end
+  // within the shift of the foot, so each reproduction also sets the base size (the clause prints at the
+  // small size, so the base size moves the stack above it a fraction of a line at a time). Measured: at
+  // these base sizes 30 and 25 lines are the last the seed's render prints on one page, the canvas pages,
+  // and the 6-order stack is drawn past the foot (311 and 218 thousandths).
   const reproductions = [
-    ["Liberation Serif, page line off", "Liberation Serif", false, 28],
-    ["Liberation Sans, page line on", "Liberation Sans", true, 23],
+    ["Liberation Serif, page line off", "Liberation Serif", false, 30, 7.75],
+    ["Liberation Sans, page line on", "Liberation Sans", true, 25, 7.55],
   ] as const;
 
   it.each(reproductions)(
     "a one-order shipment whose bill of lading prints one page in the seed's render and in its own flow, but whose seeded canvas prints two, is refused in the sentence that says the flow fits (%s, #947)",
-    async (_why, family, pageFooter, lines) => {
+    async (_why, family, pageFooter, lines, base) => {
       const { shipper } = await bolShipment();
-      const config = withPropertyLines(lines, family, pageFooter);
+      const config = withPropertyLines(lines, family, pageFooter, base);
       // The seed's own render and the shipment's flow each print one page; the stack the seed builds,
       // printed for the shipment, prints two.
       expect((await bolLaidOut(shipper.id, config)).pages).toBe(1);
@@ -1585,7 +1593,7 @@ describe("seedBolLayout: a bill of lading draft seeds its canvas from a shipment
       await expect(seedCanvasLayout(await readPreviewContext(t.id), { recordId: shipper.id, config }, "nobody"))
         .rejects.toMatchObject({ status: 400, message: bolFlowFits });
       // One line more prints two pages in the seed's render, refused in the page-count sentence.
-      await expect(bolSeed(shipper.id, withPropertyLines(lines + 1, family, pageFooter)))
+      await expect(bolSeed(shipper.id, withPropertyLines(lines + 1, family, pageFooter, base)))
         .rejects.toMatchObject({ status: 400, message: bolTwoPages(2) });
     },
     60_000,
@@ -1593,15 +1601,15 @@ describe("seedBolLayout: a bill of lading draft seeds its canvas from a shipment
 
   it.each(reproductions)(
     "the boundary: the longest property clause that seeds (%s) seeds a layout whose canvas, rendered directly, prints one page, as printBol prints it, and one line more is refused (#947)",
-    async (_why, family, pageFooter, refusedAt) => {
+    async (_why, family, pageFooter, refusedAt, base) => {
       const { customer, shipper } = await bolShipment();
       const lines = refusedAt - 1;
-      const config = withPropertyLines(lines, family, pageFooter);
+      const config = withPropertyLines(lines, family, pageFooter, base);
       const layout = await bolSeed(shipper.id, config);
       const accepted = validateConfig("BOL", { ...config, layout });
       // One line more is refused by the seed in the sentence that says the flow fits (the case above),
       // so this is the boundary.
-      await expect(bolSeed(shipper.id, withPropertyLines(lines + 1, family, pageFooter)))
+      await expect(bolSeed(shipper.id, withPropertyLines(lines + 1, family, pageFooter, base)))
         .rejects.toMatchObject({ status: 400, message: bolFlowFits });
       // The seeded canvas itself, rendered for the shipment, prints one page; and so does the
       // shipment's print under the template holding it.
@@ -1615,12 +1623,13 @@ describe("seedBolLayout: a bill of lading draft seeds its canvas from a shipment
 
   it("the invariant across the boundary: every property clause length either seeds a layout whose canvas prints one page, or is refused in the sentence that says the flow fits or the page-count one, under each page-line setting (#947)", async () => {
     const { shipper } = await bolShipment();
-    const sweeps = [[false, [25, 26, 27, 28, 29, 30]], [true, [20, 21, 22, 23, 24, 25, 26]]] as const;
+    // At the Serif reproduction's base size (above), where the flow-fits window lies on a whole line.
+    const sweeps = [[false, [26, 27, 28, 29, 30, 31]], [true, [21, 22, 23, 24, 25, 26, 27]]] as const;
     const refused = new Set<string>();
     for (const [pageFooter, lengths] of sweeps) {
       let seeded = 0;
       for (const lines of lengths) {
-        const config = withPropertyLines(lines, "Liberation Serif", pageFooter);
+        const config = withPropertyLines(lines, "Liberation Serif", pageFooter, reproductions[0][4]);
         const why = `${lines} lines, page line ${pageFooter ? "on" : "off"}`;
         let layout: CanvasLayout;
         try {
@@ -1739,16 +1748,14 @@ describe("seedBolLayout: a bill of lading draft seeds its canvas from a shipment
   // so the drawn-stack check would pass it, and the stack printed for the 6 orders pages.
   it.each([
     // The Standard, no logo: the wrap moves the flow and the canvas alike, and the canvas's shift is
-    // the window (the review's base size; 8.5451 to 8.5476 behave the same).
-    ["the Standard, Liberation Serif, no logo", () => {
-      const config = withPropertyLines(20, "Liberation Serif", false);
-      config.fonts.baseSize = 8.544621;
-      return config;
-    }, undefined, (i: number) => `PO-LONG-NUMBER-${i}-XYZ`],
+    // the window (23 lines at base 7.5, re-measured for owner ruling R1 of 2026-11-24: the seeded stack
+    // stands 43 pt above the foot and the 6 orders' canvas pages).
+    ["the Standard, Liberation Serif, no logo", () => withPropertyLines(23, "Liberation Serif", false), undefined, (i: number) => `PO-LONG-NUMBER-${i}-XYZ`],
     // A header-left logo taller than the right slot: the flow takes the wrap inside the header's
-    // height, the canvas below it (the implementer's fix-round-1 case).
+    // height, the canvas below it (the implementer's fix-round-1 case; 7 lines since owner ruling R1 of
+    // 2026-11-24, re-measured: the seeded stack 8.5 pt above the foot, the 6 orders' canvas two pages).
     ["Roboto, a header-left logo 120 wide", () => {
-      const config = withPropertyLines(5, "Roboto", false);
+      const config = withPropertyLines(7, "Roboto", false);
       config.logo = { placement: "header-left", width: 120 };
       return config;
     }, alphaPng(40, 40), undefined],
@@ -1769,9 +1776,9 @@ describe("seedBolLayout: a bill of lading draft seeds its canvas from a shipment
   // foot, and one line fewer inside it.
   it.each(reproductions)(
     "a shipment whose flow and seeded canvas both page is judged by its drawn stack: drawn past the foot it is refused in the canvas sentence, and one line fewer seeds (%s, #947)",
-    async (_why, family, pageFooter, lines) => {
+    async (_why, family, pageFooter, lines, base) => {
       const { shipper } = await bolShipment({ orders: 6, po: (i) => `PO-LONG-NUMBER-${i}-XYZ` });
-      const config = withPropertyLines(lines, family, pageFooter);
+      const config = withPropertyLines(lines, family, pageFooter, base);
       // The seed's render fits one page (in `bolSeededStack`), the shipment's flow pages, the seeded
       // stack is drawn past the foot, and printed for the 6 orders it pages.
       expect(await bolCanvasPages(shipper.id, config, null)).toBeGreaterThan(1);
@@ -1780,7 +1787,7 @@ describe("seedBolLayout: a bill of lading draft seeds its canvas from a shipment
       expect(await bolCanvasPages(shipper.id, config, layout)).toBeGreaterThan(1);
       await expect(bolSeed(shipper.id, config)).rejects.toMatchObject({ status: 400, message: bolPastCanvas });
       // One line fewer: the flow and the canvas still page, and the stack, drawn inside the foot, seeds.
-      const fewer = withPropertyLines(lines - 1, family, pageFooter);
+      const fewer = withPropertyLines(lines - 1, family, pageFooter, base);
       expect(await bolCanvasPages(shipper.id, fewer, null)).toBeGreaterThan(1);
       const inside = await bolSeededStack(shipper.id, fewer);
       expect(bolFootMargin(inside.layout, pageFooter)).toBeLessThanOrEqual(-BOL_FIT_CLEARANCE);
@@ -1976,7 +1983,11 @@ describe("seedBolLayout: a bill of lading draft seeds its canvas from a shipment
 
   it("seedBolItems passes over a laid-out id outside the seed's namespace, and refuses by name a laid-out piece it has no item for, never dropping it", () => {
     const node = (id: string, top: number): LaidOutNode => ({ id, page: 1, left: 24, top });
-    const known = [node(BOL_SEED_IDS.piece("carrier_name"), 40), node(BOL_SEED_IDS.end("carrier_name"), 50)];
+    // The carrier is a ruled pair (owner ruling R1, 2026-11-24): its value column and its label column.
+    const known = [
+      node(BOL_SEED_IDS.piece("carrier_name"), 40), node(BOL_SEED_IDS.end("carrier_name"), 50),
+      node(BOL_SEED_IDS.piece("carrier_name:label"), 40), node(BOL_SEED_IDS.end("carrier_name:label"), 49),
+    ];
     expect(seedBolItems(bolCfg(), known, false).map((i) => (i.kind === "field" ? i.key : i.kind))).toEqual(["carrier_name"]);
     // An id the render reports that the seed did not place (a measurement id, say) seeds nothing.
     const foreign = [node("bol-measure", 30), ...known, node("other:end:carrier_name", 60)];

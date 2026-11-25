@@ -1541,11 +1541,16 @@ describe("the canvas rules on a bill of lading (design 2026-11-09 §6)", () => {
       ids: ["table-consignee_ref"],
     });
   });
-  it("rule 4: an item with no least-width entry keeps only the grid floor (pins: the carrier, a wording, a traveler field)", () => {
-    expect(BOL_LEAST_WIDTHS.carrier_name).toBeUndefined();
+  it("rule 4: the carrier's box keeps its label column, gap and a grid step (owner ruling R1, 2026-11-24)", () => {
+    expect(BOL_LEAST_WIDTHS.carrier_name).toBe(78.5);
     expect(() => validateCanvasLayout(
       bolChanged("field-carrier_name", { box: { x: 24, y: 4, w: CANVAS_GRID * 2, h: 12 } }), BOL_CONTRACT,
+    )).toThrow(/Carrier name.*78\.5 pt/);
+    expect(() => validateCanvasLayout(
+      bolChanged("field-carrier_name", { box: { x: 24, y: 4, w: 78.5, h: 12 } }), BOL_CONTRACT,
     )).not.toThrow();
+  });
+  it("rule 4: an item with no least-width entry keeps only the grid floor (pins: a wording, a traveler field)", () => {
     expect(() => validateCanvasLayout(
       bolChanged("text-block-bol_water_note", { box: { x: 24, y: 4, w: CANVAS_GRID * 2, h: 24 } }), BOL_CONTRACT,
     )).not.toThrow();
@@ -1565,8 +1570,10 @@ describe("the canvas rules on a bill of lading (design 2026-11-09 §6)", () => {
     expect(leastWidth(TRAVELER_CONTRACT, table("lines")))
       .toBe(visibleColumnsWidth(TRAVELER_CONTRACT, table("lines")) + tableOverhead("ruled", 4) + CANVAS_GRID);
     expect(leastWidth(BOL_CONTRACT, bolTable("trv"))).toBe(BOL_LEAST_WIDTHS.trv);
-    expect(leastWidth(BOL_CONTRACT, bolField("ship_from"))).toBe(BOL_LEAST_WIDTHS.ship_from);
-    expect(leastWidth(BOL_CONTRACT, bolField("carrier_name"))).toBe(0);
+    // The ship-from sentence has no fixed part (owner ruling R2, 2026-11-24).
+    expect(BOL_LEAST_WIDTHS.ship_from).toBeUndefined();
+    expect(leastWidth(BOL_CONTRACT, bolField("ship_from"))).toBe(0);
+    expect(leastWidth(BOL_CONTRACT, bolField("carrier_name"))).toBe(BOL_LEAST_WIDTHS.carrier_name);
     expect(leastWidth(BOL_CONTRACT, bolTextBlock("bol_water_note"))).toBe(0);
   });
   it("rule 9: the freight block keeps its sidebar beside its columns: the Standard's accepted at 415.3, refused under it by name", () => {

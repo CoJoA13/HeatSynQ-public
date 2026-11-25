@@ -97,6 +97,7 @@ const RULED_PAIRS: Record<string, { label: number; gap: number; rule: number }> 
   shipper_per: { label: W.signLabel, gap: W.signGap, rule: W.shipperRule },
   agent_per: { label: W.signLabel, gap: W.signGap, rule: W.agentRule },
   po_address: { label: W.poAddressLabel, gap: W.rowGap, rule: W.poAddressRule },
+  carrier_name: { label: W.carrierLabel, gap: W.rowGap, rule: W.carrierRule },
 };
 /** The full-width rules the seed places as Line items, each with the flow's weight. */
 const FULL_RULES: Record<string, number> = {
@@ -284,8 +285,6 @@ export function seedBolItems(config: TemplateConfig, positions: LaidOutNode[], l
       const x = node.left - pair.label - pair.gap;
       const tall = Math.max(endOf(key), endOf(pairLabelKey(key))) - node.top;
       items.push(fieldItem(config, key, { x, y: top, w: pair.label + pair.gap + pair.rule, h: tall }, anchor));
-    } else if (key === "carrier_name") {
-      items.push(fieldItem(config, key, { x: node.left, y: top, w: W.carrierRule, h }, anchor));
     } else if (key === "ship_from" || key === "consigned_to") {
       items.push(fieldItem(config, key, { x: LEFT, y: top, w: CONTENT_WIDTH, h }, anchor));
     } else if (WORDINGS.has(key)) {

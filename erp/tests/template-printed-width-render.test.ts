@@ -307,11 +307,13 @@ function inkEnd(pdf: Buffer, kind: "ruled" | "boxed" | "nested"): { end: number;
 }
 
 /** The bill of lading's sidebar: where its first 160pt rule starts. */
+/** Where the bill of lading's sidebar starts: its first row's label, "Signature of consignor", opens at
+ *  its left edge, with the row's rule beside it (owner ruling R1, 2026-11-24; the row's rule started
+ *  there before). */
 function sidebarStart(pdf: Buffer): number {
-  const rules = strokedLines(pdf)[0].filter((s) => s.y1 === s.y2 && Math.abs(Math.abs(s.x2 - s.x1) - 160) < 0.01);
-  if (rules.length === 0) assert.fail("the sidebar's rules are not printed");
-  const first = rules.reduce((a, b) => (b.y1 < a.y1 ? b : a));
-  return Math.min(first.x1, first.x2);
+  const opening = textRunsWithY(pdf)[0].filter((r) => r.text.trim() === "Signature");
+  if (opening.length !== 1) assert.fail(`${opening.length} runs open the sidebar's first row`);
+  return opening[0].x;
 }
 
 type Fit = {

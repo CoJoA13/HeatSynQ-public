@@ -104,12 +104,14 @@ function gapCrossings(dump: PaperDump, x: number, w: number): string[] {
       const lo = Math.min(s.x1, s.x2);
       const hi = Math.max(s.x1, s.x2);
       if (hi > left - 1 && hi <= left + STROKE_TOLERANCE) table += 1;
-      if (lo >= right - STROKE_TOLERANCE && lo < right + 1) sidebar += 1;
+      // A sidebar row is 160 pt from the gap's right edge, its rule beside its label (owner ruling R1,
+      // 2026-11-24), so the row's rule ENDS 160 pt past that edge.
+      if (lo > right - STROKE_TOLERANCE && Math.abs(hi - (right + 160)) <= STROKE_TOLERANCE) sidebar += 1;
       if (hi > left + STROKE_TOLERANCE && lo < right - STROKE_TOLERANCE) out.push(`page ${p + 1}: stroke ${s.x1}..${s.x2}@${s.y1} crosses the gap ${left}..${right}`);
     }
   });
   if (table === 0) out.push(`no stroke of the freight table ends at the gap's left edge ${left}`);
-  if (sidebar === 0) out.push(`no stroke of the sidebar starts at the gap's right edge ${right}`);
+  if (sidebar === 0) out.push(`no stroke of the sidebar ends 160 pt past the gap's right edge ${right}`);
   return out;
 }
 

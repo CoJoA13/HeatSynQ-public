@@ -35,3 +35,15 @@ const LINE_BREAK_RUN = new RegExp(`[\\s\\u0085]*${LINE_BREAK.source}[\\s\\u0085]
  *  shows it: `"Acme \n  Steel"` is `"Acme Steel"`, and text with no line break is returned as it is
  *  (the Invoice register's Amendment 17 as R15 amends it; the container tag's rule). */
 export const oneLine = (text: string): string => text.replace(LINE_BREAK_RUN, " ");
+
+/** A run of white space holding a line break, with the comma before it when there is one: the
+ *  separator `oneLineAddress` replaces. */
+const ADDRESS_BREAK = new RegExp(`(,?)[\\s\\u0085]*${LINE_BREAK.source}[\\s\\u0085]*`, "g");
+
+/** An address typed on several lines, printed on one: the text trimmed, and each run of white
+ *  space holding a line break (a CR LF pair, a blank line and the spaces around it included) printed
+ *  as ", " (one comma, whether or not the line before it ended in one). Text with no line break is
+ *  returned trimmed and otherwise as it is. The bill of lading's Ship-from sentence reads it (owner
+ *  ruling R2, 2026-11-24). */
+export const oneLineAddress = (text: string): string =>
+  text.replace(/^[\s\u0085]+|[\s\u0085]+$/g, "").replace(ADDRESS_BREAK, ", ");

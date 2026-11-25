@@ -55,6 +55,7 @@ export const OLD_BUILT_IN_LABELS: Readonly<Record<string, Readonly<Record<string
   CERT: { part_pounds: "Pounds" },
   INVOICE: { col_amount: "Total Wt / Price" },
   QUOTE: { col_amount: "Total Lbs / Price" },
+  BOL: { carrier_name: "(Name of Carrier)" }, // owner ruling R1, 2026-11-24
 };
 
 /** The ticket fields a config stored before the Tare column and the Tare and Gross weight rows

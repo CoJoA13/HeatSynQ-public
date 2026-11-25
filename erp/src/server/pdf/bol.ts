@@ -54,6 +54,8 @@ import {
 } from "../../lib/template-contracts/types";
 import { shipmentWeightTotals } from "../../lib/net-weight";
 import { NET_WEIGHT } from "../../lib/weight-terms";
+import { oneLineAddress } from "../../lib/line-break";
+import { textWidthOf } from "../../lib/tag-font-metrics";
 
 // ---------------------------------------------------------------------------------------------
 // BolData — the builder's whole input. Plain data: no Decimals, no Dates, no Prisma rows.
@@ -122,12 +124,11 @@ const CONTENT_WIDTH = 564;
 
 /** Every fixed width the flow prints with (points); the canvas families and the profile's
  *  `leastWidths` (src/lib/template-contracts/bol.ts, held here by tests/bol-canvas.test.ts) read it.
- *  The form's furniture keeps its own literals: the sidebar's 160 pt rules and the declared-value
+ *  The form's furniture keeps its own literals: the sidebar's 160 pt rows (`SIDEBAR_ROW`) and the declared-value
  *  "Per" row belong to no field family. The header's column gap is `BOL_HEADER_GAP`, beside it. */
 export const BOL_WIDTHS = {
   headerRight: 250, formLabel: 110, formRule: 130, formGap: 4,
-  carrierInset: 60, carrierRule: 260,
-  shipFromDate: 100, shipFromWord: 30, shipFromName: 180, shipFromGap: 6,
+  carrierLabel: 70, carrierRule: 260,
   consignedLabel: 70, consignedRule: 180, rowGap: 4,
   destinationLabel: 70, destinationRule: 150, stateLabel: 16, stateRule: 40, zipLabel: 18, zipRule: 60,
   trvLabel: 55,
@@ -200,7 +201,7 @@ function labeledRule(
  *  column `columnWidth` wide. */
 function ruledValue(
   value: string | null, columnWidth: number | "*", ruleWidth: number,
-  valueSize?: number, valueAlign?: "left" | "center",
+  valueSize?: number, valueAlign?: LabelStyle["alignment"], valueBold?: boolean,
 ): Column {
   const text: Content = value === null
     ? { text: " " }
@@ -208,19 +209,20 @@ function ruledValue(
       text: value === "" ? " " : value,
       ...(valueSize !== undefined ? { fontSize: valueSize } : {}),
       ...(valueAlign !== undefined ? { alignment: valueAlign } : {}),
+      ...(valueBold === true ? { bold: true } : {}),
     };
   return { width: columnWidth, stack: [text, line(ruleWidth)] };
 }
 
 /** A label column beside a value on a rule (or a blank write-in rule: `value` null), the two
- *  columns the flow's consignee, destination, delivering-carrier and signature rows are made of. */
+ *  columns the flow's carrier, consignee, destination, delivering-carrier and signature rows are made of. */
 function ruledPair(p: {
   label: string; labelWidth: number; labelStyle: LabelStyle; value: string | null;
-  valueSize?: number; valueAlign?: "left" | "center"; columnWidth: number | "*"; ruleWidth: number;
+  valueSize?: number; valueAlign?: LabelStyle["alignment"]; valueBold?: boolean; columnWidth: number | "*"; ruleWidth: number;
 }): Column[] {
   return [
     { width: p.labelWidth, text: p.label, ...styled(p.labelStyle) },
-    ruledValue(p.value, p.columnWidth, p.ruleWidth, p.valueSize, p.valueAlign),
+    ruledValue(p.value, p.columnWidth, p.ruleWidth, p.valueSize, p.valueAlign, p.valueBold),
   ];
 }
 
@@ -361,7 +363,7 @@ function seedColumn(ctx: Ctx, key: string, column: Column): Column {
   } as unknown as Column;
 }
 
-/** A column that is already a stack (a value on its rule, the carrier's name over its rule), marked
+/** A column that is already a stack (a value on its rule, the carrier's name among them), marked
  *  for the seed: the id on the column and the end mark last in its stack, after the rule, so the
  *  piece's top is its value's and its end the rule's. With no seed, the column unchanged. */
 function seedStack(ctx: Ctx, key: string, column: Column): Column {
@@ -470,56 +472,60 @@ function headerBlock(ctx: Ctx, d: BolData): Content[] {
   ];
 }
 
-/** The carrier's name over its rule, the caption beneath (the `carrier_name` field's label —
- *  default "(Name of Carrier)") — blank rule when the shipment has no carrier (the sample's own
+/** The carrier's label beside its line, the carrier's name centred on it (owner ruling R1, 2026-11-24,
+ *  docs/superpowers/specs/2026-11-24-bol-captions-ship-from-design.md; the label, default "Name of
+ *  Carrier", printed as a caption under the line before): the label in the consignee rows' 70 pt
+ *  column at their 9 pt bold, so it lines up with "Consigned to" and "Destination", the name at 10 pt
+ *  bold on a 260 pt rule; a blank rule when the shipment has no carrier (the sample's own
  *  hand-completed style; a customer-owned truck has none). */
 function carrierBlock(ctx: Ctx, d: BolData): Content[] {
   const v = ctx.sections.get("carrier")!;
   if (!v.field("carrier_name").visible) return [];
   return [{
-    columns: [
-      { width: W.carrierInset, text: "" },
-      seedStack(ctx, "carrier_name", carrierStack(d.carrierName, v.field("carrier_name").label, W.carrierRule, CARRIER_NAME)),
-      { width: "*", text: "" },
-    ],
+    columns: seedPair(ctx, "carrier_name", carrierPair(d.carrierName, v.field("carrier_name").label, W.carrierRule, CARRIER_NAME)),
+    columnGap: W.rowGap,
     margin: [0, 0, 0, 4],
   }];
 }
 
-/** The flow's carrier name: 10 pt bold, centred over its rule. */
+/** The flow's carrier name: 10 pt bold, centred on its rule. */
 const CARRIER_NAME: LabelStyle = { fontSize: 10, bold: true, alignment: "center" };
 
-/** The carrier's name (a blank prints one space) over a rule `width` long, the caption beneath,
- *  in a column that wide (`BOL_FLOW` hands it on as `Content`). */
-function carrierStack(name: string, caption: string, width: number, nameStyle: LabelStyle): Column {
-  return {
-    width,
-    stack: [
-      { text: name === "" ? " " : name, ...styled(nameStyle) },
-      line(width),
-      { text: caption, fontSize: 6.5, alignment: "center", margin: [0, 1, 0, 0] },
-    ],
-  };
+/** The carrier's label (at the consignee labels' 9 pt bold, in their 70 pt column) beside the
+ *  carrier's name (a blank prints one space) at `nameStyle` on a rule `ruleWidth` long (`BOL_FLOW`
+ *  hands it on, the canvas passing the rest of its box and the item's style). */
+function carrierPair(name: string, label: string, ruleWidth: number, nameStyle: LabelStyle): Column[] {
+  return ruledPair({
+    label, labelWidth: W.carrierLabel, labelStyle: CONSIGNEE_LABEL, value: name, valueSize: nameStyle.fontSize,
+    valueAlign: nameStyle.alignment, valueBold: nameStyle.bold,
+    columnWidth: ruleWidth, ruleWidth,
+  });
 }
 
-/** "at <ship-from> <date> From <company>" — ship-from is the company settings (spec §10.2). A
- *  value-only composite field (the contract's `ship_from`, defaultLabel "") — the "at"/"From"
- *  connectives are the form's own wording, so a label override has nothing to replace (the
+/** "at <address>    <date>    From <company>": one sentence, the blanks of the form's received
+ *  clause (owner ruling R2, 2026-11-24, docs/superpowers/specs/2026-11-24-bol-captions-ship-from-design.md;
+ *  it was four fixed columns, which left a gap before the date and a typed line break in the
+ *  address). Ship-from is the company settings (spec §10.2), the address printed on one line
+ *  (`oneLineAddress`). A value-only composite field (the contract's `ship_from`, defaultLabel "") —
+ *  "at" and "From" are the form's own wording, so a label override has nothing to replace (the
  *  traveler's decision 4). The ONE place the date knob lands. The date is bold always; `bold` sets
- *  the other three columns (the flow's are regular), all four at `size`. */
+ *  the rest (the flow's is regular), all at `size`. Four spaces part the pieces; a sentence too
+ *  long for its width wraps as a sentence. */
 function shipFromLine(ctx: Ctx, d: BolData, size = SHIP_FROM.fontSize, bold = SHIP_FROM.bold): Content {
   const weight = bold ? { bold: true } : {};
   return {
-    columns: [
-      { width: "*", text: `at ${d.company.address}`, fontSize: size, ...weight },
-      { width: W.shipFromDate, text: ctx.bolDate(d.shipDate), bold: true, fontSize: size, alignment: "center" },
-      { width: W.shipFromWord, text: "From", fontSize: size, ...weight },
-      { width: W.shipFromName, text: d.company.name, fontSize: size, ...weight },
+    text: [
+      { text: `at ${oneLineAddress(d.company.address)}${SHIP_FROM_SPACE}`, ...weight },
+      { text: ctx.bolDate(d.shipDate), bold: true },
+      { text: `${SHIP_FROM_SPACE}From ${d.company.name}`, ...weight },
     ],
-    columnGap: W.shipFromGap,
+    fontSize: size,
     margin: [0, 2, 0, 2],
   };
 }
+
+/** The space between the ship-from sentence's pieces: four spaces (the design's call). */
+const SHIP_FROM_SPACE = "    ";
 
 /** The legal preamble: the received clause, the ship-from line, the property clause, the shipper
  *  certification — three text blocks around one composite data line, in the sample's fixed
@@ -734,14 +740,10 @@ function freightBlock(ctx: Ctx, d: BolData): Content[] {
     layout: LAYOUT.boxed,
   };
 
-  const smallRule = (margin: [number, number, number, number]): Content =>
-    ({ canvas: [{ type: "line", x1: 0, y1: 0, x2: 160, y2: 0, lineWidth: 0.8 }], margin });
-
   const sidebarStack: Content[] = [
     { text: ctx.text("bol_section_7_text"), fontSize: 6 },
     { text: ctx.text("bol_no_delivery_text"), fontSize: 6, margin: [0, 6, 0, 0] },
-    smallRule([0, 14, 0, 1]),
-    { text: "(Signature of consignor)", fontSize: 5.5, alignment: "center" },
+    besideRule(ctx, "Signature of consignor", { fontSize: 5.5, bold: false }, [0, 14, 0, 0]),
   ];
   if (v.field("collect_checkbox").visible) {
     sidebarStack.push({ text: "Freight charges are PREPAID unless marked collect.", fontSize: 6, margin: [0, 8, 0, 2] });
@@ -761,17 +763,13 @@ function freightBlock(ctx: Ctx, d: BolData): Content[] {
     });
   }
   sidebarStack.push(
-    smallRule([0, 8, 0, 1]),
-    { text: "RECEIVED $", fontSize: 6.5, bold: true },
+    besideRule(ctx, "RECEIVED $", { fontSize: 6.5, bold: true }, [0, 8, 0, 0]),
     { text: "to apply in prepayment of the charges on the property described hereon.", fontSize: 6, margin: [0, 2, 0, 0] },
-    smallRule([0, 12, 0, 1]),
-    { text: "Agent or Cashier", fontSize: 5.5, alignment: "center" },
-    smallRule([0, 8, 0, 1]),
-    { text: "Per", fontSize: 6.5 },
+    besideRule(ctx, "Agent or Cashier", { fontSize: 5.5, bold: false }, [0, 12, 0, 0]),
+    besideRule(ctx, "Per", { fontSize: 6.5, bold: false }, [0, 8, 0, 0]),
     { text: "(The signature here acknowledges only the amount prepaid.)", fontSize: 6, margin: [0, 2, 0, 0] },
     { text: "Charges Advanced:", fontSize: 6.5, bold: true, margin: [0, 8, 0, 0] },
-    smallRule([0, 8, 0, 1]),
-    { text: "$", fontSize: 6.5 },
+    besideRule(ctx, "$", { fontSize: 6.5, bold: false }, [0, 8, 0, 0]),
     { text: ctx.text("bol_imprint_text"), fontSize: 6, margin: [0, 8, 0, 0] },
   );
 
@@ -783,6 +781,29 @@ function freightBlock(ctx: Ctx, d: BolData): Content[] {
     columnGap: W.sidebarGap,
     margin: [0, 0, 0, 10],
   }];
+}
+
+/** The sidebar's rules: each row 160 pt wide, as the rules alone were. */
+const SIDEBAR_ROW = 160;
+/** The gap between a sidebar label and its rule. */
+const SIDEBAR_GAP = 4;
+
+/** A sidebar label beside its blank rule (owner ruling R1, 2026-11-24: each label printed under its
+ *  rule before): the words in a column as wide as they print in the template's family (`textWidthOf`,
+ *  rounded up, so they never wrap), the gap, then a rule taking the rest of the 160 pt row, under a
+ *  blank line at the words' size so it lies under their baseline. The form's furniture, no template
+ *  label. */
+function besideRule(ctx: Ctx, words: string, style: { fontSize: number; bold: boolean }, margin: Margin4): Content {
+  const wordsWidth = Math.ceil(textWidthOf(words, ctx.fonts.family, style.bold ? "bold" : "normal", style.fontSize));
+  const rule = SIDEBAR_ROW - wordsWidth - SIDEBAR_GAP;
+  return {
+    columns: [
+      { width: wordsWidth, text: words, fontSize: style.fontSize, ...(style.bold ? { bold: true } : {}) },
+      { width: rule, stack: [{ text: " ", fontSize: style.fontSize }, line(rule)] },
+    ],
+    columnGap: SIDEBAR_GAP,
+    margin,
+  };
 }
 
 /** The bottom note stack: value declaration, liability limitation, fibre boxes (five text
@@ -1023,13 +1044,14 @@ export type BolFlowBuilders = {
   textOf: (textBlocks: Record<string, string>) => (key: string) => string;
   labeledRule: (label: string, value: string, labelWidth: number, valueWidth: number, labelStyle?: LabelStyle) => Content;
   /** A label column beside a value on a rule (or a blank write-in rule: `value` null), the two
-   *  columns the flow's consignee, destination, delivering-carrier and signature rows are made of. */
+   *  columns the flow's carrier, consignee, destination, delivering-carrier and signature rows are made of. */
   ruledPair: (p: {
     label: string; labelWidth: number; labelStyle: LabelStyle; value: string | null;
-    valueSize?: number; valueAlign?: "left" | "center"; columnWidth: number | "*"; ruleWidth: number;
+    valueSize?: number; valueAlign?: LabelStyle["alignment"]; valueBold?: boolean; columnWidth: number | "*"; ruleWidth: number;
   }) => Column[];
-  carrierStack: (name: string, caption: string, width: number, nameStyle: LabelStyle) => Content;
-  /** The ship-from line: four columns at `size`, the date bold always, `bold` on the other three. */
+  /** The carrier's label in its 70 pt column beside the carrier's name at `nameStyle` on a rule `ruleWidth` long. */
+  carrierPair: (name: string, label: string, ruleWidth: number, nameStyle: LabelStyle) => Column[];
+  /** The ship-from line: one sentence at `size`, the date bold always, `bold` on the rest. */
   shipFromLine: (ctx: Ctx, d: BolData, size?: number, bold?: boolean) => Content;
   /** The two consignee rows (the ship-to name and street, each on a `consignedRule` rule, the caption
    *  beside the first in `captionWidth`), the flow's `consignedBlock` calling it with `"*"`. */
@@ -1042,7 +1064,7 @@ export type BolFlowBuilders = {
 };
 
 export const BOL_FLOW: BolFlowBuilders = {
-  widths: BOL_WIDTHS, sectionView, makeNum, makeBolDate, textOf, labeledRule, ruledPair, carrierStack, shipFromLine,
+  widths: BOL_WIDTHS, sectionView, makeNum, makeBolDate, textOf, labeledRule, ruledPair, carrierPair, shipFromLine,
   consigneeRows, poList, trvListNode, freightBlock,
 };
 

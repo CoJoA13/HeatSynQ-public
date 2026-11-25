@@ -53,8 +53,8 @@ describe("the flow's widths hold the profile (design 2026-11-09 §4.1 addition 5
     shipper_per: W.signLabel + W.signGap + CANVAS_GRID,
     agent_per: W.signLabel + W.signGap + CANVAS_GRID,
     po_address: W.poAddressLabel + W.rowGap + CANVAS_GRID,
-    ship_from: W.shipFromDate + W.shipFromWord + W.shipFromName + 3 * W.shipFromGap + CANVAS_GRID,
     consigned_to: W.consignedLabel + W.rowGap + W.consignedRule + W.rowGap + CANVAS_GRID,
+    carrier_name: W.carrierLabel + W.rowGap + CANVAS_GRID,
     trv: W.trvLabel + CANVAS_GRID,
   };
 
@@ -113,14 +113,16 @@ describe("the flow prints at the widths it exports (design 2026-11-09 §4.1 addi
     // `BOL_HEADER_GAP` (12 pt, the paper's); the declared-value "Per" row keeps the flow's own
     // literals (200 / 30 / 160).
     expect(BOL_HEADER_GAP).toBe(12);
+    // A sidebar label beside its rule (owner ruling R1, 2026-11-24): the words as wide as they print,
+    // rounded up, a 4 pt gap and the rule taking the rest of the 160 pt row.
+    const sidebarRow = (words: string, size: number, face: "normal" | "bold"): ColumnsShape => {
+      const width = Math.ceil(textWidthOf(words, "Roboto", face, size));
+      return { widths: [width, 160 - width - 4], gap: 4, rules: [null, 160 - width - 4] };
+    };
     expect(columnsShapes(buildBolDefinition(sampleBol()).content)).toEqual([
       { widths: ["*", W.headerRight], gap: BOL_HEADER_GAP, rules: [null, null] },
       formRule, formRule, formRule, formRule,
-      { widths: [W.carrierInset, W.carrierRule, "*"], gap: null, rules: [null, W.carrierRule, null] },
-      {
-        widths: ["*", W.shipFromDate, W.shipFromWord, W.shipFromName], gap: W.shipFromGap,
-        rules: [null, null, null, null],
-      },
+      { widths: [W.carrierLabel, W.carrierRule], gap: W.rowGap, rules: [null, W.carrierRule] },
       consigneeRow, consigneeRow,
       {
         widths: [W.destinationLabel, W.destinationRule, W.stateLabel, W.stateRule, W.zipLabel, W.zipRule, "*"],
@@ -132,7 +134,12 @@ describe("the flow prints at the widths it exports (design 2026-11-09 §4.1 addi
         gap: W.rowGap, rules: [null, W.deliveringRule, null, W.initialsRule, null, W.vehicleNoRule],
       },
       { widths: ["*", W.sidebar], gap: W.sidebarGap, rules: [null, null] },
+      sidebarRow("Signature of consignor", 5.5, "normal"),
       { widths: ["*", BOL_COLLECT_BOX.column], gap: null, rules: [null, null] },
+      sidebarRow("RECEIVED $", 6.5, "bold"),
+      sidebarRow("Agent or Cashier", 5.5, "normal"),
+      sidebarRow("Per", 6.5, "normal"),
+      sidebarRow("$", 6.5, "normal"),
       { widths: [200, 30, 160, "*"], gap: null, rules: [null, null, 160, null] },
       {
         widths: [W.signLabel, W.shipperRule, W.signLabel, "*"], gap: W.signGap,
@@ -143,32 +150,33 @@ describe("the flow prints at the widths it exports (design 2026-11-09 §4.1 addi
   });
 });
 
-/** Every `columns` node of `node` whose column widths are `widths`, in pre-order. */
-function columnsNodes(node: unknown, widths: unknown[], out: Record<string, unknown>[][] = []): Record<string, unknown>[][] {
+describe("the flow's ship-from line keeps its type (one sentence since owner ruling R2, 2026-11-24)", () => {
+  it("prints the date bold and the address, \"From\" and the name with no bold key, in one text node", () => {
+    const sentences = textNodesOpening(buildBolDefinition(sampleBol()).content, "at ");
+    expect(sentences).toHaveLength(1);
+    const [address, date, name] = sentences[0];
+    expect(date.bold).toBe(true);
+    for (const run of [address, name]) expect("bold" in run).toBe(false);
+    expect(name.text).toMatch(/^ {4}From /);
+  });
+});
+
+/** The runs of every text node of `node` whose text is a list of runs, the first opening with
+ *  `opening`, in pre-order. */
+function textNodesOpening(node: unknown, opening: string, out: Record<string, unknown>[][] = []): Record<string, unknown>[][] {
   if (Array.isArray(node)) {
-    for (const child of node) columnsNodes(child, widths, out);
+    for (const child of node) textNodesOpening(child, opening, out);
     return out;
   }
   if (node === null || typeof node !== "object") return out;
   const o = node as Record<string, unknown>;
-  if (Array.isArray(o.columns)) {
-    const cols = o.columns as Record<string, unknown>[];
-    if (JSON.stringify(cols.map((c) => c.width)) === JSON.stringify(widths)) out.push(cols);
+  if (Array.isArray(o.text)) {
+    const runs = o.text as Record<string, unknown>[];
+    if (typeof runs[0]?.text === "string" && (runs[0].text as string).startsWith(opening)) out.push(runs);
   }
-  for (const value of Object.values(o)) columnsNodes(value, widths, out);
+  for (const value of Object.values(o)) textNodesOpening(value, opening, out);
   return out;
 }
-
-describe("the flow's ship-from line keeps its type (Task 2's change to shipFromLine)", () => {
-  it("prints the date bold and the address, \"From\" and the name with no bold key", () => {
-    const W = BOL_WIDTHS;
-    const rows = columnsNodes(buildBolDefinition(sampleBol()).content, ["*", W.shipFromDate, W.shipFromWord, W.shipFromName]);
-    expect(rows).toHaveLength(1);
-    const [address, date, word, name] = rows[0];
-    expect(date.bold).toBe(true);
-    for (const column of [address, word, name]) expect("bold" in column).toBe(false);
-  });
-});
 
 // ---------------------------------------------------------------------------------------------
 // The field families (Task 2). COORDINATES: `strokedLines` and the layout's boxes are top-down page
@@ -230,7 +238,7 @@ describe("the bill of lading's field families (design 2026-11-09 §4.2)", () => 
     { key: "shipper_per", w: 226, size: 7.5, bold: true, words: ["Shipper, Per"] },
     { key: "agent_per", w: 266, size: 7.5, bold: true, words: ["Agent, Per"] },
     { key: "po_address", w: 469, size: 7.5, bold: true, words: ["Permanent Post-office address of shipper"] },
-    { key: "carrier_name", w: 260, size: 10, bold: true, words: [d.carrierName, "(Name of Carrier)"] },
+    { key: "carrier_name", w: 334, size: 10, bold: true, words: ["Name of Carrier", d.carrierName] },
     { key: "ship_from", w: 564, size: 8.5, bold: false, words: [`at ${d.company.address}`, "Jul - 06 - 2026", "From", d.company.name] },
     { key: "consigned_to", w: 564, size: 9, bold: true, words: ["Consigned to", d.consignee.name, d.consignee.street, "(Mail or street address of consign - For purposes of notification only.)"] },
   ];
@@ -386,15 +394,33 @@ describe("the bill of lading's field families (design 2026-11-09 §4.2)", () => 
     expect(captionRun.x).toBeGreaterThanOrEqual(x + W.consignedLabel + W.rowGap + W.consignedRule + W.rowGap);
   });
 
-  it("carrier_name with no carrier strokes a rule the box's width and prints its caption under it", async () => {
-    const box = { x: 84, y: 100, w: 300, h: 20 };
+  it("carrier_name prints its label in the label column beside a rule taking the rest of the box, the name centred on it at the item's style", async () => {
+    // The seeded box (24, 334 wide) and a box stored before owner ruling R1 (84, 260 wide, the old seed's).
+    for (const box of [{ x: 24, y: 100, w: 334, h: 20 }, { x: 84, y: 100, w: 260, h: 20 }]) {
+      const pdf = await renderItems([bolField("carrier_name", { box, style: { size: 10, bold: true, align: "center" } })]);
+      const rules = horizontals(pdf);
+      expect(rules).toHaveLength(1);
+      expect(rules[0].x).toBeCloseTo(box.x + W.carrierLabel + W.rowGap, 2);
+      expect(rules[0].length).toBeCloseTo(box.w - W.carrierLabel - W.rowGap, 2);
+      const runs = runFonts(pdf);
+      const label = runs.find((r) => r.text === "Name")!; // runFonts trims each run
+      expect(label.x).toBeCloseTo(box.x, 1);
+      expect(label.size).toBe(9);
+      expect(isBold(label.font)).toBe(true);
+      const name = runs.find((r) => r.text === "Demo")!;
+      expect(name.size).toBe(10);
+      expect(Math.abs(name.y - label.y)).toBeLessThan(1.5);
+      expect(name.x).toBeGreaterThan(rules[0].x);
+    }
+  });
+
+  it("carrier_name with no carrier prints its label beside a blank rule", async () => {
+    const box = { x: 24, y: 100, w: 334, h: 20 };
     const pdf = await renderItems([bolField("carrier_name", { box })], cfg(), sampleBol({ carrierName: "" }));
     const rules = horizontals(pdf);
     expect(rules).toHaveLength(1);
-    expect(rules[0].x).toBeCloseTo(box.x, 2);
-    expect(rules[0].length).toBeCloseTo(box.w, 2);
-    const caption = linesOf(pdf).find((l) => l.text === "(Name of Carrier)")!;
-    expect(PAGE_HEIGHT - caption.y).toBeGreaterThan(rules[0].y);
+    expect(rules[0].x).toBeCloseTo(box.x + W.carrierLabel + W.rowGap, 2);
+    expect(linesOf(pdf).map((l) => l.text)).toEqual(["Name of Carrier"]);
   });
 
   it("a wording the freight block prints itself, a barcode and a block's own field print nothing", () => {
@@ -420,7 +446,8 @@ describe("the bill of lading's field families (design 2026-11-09 §4.2)", () => 
     expect(BOL_CANVAS.ruledFields.map((r) => r.key).sort()).toEqual([...RULED_FIELDS].sort());
     const drawOf = (key: string) => BOL_CANVAS.ruledFields.find((r) => r.key === key);
     for (const key of [...FORM_RULE_FIELDS, ...WRITE_IN_FIELDS]) expect(drawOf(key)).toEqual({ key, draw: "beside" });
-    expect(drawOf("carrier_name")).toEqual({ key: "carrier_name", draw: "under" });
+    // The carrier's label beside its line (owner ruling R1, 2026-11-24, over ruling (a)'s "under").
+    expect(drawOf("carrier_name")).toEqual({ key: "carrier_name", draw: "beside" });
     // The consignee's two rules are the flow's own column (owner ruling (a), 2026-11-10).
     expect(drawOf("consigned_to")).toEqual({ key: "consigned_to", draw: "lines", column: BOL_WIDTHS.consignedRule });
   });
@@ -691,10 +718,12 @@ describe("a canvas bill of lading (design 2026-11-09 §4.4, §5.2)", () => {
       const [a, b] = [columnWidths(narrow.xs), columnWidths(full.xs)];
       expect(b[1] - a[1]).toBeCloseTo(164, 1);
       for (const i of [0, 2, 3, 4]) expect(b[i]).toBeCloseTo(a[i], 2);
-      // The sidebar's 160 pt rules start at the block's right less 170.
-      const sideRules = horizontals(narrow.r.pdf).filter((h) => Math.abs(h.length - 160) < 0.01);
-      expect(sideRules.length).toBeGreaterThan(0);
-      for (const rule of sideRules) expect(rule.x).toBeCloseTo(24 + 400 - W.sidebar, 2);
+      // The sidebar's rows start at the block's right less 170 and end 160 pt on (each rule beside its
+      // label since owner ruling R1, 2026-11-24): every rule that ends there starts inside the row.
+      const rowEnd = 24 + 400 - W.sidebar + 160;
+      const sideRules = horizontals(narrow.r.pdf).filter((h) => Math.abs(h.x + h.length - rowEnd) < 0.01);
+      expect(sideRules).toHaveLength(5);
+      for (const rule of sideRules) expect(rule.x).toBeGreaterThan(24 + 400 - W.sidebar);
     });
 
     it("a COLLECT shipment's box sits in its 14 pt column at the block's right: 574.4 and 587.6 at 564 (#557)", async () => {

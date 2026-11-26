@@ -17,6 +17,7 @@ import { listSurcharges, buildSurcharges, CUSTOMER_SURCHARGE_SELECT, type Surcha
 import { listPartPricesByPart, PRICE_ROW_INCLUDE, PRICE_ROW_ORDER } from "./part-prices";
 import { listAddresses, type AddressRow } from "./customer-addresses";
 import { billToLines, pickDefaultAddress } from "./party-address";
+import { invoiceShipToAddressId, type ShipToCandidate } from "../lib/invoice-ship-to";
 import { getSetting, allocateNumber } from "./settings";
 import { shippedTotals, recomputeOrderStatus } from "./ship-ledger";
 import {
@@ -28,15 +29,16 @@ import { parseDateOnly, formatDateOnly, todayDateOnly, dateOnly, addDays } from 
 import {
   INVOICE_LINE_KINDS, PRICE_SOURCES, invoiceDocumentNumber,
   type InvoiceKindValue, type InvoiceStatusValue, type InvoiceLineKindValue, type PriceSourceValue,
-  type InvoicePrinted,
+  type InvoicePrinted, type InvoiceBalance,
 } from "../lib/invoice-constants";
+import { invoiceOpenBalance } from "./ar-balances";
 import { PRICE_PER, PRICE_PER_LABELS, type PricePerValue } from "../lib/part-constants";
 import { ORDER_STATUS_LABELS } from "../lib/order-constants";
 import { printedSince, selectedPrintRefusal } from "../lib/invoice-printed";
 import { readRemovedLines, removedLineLabel, NOT_REMOVED, type RemovedLine } from "../lib/invoice-removed-lines";
 import { shipmentFingerprintSource, type ShipmentFingerprintInput } from "../lib/invoice-shipment-fingerprint";
 import { LIST_WINDOW, cutToWindow, type ListWindow } from "../lib/list-window";
-import { renderPdf, jpegDataUri, pngDataUri } from "./pdf/render";
+import { renderPdf, joinPdfs, jpegDataUri, pngDataUri } from "./pdf/render";
 import { buildInvoiceDefinition, type InvoicePdfData, type InvoiceAmountRow } from "./pdf/invoice";
 import { storeDocument, assertPrintable } from "./documents";
 import { nextFilingTicket, type CustomerFiling } from "./customer-folders";
@@ -221,9 +223,6 @@ export async function listInvoiceCandidates(
 ): Promise<InvoiceCandidate[]> {
   const from = filter.from ? parseDate(filter.from, "From date") : undefined;
   const to = filter.to ? parseDate(filter.to, "To date") : undefined;
-  const shipDateWindow = from || to
-    ? { shipDate: { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) } }
-    : undefined;
 
   const orders = await prisma.order.findMany({
     where: {
@@ -232,7 +231,6 @@ export async function listInvoiceCandidates(
       // The live partial-unique guard's own predicate: no live invoice (a CREDIT does not count).
       invoices: { none: { kind: "INVOICE", deletedAt: null } },
       ...(filter.customerId ? { customerId: filter.customerId } : {}),
-      ...(shipDateWindow ? { shipperOrders: { some: { shipper: { deletedAt: null, ...shipDateWindow } } } } : {}),
     },
     orderBy: { orderNumber: "asc" },
     select: {
@@ -246,15 +244,24 @@ export async function listInvoiceCandidates(
     },
   });
 
-  return orders.map((o) => {
+  // #1057 ruling 6a (owner, 2026-11-26): the From/To range keeps an order by its LAST live
+  // shipment's date, the figure the Last Ship Date column shows, never by any shipment of the order
+  // falling inside it (which this read did before). Applied to the rows after the read: the
+  // candidates are the orders shipped and not yet invoiced, never windowed, and a max per order is
+  // not a predicate the `where` above can state. An order with no live shipment has no date, and a
+  // range keeps it out.
+  const rows = orders.map((o) => {
     const times = o.shipperOrders.map((so) => so.shipper.shipDate.getTime());
     const last = times.length ? new Date(Math.max(...times)) : null;
-    return {
-      orderId: o.id, orderNumber: o.orderNumber,
-      customerCode: o.customer.code, customerName: o.customer.name,
-      poNumber: o.poNumber, lastShipDate: last ? formatDateOnly(last) : null,
-    };
+    return { o, last };
   });
+  const inRange = (last: Date | null) =>
+    (!from && !to) || (last !== null && (!from || last >= from) && (!to || last <= to));
+  return rows.filter(({ last }) => inRange(last)).map(({ o, last }) => ({
+    orderId: o.id, orderNumber: o.orderNumber,
+    customerCode: o.customer.code, customerName: o.customer.name,
+    poNumber: o.poNumber, lastShipDate: last ? formatDateOnly(last) : null,
+  }));
 }
 
 // -------------------------------------------------------------------------------------------
@@ -273,9 +280,12 @@ export type InvoiceListRow = {
 
 /** The register's filters. `printed` (the UX redesign PR 6, owner 2026-10-31) is not a column: a
  *  row's `printedAt` is derived from its prints after the read (`readRegister`), so the filter is
- *  applied to the derived rows, and a windowed read under it reads the register whole first. */
+ *  applied to the derived rows, and a windowed read under it reads the register whole first.
+ *  `balance` (#1057) is the same kind of figure: a row's open balance is derived from its live
+ *  applications after the read, never stored. */
 export type InvoiceFilter = {
   customerId?: string; status?: InvoiceStatusValue; from?: string; to?: string; printed?: InvoicePrinted;
+  balance?: InvoiceBalance;
 };
 
 const LIST_SELECT = {
@@ -304,12 +314,17 @@ function invoiceListWhere(filter: InvoiceFilter): Prisma.InvoiceWhereInput {
     ...(filter.from ? { gte: parseDate(filter.from, "Invoice date from") } : {}),
     ...(filter.to ? { lte: parseDate(filter.to, "Invoice date to") } : {}),
   } : undefined;
-  return {
+  const where: Prisma.InvoiceWhereInput = {
     deletedAt: null, // a discarded draft never printed and is a candidate again (listInvoiceCandidates)
     ...(filter.customerId ? { customerId: filter.customerId } : {}),
     ...(filter.status ? { status: filter.status } : {}),
     ...(invoiceDate ? { invoiceDate } : {}),
   };
+  // #1057: only a finalized INVOICE can carry an open balance (a draft carries none, and the build
+  // answer of 2026-11-26 leaves credit memos out), so the Open filter narrows the read to those
+  // first, beside the Status filter rather than over it (Draft and Open together list nothing);
+  // the balance itself is judged after the read (`readRegister`).
+  return filter.balance === "open" ? { AND: [where, { kind: "INVOICE", status: "FINALIZED" }] } : where;
 }
 
 /** The Invoicing list's own row (#591): the list row plus when it last printed since it was
@@ -396,12 +411,19 @@ export async function readInvoiceRegisterWindow(
  * is the window cut: the newest `window` rows AMONG the ones it names, and `cut` when one more is
  * past them. Still one invoice read and one prints read, the prints over the plain `where` (no
  * read-time cut to bound them by). The cost: a To print view reads every live invoice.
+ *
+ * The Balance filter (#1057) is derived the same way and cut the same way: its rows are read whole,
+ * their live applications read once more on the same transaction through the same invoice-relation
+ * `where`, each row's balance worked out by `invoiceOpenBalance` (the one definition,
+ * src/server/ar-balances.ts), and only then is the window cut. Its `where` already holds only
+ * finalized invoices (`invoiceListWhere`).
  */
 async function readRegister(
   tx: Db, filter: InvoiceFilter, prefix: string, window?: number,
 ): Promise<ListWindow<InvoiceRegisterRow>> {
   const where = invoiceListWhere(filter);
-  const bounded = window !== undefined && filter.printed === undefined;
+  const derivedFilter = filter.printed !== undefined || filter.balance !== undefined;
+  const bounded = window !== undefined && !derivedFilter;
   const read = await tx.invoice.findMany({
     where, select: REGISTER_SELECT, orderBy: REGISTER_ORDER_BY,
     ...(bounded ? { take: window + 1 } : {}),
@@ -414,6 +436,7 @@ async function readRegister(
   });
   const newestPrint = new Map<string, Date | null>();
   for (const p of prints) if (p.invoiceId !== null) newestPrint.set(p.invoiceId, p._max.createdAt);
+  const owing = filter.balance === undefined ? null : await openInvoiceIds(tx, where, read);
   const derived = rows.map((r) => {
     const printedAt = printedSince(r.finalizedAt, newestPrint.get(r.id) ?? null);
     return {
@@ -421,11 +444,37 @@ async function readRegister(
       creditNumber: r.creditNumber, orderVoided: r.order.deletedAt !== null,
     };
   });
-  if (filter.printed === undefined) return { cut, rows: derived };
+  if (!derivedFilter) return { cut, rows: derived };
   const wanted = filter.printed === "1";
-  const named = derived.filter((r) => (r.printedAt !== null) === wanted);
+  const named = derived.filter((r) =>
+    (filter.printed === undefined || (r.printedAt !== null) === wanted)
+    && (owing === null || owing.has(r.id)));
   return window === undefined ? { cut: false, rows: named } : cutToWindow(named, window);
 }
+
+/** The ids among `rows` whose open balance is above $0 (#1057's Open), each balance worked out from
+ *  its live applications by `invoiceOpenBalance`. The applications are one read on `tx` through the
+ *  invoice relation by the register's own `where`, never an `in` list of ids (`readRegister`'s
+ *  header says why). */
+async function openInvoiceIds(
+  tx: Db, where: Prisma.InvoiceWhereInput, rows: { id: string; total: Prisma.Decimal }[],
+): Promise<Set<string>> {
+  const applications = await tx.application.findMany({
+    where: { deletedAt: null, invoice: { is: where } },
+    select: { invoiceId: true, amount: true, type: true, deletedAt: true },
+  });
+  const byInvoice = new Map<string, ApplicationLiteRow[]>();
+  for (const a of applications) {
+    const list = byInvoice.get(a.invoiceId) ?? [];
+    list.push({ amount: a.amount.toNumber(), type: a.type, deletedAt: a.deletedAt });
+    byInvoice.set(a.invoiceId, list);
+  }
+  return new Set(rows
+    .filter((r) => invoiceOpenBalance(r.total.toNumber(), byInvoice.get(r.id) ?? []) > 0)
+    .map((r) => r.id));
+}
+
+type ApplicationLiteRow = Parameters<typeof invoiceOpenBalance>[1][number];
 
 /** The Invoice register PDF's read (#592): the register's rows and, when the filter names a
  *  customer, that customer's code and name for the PDF's filter line. */
@@ -511,7 +560,9 @@ async function otherChargeGlRef(): Promise<GlRef> {
 /** The SHIP-TO block for the invoice snapshot (§10): the row's name, else the customer's own; blank
  *  components are dropped so no empty line prints. The BILL-TO block is `billToLines`
  *  (`party-address.ts`, R14 of #671): the row's name stacked above the customer's. */
-function renderAddress(addr: AddressRow | null, fallbackName: string): string {
+function renderAddress(
+  addr: Pick<AddressRow, "name" | "street" | "city" | "state" | "zip"> | null, fallbackName: string,
+): string {
   const name = addr && addr.name !== "" ? addr.name : fallbackName;
   const cityLine = addr ? [addr.city, [addr.state, addr.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ") : "";
   return [name, addr?.street ?? "", cityLine].filter((s) => s !== "").join("\n");
@@ -652,14 +703,25 @@ async function priceRowsByLine(
  * `buildPricingInput` prices from this function's result and `shipmentFingerprint` hashes it, so
  * what finalize compares is by construction what was priced: there is no second query to drift.
  * On the caller's `tx`, under its order claim.
+ *
+ * The same read answers the shipments a new invoice's Ship-to is chosen from (`shipToCandidates`,
+ * #1055), so create reads the order's shipments once. They are deliberately NOT in the fingerprint
+ * (`shipmentFingerprintSource` reads `lines` and `freight` alone): the Ship-to is set at create only
+ * (owner ruling 2026-11-25), so a shipment's ship-to changed later must not make Finalize refuse a
+ * draft that Recalculate would not change.
  */
 async function readShipmentInputs(
   tx: Db, orderId: string, orderLineIds: string[],
-): Promise<ShipmentFingerprintInput & { shipped: Map<string, { qty: number; weight: number }> }> {
+): Promise<ShipmentFingerprintInput & {
+  shipped: Map<string, { qty: number; weight: number }>; shipToCandidates: ShipToCandidate[];
+}> {
   const shipped = await shippedTotals(tx, orderLineIds);
   const shipperOrders = await tx.shipperOrder.findMany({
     where: { orderId },
-    select: { shipper: { select: { id: true, deletedAt: true, billFreight: true, freightAmount: true } } },
+    select: { shipper: { select: {
+      id: true, deletedAt: true, billFreight: true, freightAmount: true,
+      shipToAddressId: true, shipDate: true, createdAt: true, reversesShipperId: true,
+    } } },
   });
   const freight: { shipperId: string; amount: number }[] = [];
   const seenShippers = new Set<string>();
@@ -673,6 +735,7 @@ async function readShipmentInputs(
   return {
     shipped, freight,
     lines: orderLineIds.map((id) => ({ orderLineId: id, ...(shipped.get(id) ?? { qty: 0, weight: 0 }) })),
+    shipToCandidates: shipperOrders.map((so) => so.shipper),
   };
 }
 
@@ -700,6 +763,10 @@ async function buildPricingInput(
   orderLines: OrderLineRow[],
 ): Promise<{
   input: PricingInput; otherChargeGlName: string; shipmentFingerprint: string;
+  /** The latest live shipment's ship-to address id (#1055, `invoiceShipToAddressId`), else null.
+   *  Create alone reads it; Recalculate leaves a draft's Ship-to as it stands (owner ruling
+   *  2026-11-25). */
+  shipToAddressId: string | null;
   /** The price rows read for each PRICED order line, by order line id: what `lines[].prices` was
    *  built from, kept so create's header can take the lead line's rows from this read instead of
    *  reading them again on `tx` (#622). A zero-net line has no entry: it was never priced. */
@@ -798,6 +865,7 @@ async function buildPricingInput(
     input: { lines, surcharges: buildSurcharges(surcharges, customer), charges, freight, cert, tax },
     otherChargeGlName,
     shipmentFingerprint: shipmentFingerprint(shipmentInputs),
+    shipToAddressId: invoiceShipToAddressId(shipmentInputs.shipToCandidates),
     pricesByLine,
   };
 }
@@ -1051,7 +1119,6 @@ async function createInvoiceInTx(
   const addresses = await listAddresses(order.customerId, undefined, tx);
   // Frozen at create (§10): an invoice raised before R14 keeps the block it printed.
   const billTo = billToLines(customer.name, pickDefaultAddress(addresses, "BILL_TO")).join("\n");
-  const shipTo = renderAddress(pickDefaultAddress(addresses, "SHIP_TO"), customer.name);
 
   const orderLines: OrderLineRow[] = await tx.orderLine.findMany({
     where: { orderId: data.orderId },
@@ -1059,8 +1126,18 @@ async function createInvoiceInTx(
     select: ORDER_LINE_SELECT,
   });
 
-  const { input, otherChargeGlName, shipmentFingerprint: fingerprint, pricesByLine } =
+  const { input, otherChargeGlName, shipmentFingerprint: fingerprint, shipToAddressId, pricesByLine } =
     await buildPricingInput(tx, deps.config, deps.surcharges, order, customer, orderLines);
+
+  // The Ship-to (#1055, owner ruling 2026-11-25): the latest live shipment's own ship-to row, read
+  // UNFILTERED on deletedAt/active as the shipping ticket and the bill of lading read it (the paper
+  // names where the truck went, whatever has happened to the address book since), and printed by
+  // their rule, the row's name else the customer's. No shipment naming one keeps the rule before
+  // #1055, the customer's default SHIP_TO row. Frozen at create: Recalculate never rewrites it, and
+  // an invoice raised before #1055 keeps the block it printed.
+  const shipmentShipTo = shipToAddressId === null ? null
+    : await tx.customerAddress.findFirst({ where: { id: shipToAddressId } });
+  const shipTo = renderAddress(shipmentShipTo ?? pickDefaultAddress(addresses, "SHIP_TO"), customer.name);
   const computed = priceOrder(input); // the pure engine — all the arithmetic
 
   // Ruling 4's invoice half (spec §5.7): the header's Process: snapshot is the lead part's
@@ -2791,4 +2868,37 @@ export async function printSelectedInvoice(
     (fresh) => printInvoiceInTx(fresh, invoiceId, settings, "selected"),
     { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
   )));
+}
+
+// -------------------------------------------------------------------------------------------
+// Print as one PDF (#1057): the stored prints of a Print selected run, joined.
+// -------------------------------------------------------------------------------------------
+
+const JOIN_INPUT = z.object({
+  documentIds: z.array(z.string().min(1)).min(1, "Name at least one document to join")
+    .refine((ids) => new Set(ids).size === ids.length, "A document is named twice"),
+});
+
+/** The sentence a join answers when an id names no stored invoice or credit print. */
+export const JOIN_NOT_AN_INVOICE = "A document to join is not a stored invoice or credit memo print";
+
+/**
+ * The Invoicing list's Print as one PDF (#1057; owner rulings of 2026-11-26 and the build answers of
+ * the same day): the page prints each ticked row through Print selected's own route, which files
+ * each one, and then asks here for those stored prints joined end to end, in the order it names
+ * them. A pure read (spec §12): it stores nothing and audits nothing, so the joined file is never
+ * filed; each invoice in it already was, by its own print. It reads the stored bytes, never renders
+ * again, so the pages are the paper filed. An id that names no INVOICE or CREDIT document refuses
+ * the whole join with a 400: nothing else may ride a file headed for a customer.
+ */
+export async function joinInvoicePrints(input: unknown): Promise<Buffer> {
+  const { documentIds } = JOIN_INPUT.parse(input);
+  const rows = await prisma.storedDocument.findMany({
+    where: { id: { in: documentIds }, kind: { in: ["INVOICE", "CREDIT"] } },
+    select: { id: true, fileData: true },
+  });
+  const bytes = new Map(rows.map((r) => [r.id, r.fileData]));
+  const parts = documentIds.map((id) => bytes.get(id));
+  if (parts.some((p) => p === undefined)) throw new HttpError(400, JOIN_NOT_AN_INVOICE);
+  return joinPdfs(parts as Uint8Array[]);
 }

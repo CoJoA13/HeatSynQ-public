@@ -159,6 +159,8 @@ export function fixtureRuntime(options: {
     openRecordTab: async () => {}, // the invoice fixture opens its Lines tab (PR 6)
     waitForShipmentPage: async () => ({ id: `shipment-${orderNumber}`, shipperNumber: orderNumber }),
     waitForValue: async () => {},
+    // A Combobox pick (#1056) is a UI effect, as the native selectOption it replaced was.
+    pickComboboxValue: async () => {},
   }) as (page: unknown, ctx: unknown) => Promise<unknown>;
   return { run: () => prepare(page, ctx), owned, ctx, boundary, writes, watchers,
     rejectPending(error: Error) { for (const watch of watchers) if (!watch.settled) watch.reject(error); },

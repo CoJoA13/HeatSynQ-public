@@ -39,7 +39,7 @@ describe("the certifications list's shape (PR 5)", () => {
     const texts = jsxTexts(PAGE, "label");
     const byFor = new Map(named("label").map((l, i) => [l.attr("htmlFor"), texts[i]]));
     const boxes: [string, string, string][] = [
-      ["input", "filters.search", "Search"], ["select", "filters.customerId", "Customer"],
+      ["input", "filters.search", "Search"], ["Combobox", "filters.customerId", "Customer"],
       ["select", "filters.scope", "Scope"], ["select", "filters.printed", "Printed"],
     ];
     for (const [tag, value, word] of boxes) {

@@ -68,6 +68,9 @@ import { QUOTE_DETAILS_SECTION, QUOTE_LINES_SECTION, QUOTE_TAB_LABEL, quoteTabs 
 import {
   BUTTON_NEUTRAL, BUTTON_NEUTRAL_COMPACT, BUTTON_PRIMARY, BUTTON_PRIMARY_COMPACT, CARD, INPUT_COMPACT, LINK, NOTICE,
 } from "@/lib/ui-classes";
+import { Combobox } from "@/components/Combobox";
+import { labelledOptions, partOptions } from "@/lib/menu-options";
+import { inMenuOrder } from "@/lib/menu-order";
 
 // Picker option slices (local mirrors, never src/server/** imports — CLAUDE.md).
 type ContactOption = { id: string; name: string; active: boolean };
@@ -737,19 +740,16 @@ export function QuoteDetail({ id }: { id: string }) {
               <>
                 <label className="block">
                   Part
-                  <select value={line.partId}
-                          disabled={editGate.disabled || !partsGate.allowed}
-                          title={editGate.disabled ? editGate.title : partsGate.allowed ? undefined : partsGate.title}
-                          onChange={(e) => patchLine(line.key, { partId: e.target.value })}
-                          className={`${INPUT_COMPACT} mt-1 block disabled:cursor-not-allowed disabled:bg-surface-50`}>
-                    {/* Synthesized current option when the catalog lacks the id (R3). */}
-                    {!customerParts.some((p) => p.id === line.partId) && (
-                      <option value={line.partId}>{display?.partNumber || "(current part)"}</option>
-                    )}
-                    {customerParts.filter((p) => p.active || p.id === line.partId).map((p) => (
-                      <option key={p.id} value={p.id}>{p.partNumber} — {p.name}{p.active ? "" : " (inactive)"}</option>
-                    ))}
-                  </select>
+                  {/* Synthesized current option when the catalog lacks the id (R3). */}
+                  <Combobox value={line.partId}
+                            options={[
+                              ...(!customerParts.some((p) => p.id === line.partId)
+                                ? [{ value: line.partId, label: display?.partNumber || "(current part)" }] : []),
+                              ...partOptions(customerParts.filter((p) => p.active || p.id === line.partId), { separator: " — ", markInactive: true }),
+                            ]}
+                            disabled={editGate.disabled || !partsGate.allowed}
+                            title={editGate.disabled ? editGate.title : partsGate.allowed ? undefined : partsGate.title}
+                            onSelect={(v) => patchLine(line.key, { partId: v })} ariaLabel="Part" className="mt-1 w-64" />
                 </label>
                 <button type="button"
                         onClick={() => patchLine(line.key, freeTextFromPart(
@@ -813,15 +813,11 @@ export function QuoteDetail({ id }: { id: string }) {
               <div className="flex items-end gap-2">
                 <label className="block">
                   Attach part
-                  <select value={attachPicks[line.key] ?? ""}
-                          disabled={attachGate.disabled} title={attachGate.title}
-                          onChange={(e) => setAttachPicks((cur) => ({ ...cur, [line.key]: e.target.value }))}
-                          className={`${INPUT_COMPACT} mt-1 block disabled:cursor-not-allowed disabled:bg-surface-50`}>
-                    <option value="">Part…</option>
-                    {customerParts.filter((p) => p.active).map((p) => (
-                      <option key={p.id} value={p.id}>{p.partNumber} — {p.name}</option>
-                    ))}
-                  </select>
+                  <Combobox value={attachPicks[line.key] ?? ""}
+                            options={partOptions(customerParts.filter((p) => p.active), { blank: "Part…", separator: " — " })}
+                            disabled={attachGate.disabled} title={attachGate.title}
+                            onSelect={(v) => setAttachPicks((cur) => ({ ...cur, [line.key]: v }))}
+                            ariaLabel="Attach part" className="mt-1 w-64" />
                 </label>
                 <button type="button" onClick={() => void attachPart(line)}
                         disabled={attachGate.disabled || !(attachPicks[line.key] ?? "") || attaching}
@@ -833,16 +829,12 @@ export function QuoteDetail({ id }: { id: string }) {
             ) : (
               <label className="block">
                 Use memorized part instead
-                <select value=""
-                        disabled={editGate.disabled || !partsGate.allowed}
-                        title={editGate.disabled ? editGate.title : partsGate.allowed ? undefined : partsGate.title}
-                        onChange={(e) => { if (e.target.value) patchLine(line.key, { partId: e.target.value }); }}
-                        className={`${INPUT_COMPACT} mt-1 block disabled:cursor-not-allowed disabled:bg-surface-50`}>
-                  <option value="">Part…</option>
-                  {customerParts.filter((p) => p.active).map((p) => (
-                    <option key={p.id} value={p.id}>{p.partNumber} — {p.name}</option>
-                  ))}
-                </select>
+                <Combobox value="" placeholder="Part…"
+                          options={partOptions(customerParts.filter((p) => p.active), { separator: " — " })}
+                          disabled={editGate.disabled || !partsGate.allowed}
+                          title={editGate.disabled ? editGate.title : partsGate.allowed ? undefined : partsGate.title}
+                          onSelect={(v) => { if (v) patchLine(line.key, { partId: v }); }}
+                          ariaLabel="Use memorized part instead" className="mt-1 w-64" />
               </label>
             )}
           </div>
@@ -884,19 +876,14 @@ export function QuoteDetail({ id }: { id: string }) {
             return (
               <div key={price.key} className="rounded border bg-surface-50/50 p-2">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <select value={price.processStepCodeId} disabled={editGate.disabled || !stepCodesReady}
-                          title={!stepCodesReady ? "Options failed to load — reload the page" : editGate.title}
-                          onChange={(e) => patchPrice(line.key, price.key, { processStepCodeId: e.target.value })}
-                          className={`${INPUT_COMPACT} disabled:cursor-not-allowed disabled:bg-surface-50`}>
-                    {!hasCode && (
-                      <option value={price.processStepCodeId}>
-                        {price.stepCode}{price.stepName ? ` — ${price.stepName}` : ""}
-                      </option>
-                    )}
-                    {stepCodes.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}{!c.active && " (inactive)"}</option>
-                    ))}
-                  </select>
+                  <Combobox value={price.processStepCodeId} disabled={editGate.disabled || !stepCodesReady}
+                            title={!stepCodesReady ? "Options failed to load — reload the page" : editGate.title}
+                            onSelect={(v) => patchPrice(line.key, price.key, { processStepCodeId: v })}
+                            options={[
+                              ...(!hasCode ? [{ value: price.processStepCodeId, label: `${price.stepCode}${price.stepName ? ` — ${price.stepName}` : ""}` }] : []),
+                              ...labelledOptions(stepCodes, (c) => `${c.name}${c.active ? "" : " (inactive)"}`),
+                            ]}
+                            ariaLabel="Operation step code" className="w-72" />
                   <div className="flex items-center gap-2">
                     <button type="button" onClick={() => movePrice(line.key, pIdx, -1)}
                             {...moveGate(editGate, pIdx, line.prices.length, -1)} aria-label="Move operation up"
@@ -1001,13 +988,11 @@ export function QuoteDetail({ id }: { id: string }) {
           })}
         </div>
         <div className="flex items-end gap-2">
-          <select value="" disabled={editGate.disabled || !stepCodesReady}
-                  title={!stepCodesReady ? "Options failed to load — reload the page" : editGate.title}
-                  onChange={(e) => { if (e.target.value) addPrice(line.key, e.target.value); }}
-                  className={`${INPUT_COMPACT} disabled:cursor-not-allowed disabled:bg-surface-50`}>
-            <option value="">Add operation</option>
-            {stepCodes.filter((c) => c.active).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+          <Combobox value="" disabled={editGate.disabled || !stepCodesReady}
+                    title={!stepCodesReady ? "Options failed to load — reload the page" : editGate.title}
+                    onSelect={(v) => { if (v) addPrice(line.key, v); }} placeholder="Add operation"
+                    options={labelledOptions(stepCodes.filter((c) => c.active), (c) => c.name)}
+                    ariaLabel="Add operation" className="w-72" />
         </div>
       </div>
     );
@@ -1180,7 +1165,9 @@ export function QuoteDetail({ id }: { id: string }) {
               {!users.some((u) => u.id === header.quotedById) && (
                 <option value={header.quotedById}>{detail.quotedByName}</option>
               )}
-              {users.map((u) => (
+              {/* By the display name each option shows, not the username the list is read by (#1056
+                  ruling 3). */}
+              {inMenuOrder(users, (u) => u.displayName).map((u) => (
                 <option key={u.id} value={u.id}>{u.displayName}{!u.active && " (inactive)"}</option>
               ))}
             </select>
@@ -1224,7 +1211,7 @@ export function QuoteDetail({ id }: { id: string }) {
               {header.endingStatementId !== "" && !statements.some((s) => s.id === header.endingStatementId) && (
                 <option value={header.endingStatementId}>{detail.endingStatementName || "(current statement)"}</option>
               )}
-              {statements.map((s) => (
+              {inMenuOrder(statements, (r) => r.name).map((s) => (
                 <option key={s.id} value={s.id}>{s.name}{!s.active && " (inactive)"}</option>
               ))}
             </select>

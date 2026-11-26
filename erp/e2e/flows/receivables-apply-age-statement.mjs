@@ -50,7 +50,7 @@
 // re-armed in invoice-shipped-order.mjs) — every wait below is for post-navigation-ONLY content.
 import assert from "node:assert/strict";
 import { answerModal, modalTitle } from "../lib/modal.mjs";
-import { assertNeverVisible, waitForValue } from "../lib/ui.mjs";
+import { assertNeverVisible, pickCombobox, pickComboboxValue, waitForValue } from "../lib/ui.mjs";
 import { createOrderViaUi, startNewShipment, orderPanel, waitForShipmentPage } from "../lib/orders.mjs";
 import { openRecordTab } from "../lib/record-tabs.mjs";
 import { openBatchesView } from "../lib/receivables.mjs";
@@ -170,19 +170,15 @@ export async function run(page, shot, ctx) {
   await shot("batch-created");
 
   // --- Add a check payment. ---
-  // NOT `getByLabel(..., { exact: true })` for these two: BatchDetail.tsx wraps each `<select>`
-  // directly inside its own `<label>` text (nesting, not `aria-label`/`for`), and Playwright's
-  // getByLabel computes that label's match text as the label's FULL textContent — which for a
-  // `<select>` child recursively includes every `<option>`'s own rendered text too. So the
-  // computed string is "Payer customerSelect…E2EARCUST · E2E AR Customer…", never literally
-  // "Payer customer" — `exact: true` then matches nothing (verified live against this exact page:
-  // 0 matches with `exact: true`, 1 without). `getByRole("combobox")`'s OWN accessible-name
-  // computation does collapse to the clean "Payer customer" (confirmed via `ariaSnapshot()`), so
-  // this is a getByLabel-specific quirk, not a real accessibility defect in the app — but it means
-  // a `<select>` wrapped by a label needs a scoped `label ... select` locator instead (a plain
-  // `<input>` has no text content of its own to pollute the label with — the "Amount"/"Check #"/
-  // "Received date" fields below are unaffected and keep `exact: true`).
-  await page.locator("label", { hasText: "Payer customer" }).locator("select").selectOption(fixtures.arCustomerId);
+  // Payer customer is a Combobox picker since #1056, found by its own `aria-label`. NOT
+  // `getByLabel(..., { exact: true })` for Payment type: BatchDetail.tsx wraps that `<select>`
+  // directly inside its own `<label>` text, and Playwright's getByLabel computes that label's
+  // match text as the label's FULL textContent, which for a `<select>` child includes every
+  // `<option>`'s rendered text, so `exact: true` matches nothing. A `<select>` wrapped by a label
+  // needs a scoped `label ... select` locator instead (a plain `<input>` has no text content of
+  // its own to pollute the label with — the "Amount"/"Check #"/"Received date" fields below are
+  // unaffected and keep `exact: true`).
+  await pickComboboxValue(page, "Payer customer", fixtures.arCustomerId);
   await page.locator("label", { hasText: "Payment type" }).locator("select").selectOption(fixtures.arPaymentTypeId);
   await page.getByLabel("Amount", { exact: true }).fill("700.00");
   await page.getByLabel("Check #", { exact: true }).fill("E2E-1001");
@@ -268,9 +264,8 @@ export async function run(page, shot, ctx) {
   // 200.00 on-account cash; Net = 470.00 - 200.00 = 270.00. ---
   await page.goto(`${ctx.baseURL}/receivables/aging`);
   await page.getByRole("heading", { name: "A/R Aging", exact: true }).waitFor({ state: "visible" });
-  // Scoped `label ... select`, not `getByLabel(..., { exact: true })` — the same wrapping-label
-  // `<select>` quirk as the batch's "Payer customer"/"Payment type" fields above.
-  await page.locator("label", { hasText: "Customer" }).locator("select").selectOption(fixtures.arCustomerId);
+  // The Customer filter is a Combobox picker (#1056); typing its code proves it filters.
+  await pickCombobox(page, "Customer", fixtures.arCustomerCode, new RegExp(`^${fixtures.arCustomerCode} · `));
 
   const agingRow = page.locator("tbody tr").filter({ has: page.getByText(fixtures.arCustomerCode, { exact: false }) });
   await agingRow.waitFor({ state: "visible", timeout: 15000 });
@@ -407,7 +402,7 @@ export async function run(page, shot, ctx) {
   // the chain shows up here as an absent checkbox rather than a wrong number.
   await page.goto(`${ctx.baseURL}/receivables/batches/${ctx.created.receivablesBatchId}`);
   await batchHeading.waitFor({ state: "visible", timeout: 15000 });
-  await page.locator("label", { hasText: "Payer customer" }).locator("select").selectOption(fixtures.arCustomerId);
+  await pickComboboxValue(page, "Payer customer", fixtures.arCustomerId);
   await page.locator("label", { hasText: "Payment type" }).locator("select").selectOption(fixtures.arPaymentTypeId);
   await page.getByLabel("Amount", { exact: true }).fill("460.60");
   await page.getByLabel("Check #", { exact: true }).fill("E2E-1002");

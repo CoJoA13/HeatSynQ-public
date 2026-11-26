@@ -17,7 +17,6 @@
 // in tests/waiting-titles.test.ts; this file pins, from the parsed source, that the button and the
 // list read one condition, so the button cannot say "Pick an order first" beside a closed list.
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
 import { declared, jsxTags, type JsxTag } from "./helpers/jsx-source";
 
 const NS = "src/app/shipping/new/NewShipment.tsx";
@@ -40,13 +39,14 @@ describe("the new form's Add order: the button and its list read one condition",
   });
 
   it("the list's first option and title are the leaf's, with no customer named first", () => {
-    const select = only("the Add order select", (t) => t.name === "select" && t.attr("aria-label") === "Add order");
+    // The Add order picker (a Combobox since #1056) shows the leaf's sentence as its placeholder.
+    const select = only("the Add order select", (t) => t.name === "Combobox" && t.attr("ariaLabel") === "Add order");
     expect(select.attr("title")).toBe("addSelect.title");
-    expect(oneLine(readFileSync(NS, "utf8"))).toContain('<option value="">{!customerId ? "Pick a customer first" : addSelect.placeholder}</option>');
+    expect(oneLine(select.attr("placeholder") ?? "")).toBe('!customerId ? "Pick a customer first" : addSelect.placeholder');
   });
 
   it("the list's select is closed by it", () => {
-    expect(only("the Add order select", (t) => t.name === "select" && t.attr("aria-label") === "Add order").attr("disabled"))
+    expect(only("the Add order select", (t) => t.name === "Combobox" && t.attr("ariaLabel") === "Add order").attr("disabled"))
       .toBe("addListClosed");
   });
 

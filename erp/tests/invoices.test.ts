@@ -159,6 +159,36 @@ describe("listInvoiceCandidates", () => {
     await prisma.order.update({ where: { id: voided.id }, data: { deletedAt: new Date() } });
     expect(await listInvoiceCandidates({})).toEqual([]);
   });
+
+  // #1057 ruling 6a (owner, 2026-11-26): the ship-date range applies to each order's LAST live
+  // shipment, the figure the Last Ship Date column shows, never to any shipment of the order.
+  it("keeps an order by its last live shipment's date, not by an earlier shipment in the range", async () => {
+    const { order, shipper: first } = await partiallyShippedOrder();
+    const rest = oneOrderInput(order);
+    rest.shipDate = "2026-09-02";
+    rest.orders[0].lines[0].qty = order.lines[0].qty - 10;
+    await createShipper(rest, { canOverrideCreditHold: false });
+    await prisma.shipper.update({ where: { id: first.id }, data: { shipDate: parseDateOnly("2026-08-04") } });
+    const listed = (filter: { from?: string; to?: string }) =>
+      listInvoiceCandidates(filter).then((rows) => rows.map((c) => c.orderNumber));
+    expect(await listed({ from: "2026-08-01", to: "2026-08-31" })).toEqual([]);
+    expect(await listed({ to: "2026-08-31" })).toEqual([]);
+    expect(await listed({ from: "2026-09-02", to: "2026-09-02" })).toEqual([order.orderNumber]);
+    expect(await listed({ from: "2026-09-01" })).toEqual([order.orderNumber]);
+    expect(await listed({ from: "2026-09-03" })).toEqual([]);
+    // The range reads the figure the column shows.
+    const [row] = await listInvoiceCandidates({});
+    expect(row.lastShipDate).toBe("2026-09-02");
+  });
+
+  it("keeps only the named customer's orders", async () => {
+    const { order: a } = await shippedOrder();
+    const { order: b } = await shippedOrder();
+    const listed = (customerId: string) =>
+      listInvoiceCandidates({ customerId }).then((rows) => rows.map((c) => c.orderNumber));
+    expect(await listed(a.customerId)).toEqual([a.orderNumber]);
+    expect(await listed(b.customerId)).toEqual([b.orderNumber]);
+  });
 });
 
 describe("createInvoice", () => {
@@ -2388,6 +2418,139 @@ describe("finalizeInvoice — the shipment fingerprint", () => {
     const credit = await asSystem(() => createCredit(invoice.id));
     expect(await fingerprintOf(credit.id)).toBeNull();
     expect((await finalize(credit.id)).status).toBe("FINALIZED");
+  });
+});
+
+// #1055 (owner ruling 2026-11-25): a new invoice's Ship-to is the latest live, non-reversal
+// shipment's own ship-to row, else the customer's default SHIP_TO row; set at create only. The
+// leaf's ordering is pinned in tests/invoice-ship-to.test.ts; these cases prove the wiring.
+describe("createInvoice — the shipment's ship-to (#1055)", () => {
+  const finalize = (id: string) => asSystem(() => finalizeInvoice(id));
+  const recalc = (id: string) => asSystem(() => recalculateInvoice(id));
+
+  async function shipTo(customerId: string, name: string, street: string, isDefault = false) {
+    return prisma.customerAddress.create({
+      data: { customerId, kind: "SHIP_TO", name, street, city: "Tulsa", state: "OK", zip: "74101", isDefault },
+    });
+  }
+
+  /** Ships `qty` of the order's single line on `shipDate`, to `shipToAddressId` when given. */
+  async function ship(order: OrderDetail, qty: number, shipDate: string, shipToAddressId?: string) {
+    const { shipper } = await asSystem(() => createShipper({
+      customerId: order.customerId, shipDate, ...(shipToAddressId ? { shipToAddressId } : {}),
+      orders: [{
+        orderId: order.id,
+        lines: [{ orderLineId: order.lines[0].id, qty, weight: qty, lineComplete: false }],
+        containers: [], serials: [],
+      }],
+    }, { canOverrideCreditHold: false }));
+    return shipper;
+  }
+
+  it("takes the shipment's ship-to, not the customer's default SHIP_TO row (the owner's case)", async () => {
+    const { order, customer, shipper } = await pricedShippedOrder();
+    await shipTo(customer.id, "Home Plant", "1 Main St", true);
+    const coater = await shipTo(customer.id, "Outside Coater", "9 Coat Rd");
+    await asSystem(() => updateShipper(shipper.id, { shipToAddressId: coater.id }));
+    const { invoice } = await asSystem(() => createInvoice({ orderId: order.id }));
+    expect(invoice.shipTo).toBe("Outside Coater\n9 Coat Rd\nTulsa, OK 74101");
+  });
+
+  it("prints the customer's name when the shipment's row has none", async () => {
+    const { order, customer, shipper } = await pricedShippedOrder();
+    await shipTo(customer.id, "Home Plant", "1 Main St", true);
+    const dock = await shipTo(customer.id, "", "9 Coat Rd");
+    await asSystem(() => updateShipper(shipper.id, { shipToAddressId: dock.id }));
+    const { invoice } = await asSystem(() => createInvoice({ orderId: order.id }));
+    expect(invoice.shipTo).toBe(`${customer.name}\n9 Coat Rd\nTulsa, OK 74101`);
+  });
+
+  it("takes the later ship date over the later-created shipment", async () => {
+    const { order, customer } = await savedOrder({ qty: 144, weight: "3024.00" });
+    await shipTo(customer.id, "Default Dock", "0 Default Rd", true); // created first, and the default
+    const north = await shipTo(customer.id, "North Plant", "1 North Rd");
+    const south = await shipTo(customer.id, "South Plant", "2 South Rd");
+    await ship(order, 100, "2026-08-06", north.id);
+    await ship(order, 44, "2026-08-05", south.id); // created later, shipped earlier
+    expect((await getOrder(order.id)).status).toBe("SHIPPED");
+    const { invoice } = await asSystem(() => createInvoice({ orderId: order.id }));
+    expect(invoice.shipTo).toBe("North Plant\n1 North Rd\nTulsa, OK 74101");
+  });
+
+  it("on one ship date, takes the later-created shipment", async () => {
+    const { order, customer } = await savedOrder({ qty: 144, weight: "3024.00" });
+    await shipTo(customer.id, "Default Dock", "0 Default Rd", true); // created first, and the default
+    const north = await shipTo(customer.id, "North Plant", "1 North Rd");
+    const south = await shipTo(customer.id, "South Plant", "2 South Rd");
+    const first = await ship(order, 100, "2026-08-05", north.id);
+    const second = await ship(order, 44, "2026-08-05", south.id);
+    // Set apart by a second, so the case does not rest on the clock's resolution or the id tie-break.
+    await prisma.shipper.update({ where: { id: first.id }, data: { createdAt: new Date("2026-08-05T08:00:00Z") } });
+    await prisma.shipper.update({ where: { id: second.id }, data: { createdAt: new Date("2026-08-05T08:00:01Z") } });
+    const { invoice } = await asSystem(() => createInvoice({ orderId: order.id }));
+    expect(invoice.shipTo).toBe("South Plant\n2 South Rd\nTulsa, OK 74101");
+  });
+
+  it("skips a voided shipment and one that names no ship-to", async () => {
+    const { order, customer } = await savedOrder({ qty: 144, weight: "3024.00" });
+    await shipTo(customer.id, "Default Dock", "0 Default Rd", true); // created first, and the default
+    const north = await shipTo(customer.id, "North Plant", "1 North Rd");
+    const south = await shipTo(customer.id, "South Plant", "2 South Rd");
+    await ship(order, 144, "2026-08-04", north.id);
+    const voided = await ship(order, 6, "2026-08-07", south.id);
+    await asSystem(() => voidShipper(voided.id, "shipped twice"));
+    await ship(order, 6, "2026-08-08"); // no ship-to
+    expect((await getOrder(order.id)).status).toBe("SHIPPED");
+    const { invoice } = await asSystem(() => createInvoice({ orderId: order.id }));
+    expect(invoice.shipTo).toBe("North Plant\n1 North Rd\nTulsa, OK 74101");
+  });
+
+  it("skips a reversal, though it is the latest and names a ship-to", async () => {
+    const { order, customer } = await savedOrder({ qty: 144, weight: "3024.00" });
+    await shipTo(customer.id, "Default Dock", "0 Default Rd", true); // created first, and the default
+    const north = await shipTo(customer.id, "North Plant", "1 North Rd");
+    const south = await shipTo(customer.id, "South Plant", "2 South Rd");
+    const returned = await shipTo(customer.id, "Returns Dock", "3 Return Rd");
+    const original = await ship(order, 144, "2026-08-04", north.id);
+    const { shipper: reversal } = await asSystem(() => reverseShipper(original.id, { reason: "wrong parts loaded" }));
+    // A reversal copies its original's ship-to; another, on a later date, makes the case discriminate.
+    await prisma.shipper.update({
+      where: { id: reversal.id }, data: { shipToAddressId: returned.id, shipDate: parseDateOnly("2026-09-01") },
+    });
+    await ship(order, 144, "2026-08-04", south.id); // the re-ship, created after the original
+    expect((await getOrder(order.id)).status).toBe("SHIPPED");
+    const { invoice } = await asSystem(() => createInvoice({ orderId: order.id }));
+    expect(invoice.shipTo).toBe("South Plant\n2 South Rd\nTulsa, OK 74101");
+  });
+
+  it("prints the shipment's row after the address is deleted, as the ticket and bill of lading do", async () => {
+    const { order, customer, shipper } = await pricedShippedOrder();
+    await shipTo(customer.id, "Home Plant", "1 Main St", true);
+    const coater = await shipTo(customer.id, "Outside Coater", "9 Coat Rd");
+    await asSystem(() => updateShipper(shipper.id, { shipToAddressId: coater.id }));
+    await prisma.customerAddress.update({ where: { id: coater.id }, data: { deletedAt: new Date(), active: false } });
+    const { invoice } = await asSystem(() => createInvoice({ orderId: order.id }));
+    expect(invoice.shipTo).toBe("Outside Coater\n9 Coat Rd\nTulsa, OK 74101");
+  });
+
+  it("is set at create only: Recalculate leaves it, and a later ship-to change does not stop Finalize", async () => {
+    const { order, customer, shipper } = await pricedShippedOrder();
+    await shipTo(customer.id, "Default Dock", "0 Default Rd", true); // created first, and the default
+    const north = await shipTo(customer.id, "North Plant", "1 North Rd");
+    const south = await shipTo(customer.id, "South Plant", "2 South Rd");
+    await asSystem(() => updateShipper(shipper.id, { shipToAddressId: north.id }));
+    const { invoice } = await asSystem(() => createInvoice({ orderId: order.id }));
+    expect(invoice.shipTo).toBe("North Plant\n1 North Rd\nTulsa, OK 74101");
+
+    await asSystem(() => updateShipper(shipper.id, { shipToAddressId: south.id }));
+    expect((await recalc(invoice.id)).shipTo).toBe("North Plant\n1 North Rd\nTulsa, OK 74101");
+
+    await asSystem(() => updateInvoice(invoice.id, { shipTo: "Typed by hand" }));
+    expect((await recalc(invoice.id)).shipTo).toBe("Typed by hand");
+    await asSystem(() => updateShipper(shipper.id, { shipToAddressId: north.id }));
+    const done = await finalize(invoice.id); // the ship-to is not in the shipment fingerprint
+    expect(done.status).toBe("FINALIZED");
+    expect(done.shipTo).toBe("Typed by hand");
   });
 });
 

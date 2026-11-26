@@ -49,6 +49,9 @@ import { AtAGlance } from "@/components/AtAGlance";
 import { ActionMenu } from "@/components/ActionMenu";
 import { RECEIPT_BATCH_TAB_LABEL, balanceText, batchSubtitle, controlTotalText, postConfirm, receiptBatchTabs } from "@/lib/receipt-batch-page";
 import { BUTTON_PRIMARY, BUTTON_PRIMARY_COMPACT, CARD, INPUT_COMPACT, LINK, NOTICE } from "@/lib/ui-classes";
+import { Combobox } from "@/components/Combobox";
+import { customerOptions } from "@/lib/menu-options";
+import { inMenuOrder } from "@/lib/menu-order";
 
 // ---------------------------------------------------------------------------------------------
 // Types. Local mirrors of src/server/receipts.ts's `BatchDetail`/`PaymentRow` and
@@ -728,13 +731,10 @@ export function BatchDetail({ id }: { id: string }) {
         <div className="flex flex-wrap items-end gap-3 text-sm">
           <label className="block">
             Payer customer
-            <select value={payCustomerId} disabled={!createPaymentGate.allowed || !customersGate.allowed}
+            <Combobox value={payCustomerId} options={customerOptions(customers, { blank: "Select…" })}
+                    disabled={!createPaymentGate.allowed || !customersGate.allowed}
                     title={!createPaymentGate.allowed ? createPaymentGate.title : customersGate.title}
-                    onChange={(e) => setPayCustomerId(e.target.value)}
-                    className={`${INPUT_COMPACT} mt-1 block disabled:cursor-not-allowed disabled:bg-surface-50`}>
-              <option value="">Select…</option>
-              {customers.map((c) => <option key={c.id} value={c.id}>{c.code} · {c.name}</option>)}
-            </select>
+                    onSelect={(v) => setPayCustomerId(v)} ariaLabel="Payer customer" className="mt-1 w-64" />
           </label>
           <label className="block">
             Payment type
@@ -742,7 +742,7 @@ export function BatchDetail({ id }: { id: string }) {
                     onChange={(e) => setPayTypeId(e.target.value)}
                     className={`${INPUT_COMPACT} mt-1 block disabled:cursor-not-allowed disabled:bg-surface-50`}>
               <option value="">Select…</option>
-              {paymentTypes.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {inMenuOrder(paymentTypes, (r) => r.name).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           </label>
           <label className="block">

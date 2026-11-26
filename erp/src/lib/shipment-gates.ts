@@ -184,6 +184,12 @@ export function addOrderSelect(input: { gate: Gate; ordersGate: Gate; state: Add
   return { disabled: linesGate.disabled || !ordersGate.allowed || state !== "ready" || count === 0, title, placeholder };
 }
 
+/** An order as the Add order picker lists it, on both shipment pages: `#N`, then its PO when it has
+ * one. The picker keeps the server's order, newest first (#1056 ruling 3). */
+export function addOrderOptionLabel(o: { orderNumber: number; poNumber: string | null }): string {
+  return `#${o.orderNumber}${o.poNumber ? ` · PO ${o.poNumber}` : ""}`;
+}
+
 /**
  * Why a grid's Add picker is empty when the reason is not "everything is on the shipment already".
  * `context` is the grid's accepted baseline context (`shipment-bulk-recovery.ts`): it names the

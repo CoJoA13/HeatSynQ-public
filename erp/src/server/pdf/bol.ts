@@ -496,7 +496,7 @@ const CARRIER_NAME: LabelStyle = { fontSize: 10, bold: true, alignment: "center"
  *  hands it on, the canvas passing the rest of its box and the item's style). */
 function carrierPair(name: string, label: string, ruleWidth: number, nameStyle: LabelStyle): Column[] {
   return ruledPair({
-    label, labelWidth: W.carrierLabel, labelStyle: CONSIGNEE_LABEL, value: name, valueSize: nameStyle.fontSize,
+    label, labelWidth: W.carrierLabel, labelStyle: BOL_CARRIER_LABEL, value: name, valueSize: nameStyle.fontSize,
     valueAlign: nameStyle.alignment, valueBold: nameStyle.bold,
     columnWidth: ruleWidth, ruleWidth,
   });
@@ -572,6 +572,9 @@ function consigneeRows(label: string, labelStyle: LabelStyle, d: BolData, captio
 
 /** The flow's consignee and destination labels: 9 pt bold. */
 const CONSIGNEE_LABEL: LabelStyle = { fontSize: 9, bold: true };
+/** The carrier's label: the consignee labels' type. The canvas profile's `carrier_name` entry states
+ *  it for the stage (owner ruling on #1053, 2026-11-25), held to this by tests/bol-canvas.test.ts. */
+export const BOL_CARRIER_LABEL: LabelStyle = CONSIGNEE_LABEL;
 
 /** Consigned to / Destination, from the ship-to address — how a third-party consignee like the
  *  sample's "Example Coating" is expressed (spec §10.2, §3's closing note). Hand-laid: each field

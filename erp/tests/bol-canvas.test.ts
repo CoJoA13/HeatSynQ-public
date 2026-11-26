@@ -1,7 +1,7 @@
 import { beforeEach, describe, it, expect } from "vitest";
 import type { Content } from "pdfmake/interfaces";
 import {
-  BOL_FLOW, BOL_HEADER_GAP, BOL_WIDTHS, bolCanvasItemContent, buildBolDefinition, type BolData, type Ctx,
+  BOL_CARRIER_LABEL, BOL_FLOW, BOL_HEADER_GAP, BOL_WIDTHS, bolCanvasItemContent, buildBolDefinition, type BolData, type Ctx,
 } from "@/server/pdf/bol";
 import { BOL_COLLECT_BOX, renderPdf, renderSheetGroupsWithPositions, type LaidOutNode } from "@/server/pdf/render";
 import { CANVAS_IDS, assembleCanvasSheet, labelOf } from "@/server/pdf/canvas-sheet";
@@ -445,11 +445,43 @@ describe("the bill of lading's field families (design 2026-11-09 §4.2)", () => 
   it("the profile's ruledFields are the server's ruled families, each drawn as its family prints", () => {
     expect(BOL_CANVAS.ruledFields.map((r) => r.key).sort()).toEqual([...RULED_FIELDS].sort());
     const drawOf = (key: string) => BOL_CANVAS.ruledFields.find((r) => r.key === key);
-    for (const key of [...FORM_RULE_FIELDS, ...WRITE_IN_FIELDS]) expect(drawOf(key)).toEqual({ key, draw: "beside" });
-    // The carrier's label beside its line (owner ruling R1, 2026-11-24, over ruling (a)'s "under").
-    expect(drawOf("carrier_name")).toEqual({ key: "carrier_name", draw: "beside" });
+    // Each label in the column the paper prints it in, the gap before the rule the paper's (owner
+    // ruling on #1053, 2026-11-25), the widths the flow's own.
+    const W = BOL_WIDTHS;
+    const labelOf: Record<string, { width: number; gap: number }> = {
+      pro_number: { width: W.formLabel, gap: W.formGap },
+      bol_number: { width: W.formLabel, gap: W.formGap },
+      scac_code: { width: W.formLabel, gap: W.formGap },
+      destination: { width: W.destinationLabel, gap: W.rowGap },
+      destination_state: { width: W.stateLabel, gap: W.rowGap },
+      destination_zip: { width: W.zipLabel, gap: W.rowGap },
+      delivering_carrier: { width: W.deliveringLabel, gap: W.rowGap },
+      vehicle_initials: { width: W.initialsLabel, gap: W.rowGap },
+      vehicle_no: { width: W.vehicleNoLabel, gap: W.rowGap },
+      shipper_per: { width: W.signLabel, gap: W.signGap },
+      agent_per: { width: W.signLabel, gap: W.signGap },
+      po_address: { width: W.poAddressLabel, gap: W.rowGap },
+    };
+    for (const key of [...FORM_RULE_FIELDS, ...WRITE_IN_FIELDS]) {
+      expect(drawOf(key)).toEqual({ key, draw: "beside", label: labelOf[key] });
+    }
+    // The carrier's label beside its line (owner ruling R1, 2026-11-24, over ruling (a)'s "under"),
+    // in the consignee labels' column at their fixed type, set left as the flow sets it.
+    expect(drawOf("carrier_name")).toEqual({
+      key: "carrier_name", draw: "beside",
+      label: { width: W.carrierLabel, gap: W.rowGap, type: { size: BOL_CARRIER_LABEL.fontSize, bold: BOL_CARRIER_LABEL.bold } },
+    });
+    expect(BOL_CARRIER_LABEL.alignment).toBeUndefined();
     // The consignee's two rules are the flow's own column (owner ruling (a), 2026-11-10).
-    expect(drawOf("consigned_to")).toEqual({ key: "consigned_to", draw: "lines", column: BOL_WIDTHS.consignedRule });
+    expect(drawOf("consigned_to")).toEqual({
+      key: "consigned_to", draw: "lines", column: W.consignedRule, label: { width: W.consignedLabel, gap: W.rowGap },
+    });
+    // A ruled field's least width is its label column, its gap and a grid step of rule (the consignee
+    // two gaps, its rules' column and a grid step of caption), so the stage's column always fits.
+    for (const ruled of BOL_CANVAS.ruledFields) {
+      const rest = ruled.draw === "lines" ? (ruled.column ?? 0) + ruled.label.gap + CANVAS_GRID : CANVAS_GRID;
+      expect(BOL_LEAST_WIDTHS[ruled.key]).toBe(ruled.label.width + ruled.label.gap + rest);
+    }
   });
 });
 

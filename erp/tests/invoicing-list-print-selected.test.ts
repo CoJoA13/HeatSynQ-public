@@ -5,7 +5,8 @@ import { PRINT_NO_FOLDER } from "@/lib/customer-folder-words";
 import { invoiceFileName } from "@/lib/invoice-file-names";
 import { printTickable, selectedPrintRefusal } from "@/lib/invoice-printed";
 import {
-  confirmParts, confirmText, printTicksAfterRun, resultText, runSelectedPrints, ZIP_FAILED, zipFileName, zipPrints,
+  confirmParts, confirmText, JOIN_FAILED, joinedConfirmParts, joinedFileName, joinOrder, printTicksAfterRun, resultText,
+  runSelectedPrints, ZIP_FAILED, zipFileName, zipPrints,
 } from "@/lib/print-selected";
 import { callback, runNode, source } from "./helpers/lift-callback";
 
@@ -58,7 +59,14 @@ function printRowsOf(invoices: Row[], printTicked: Set<string>): Row[] {
 /** A print's bytes, different for each row, so an unzipped entry shows whose print it holds. */
 const pdf = (id: string) => new TextEncoder().encode(`%PDF-1.7 ${id}`);
 const printedAnswer = (id: string) =>
-  new Response(pdf(id), { status: 200, headers: { "content-type": "application/pdf" } });
+  new Response(pdf(id), { status: 200, headers: { "content-type": "application/pdf", "x-document-id": `doc-${id}` } });
+/** The join's answer (#1057): one PDF, its bytes naming the documents it was asked for. */
+const joinedAnswer = (init: RequestInit) => {
+  const { documentIds } = JSON.parse(init.body as string) as { documentIds: string[] };
+  return new Response(new TextEncoder().encode(`%PDF-1.7 joined ${documentIds.join(",")}`), {
+    status: 200, headers: { "content-type": "application/pdf" },
+  });
+};
 /** A row's print whose answer says it was not filed, the print route's `x-print-warnings` (#588). */
 const unfiledAnswer = (id: string, sentence: string) => new Response(pdf(id), {
   status: 200,
@@ -76,7 +84,7 @@ const alreadyPrinted = (kind: Row["kind"], documentNumber: string) =>
  *  tickable id set the post-run reload applies, or null when it fails and applies nothing. */
 function page(
   ticks: string[] = ["i1", "c1", "i2"],
-  options: { printing?: boolean; confirmed?: boolean; rows?: Row[] } = {},
+  options: { printing?: boolean; finalizing?: boolean; confirmed?: boolean; rows?: Row[] } = {},
 ) {
   const rows = options.rows ?? ROWS;
   const log: string[] = [];
@@ -96,10 +104,15 @@ function page(
   const askConfirm = vi.fn(async (q: { title: string; body: string; confirm: string }) => confirm(`${q.title} ${q.body}`));
   const trackedFetch = vi.fn(async (path: string, init: RequestInit) => {
     log.push(`${init.method} ${path}`);
+    if (path === "/api/invoices/joined") return (joinAnswer.current ?? joinedAnswer)(init);
     const id = path.split("/")[3];
     return (answers[id] ?? (() => printedAnswer(id)))();
   });
-  const downloadFile = vi.fn((_bytes: Uint8Array, _name: string) => { void _bytes; void _name; log.push("download"); });
+  /** The join's answer when a case sets one; absent, the joined PDF. */
+  const joinAnswer: { current: ((init: RequestInit) => Response) | null } = { current: null };
+  const downloadFile = vi.fn((_bytes: Uint8Array, _name: string, _type?: string) => {
+    void _bytes; void _name; void _type; log.push("download");
+  });
   const printTicked = new Set(ticks);
   const setPrintTicked = vi.fn((next: Set<string> | ((prev: Set<string>) => Set<string>)) => {
     log.push("ticks");
@@ -111,11 +124,13 @@ function page(
   const setPrintErrors = vi.fn((_errors: Map<string, string>) => { void _errors; log.push("errors"); });
   const setPrintWarnings = vi.fn((_warnings: Map<string, string>) => { void _warnings; log.push("warnings"); });
   const setPrintResult = vi.fn((value: string | null) => { log.push(`result ${value}`); });
-  const printSelected = callback<() => Promise<void>>(LIST, "InvoicingList", "printSelected", {
-    printing: options.printing ?? false, printRows: printRowsOf(rows, printTicked), open, tickableRef, loadInvoicesRef,
+  const printSelected = callback<(output?: "zip" | "joined") => Promise<void>>(LIST, "InvoicingList", "printSelected", {
+    printing: options.printing ?? false, finalizing: options.finalizing ?? false,
+    printRows: printRowsOf(rows, printTicked), open, tickableRef, loadInvoicesRef,
     setPrinting, setPrintErrors, setPrintWarnings, setPrintResult, setPrintTicked,
     askConfirm, trackedFetch, downloadFile,
     runSelectedPrints, zipPrints, zipFileName, printTicksAfterRun, confirmParts, resultText, invoiceFileName,
+    joinedConfirmParts, joinedFileName, joinOrder,
   });
   /** Each request the page sent, in order: its method and path. */
   const requests = () => trackedFetch.mock.calls.map(([path, init]) => `${init.method} ${path}`);
@@ -126,7 +141,7 @@ function page(
     return { name, entries: unzipSync(bytes) };
   };
   return {
-    log, answers, open, tickableRef, script, printTicked, printSelected, requests, zip,
+    log, answers, joinAnswer, open, tickableRef, script, printTicked, printSelected, requests, zip, trackedFetch,
     confirm, downloadFile, loadInvoicesRef, setPrinting, setPrintErrors, setPrintWarnings, setPrintResult, setPrintTicked,
   };
 }
@@ -304,6 +319,14 @@ describe("Invoicing list: Print selected", () => {
     expect(p.log).toEqual([]);
   });
 
+  it("sends nothing while a Finalize selected run is out (#1057)", async () => {
+    const p = page(["i1"], { finalizing: true });
+    await p.printSelected();
+    await p.printSelected("joined");
+    expect(p.confirm).not.toHaveBeenCalled();
+    expect(p.requests()).toEqual([]);
+  });
+
   it("keeps a failed row ticked only while the list the reload put on screen still gives it a box", async () => {
     // i1 prints; c1 and i2 are refused as already printed (another session printed them), and the
     // reload shows c1 printed, so its box is gone, while i2 still has one.
@@ -329,6 +352,70 @@ describe("Invoicing list: Print selected", () => {
     p.script.reload = null;
     await p.printSelected();
     expect(p.printTicked).toEqual(new Set(["i2"]));
+  });
+});
+
+// #1057 (owner rulings 2026-11-26 and the build answers of the same day): Print as one PDF is the same
+// run, each print filed by its own selected print, then the stored prints joined by the server in the
+// table's order and downloaded as one PDF in place of the zip.
+describe("Invoicing list: Print as one PDF", () => {
+  const joined = "POST /api/invoices/joined";
+
+  it("asks in its own words and sends nothing when cancelled", async () => {
+    const p = page(["i1", "c1", "i2"], { confirmed: false });
+    await p.printSelected("joined");
+    const q = joinedConfirmParts(3);
+    expect(p.log).toEqual([`confirm ${q.title} ${q.body}`]);
+    expect(p.requests()).toEqual([]);
+  });
+
+  it("prints each row, then joins the printed rows' documents in the table's order and downloads one PDF", async () => {
+    const p = page(["i2", "i1", "c1"]);
+    p.answers.c1 = () => refusedAnswer(alreadyPrinted("CREDIT", "1000"));
+    const before = joinedFileName(new Date());
+    await p.printSelected("joined");
+    const after = joinedFileName(new Date());
+    expect(p.requests()).toEqual([print("i1"), print("c1"), print("i2"), joined]);
+    const joinCall = p.trackedFetch.mock.calls.find(([path]) => path === "/api/invoices/joined")!;
+    expect(JSON.parse(joinCall[1].body as string)).toEqual({ documentIds: ["doc-i1", "doc-i2"] });
+    expect(p.downloadFile).toHaveBeenCalledTimes(1);
+    const [bytes, name, type] = p.downloadFile.mock.calls[0];
+    expect(new TextDecoder().decode(bytes)).toBe("%PDF-1.7 joined doc-i1,doc-i2");
+    expect([before, after]).toContain(name);
+    expect(type).toBe("application/pdf");
+    expect(p.log.slice(-7)).toEqual(["download", "reload", "ticks", "errors", "warnings", `result ${resultText(2, 3)}`, "printing false"]);
+    expect(p.setPrintResult).toHaveBeenLastCalledWith(resultText(2, 3));
+    expect(p.printTicked).toEqual(new Set(["c1"]));
+  });
+
+  it("sends no join and downloads nothing when nothing printed", async () => {
+    const p = page(["i1"]);
+    p.answers.i1 = () => refusedAnswer(alreadyPrinted("INVOICE", "1001"));
+    await p.printSelected("joined");
+    expect(p.requests()).toEqual([print("i1")]);
+    expect(p.downloadFile).not.toHaveBeenCalled();
+    expect(p.setPrintResult).toHaveBeenLastCalledWith(resultText(0, 1));
+  });
+
+  it("says so when the join is refused or lost, and still reads the list and frees the button", async () => {
+    for (const answer of [() => new Response("{}", { status: 400 }), () => { throw new Error("network"); }]) {
+      const p = page(["i1"]);
+      p.joinAnswer.current = answer;
+      await p.printSelected("joined");
+      expect(p.downloadFile).not.toHaveBeenCalled();
+      expect(p.log).toContain("reload");
+      expect(p.setPrintResult).toHaveBeenLastCalledWith(`${resultText(1, 1)} ${JOIN_FAILED}`);
+      expect(p.setPrinting).toHaveBeenLastCalledWith(false);
+    }
+  });
+
+  it("downloads nothing and sets no state when the page goes while the join is out", async () => {
+    const p = page(["i1"]);
+    p.joinAnswer.current = (init) => { p.open.current = false; return joinedAnswer(init); };
+    await p.printSelected("joined");
+    expect(p.downloadFile).not.toHaveBeenCalled();
+    expect(p.log).not.toContain("reload");
+    expect(p.setPrinting).toHaveBeenCalledTimes(1);
   });
 });
 

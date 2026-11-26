@@ -16,6 +16,8 @@ import { ACCOUNTING_TAB_LABEL, accountingTabs } from "@/lib/admin-tabs";
 import { SavedMark } from "@/components/SavedMark";
 import { useSavedMarks } from "@/lib/use-saved-marks";
 import { CARD_FLUSH, INPUT_COMPACT, NOTICE } from "@/lib/ui-classes";
+import { Combobox } from "@/components/Combobox";
+import { glAccountOptions, labelledOptions } from "@/lib/menu-options";
 
 // number|null once loaded from the server, but also string mid-edit for the two decimal fields —
 // the input is bound straight to these and the server's decimalField schema accepts a decimal
@@ -58,6 +60,7 @@ export default function BillingPage() {
   // Every write here hits PUT /api/admin/billing, which requires admin.edit
   // (src/app/api/admin/billing/route.ts) — disabled with a tooltip, never hidden (§5.16).
   const canEdit = gate(perms, "admin.edit");
+  const glMenu = glAccountOptions(glAccounts, { blank: "(none)" });
 
   // #222: every per-field save here answers with the ENTIRE fresh config, and the page used to
   // swap it into state at ARRIVAL order — two overlapping saves could revert a committed sibling
@@ -171,81 +174,75 @@ export default function BillingPage() {
             <div className={CARD_FLUSH}>
             <label className="flex items-center justify-between border-b p-2 text-sm last:border-0">
               <span>A/R{savedMark("arGlAccountId", "A/R")}</span>
-              <select
+              <Combobox
                 value={cfg.arGlAccountId ?? ""}
+                options={glMenu}
                 disabled={canEdit.disabled}
                 title={canEdit.title}
-                onChange={(e) => void save({ arGlAccountId: e.target.value || null })}
-                className={`${INPUT_COMPACT} w-56 disabled:cursor-not-allowed disabled:bg-surface-50`}
-              >
-                <option value="">(none)</option>
-                {glAccounts.map((g) => <option key={g.id} value={g.id}>{g.name} {g.description}</option>)}
-              </select>
+                onSelect={(v) => void save({ arGlAccountId: v || null })}
+                ariaLabel="A/R"
+                className="w-56"
+              />
             </label>
             <label className="flex items-center justify-between border-b p-2 text-sm last:border-0">
               <span>Sales tax{savedMark("salesTaxGlAccountId", "Sales tax")}</span>
-              <select
+              <Combobox
                 value={cfg.salesTaxGlAccountId ?? ""}
+                options={glMenu}
                 disabled={canEdit.disabled}
                 title={canEdit.title}
-                onChange={(e) => void save({ salesTaxGlAccountId: e.target.value || null })}
-                className={`${INPUT_COMPACT} w-56 disabled:cursor-not-allowed disabled:bg-surface-50`}
-              >
-                <option value="">(none)</option>
-                {glAccounts.map((g) => <option key={g.id} value={g.id}>{g.name} {g.description}</option>)}
-              </select>
+                onSelect={(v) => void save({ salesTaxGlAccountId: v || null })}
+                ariaLabel="Sales tax"
+                className="w-56"
+              />
             </label>
             <label className="flex items-center justify-between border-b p-2 text-sm last:border-0">
               <span>Freight{savedMark("freightGlAccountId", "Freight")}</span>
-              <select
+              <Combobox
                 value={cfg.freightGlAccountId ?? ""}
+                options={glMenu}
                 disabled={canEdit.disabled}
                 title={canEdit.title}
-                onChange={(e) => void save({ freightGlAccountId: e.target.value || null })}
-                className={`${INPUT_COMPACT} w-56 disabled:cursor-not-allowed disabled:bg-surface-50`}
-              >
-                <option value="">(none)</option>
-                {glAccounts.map((g) => <option key={g.id} value={g.id}>{g.name} {g.description}</option>)}
-              </select>
+                onSelect={(v) => void save({ freightGlAccountId: v || null })}
+                ariaLabel="Freight"
+                className="w-56"
+              />
             </label>
             <label className="flex items-center justify-between border-b p-2 text-sm last:border-0">
               <span>Other charges{savedMark("otherChargeGlAccountId", "Other charges")}</span>
-              <select
+              <Combobox
                 value={cfg.otherChargeGlAccountId ?? ""}
+                options={glMenu}
                 disabled={canEdit.disabled}
                 title={canEdit.title}
-                onChange={(e) => void save({ otherChargeGlAccountId: e.target.value || null })}
-                className={`${INPUT_COMPACT} w-56 disabled:cursor-not-allowed disabled:bg-surface-50`}
-              >
-                <option value="">(none)</option>
-                {glAccounts.map((g) => <option key={g.id} value={g.id}>{g.name} {g.description}</option>)}
-              </select>
+                onSelect={(v) => void save({ otherChargeGlAccountId: v || null })}
+                ariaLabel="Other charges"
+                className="w-56"
+              />
             </label>
             <label className="flex items-center justify-between border-b p-2 text-sm last:border-0">
               <span>Discounts{savedMark("discountGlAccountId", "Discounts")}</span>
-              <select
+              <Combobox
                 value={cfg.discountGlAccountId ?? ""}
+                options={glMenu}
                 disabled={canEdit.disabled}
                 title={canEdit.title}
-                onChange={(e) => void save({ discountGlAccountId: e.target.value || null })}
-                className={`${INPUT_COMPACT} w-56 disabled:cursor-not-allowed disabled:bg-surface-50`}
-              >
-                <option value="">(none)</option>
-                {glAccounts.map((g) => <option key={g.id} value={g.id}>{g.name} {g.description}</option>)}
-              </select>
+                onSelect={(v) => void save({ discountGlAccountId: v || null })}
+                ariaLabel="Discounts"
+                className="w-56"
+              />
             </label>
             <label className="flex items-center justify-between border-b p-2 text-sm last:border-0">
               <span>Write-offs{savedMark("writeOffGlAccountId", "Write-offs")}</span>
-              <select
+              <Combobox
                 value={cfg.writeOffGlAccountId ?? ""}
+                options={glMenu}
                 disabled={canEdit.disabled}
                 title={canEdit.title}
-                onChange={(e) => void save({ writeOffGlAccountId: e.target.value || null })}
-                className={`${INPUT_COMPACT} w-56 disabled:cursor-not-allowed disabled:bg-surface-50`}
-              >
-                <option value="">(none)</option>
-                {glAccounts.map((g) => <option key={g.id} value={g.id}>{g.name} {g.description}</option>)}
-              </select>
+                onSelect={(v) => void save({ writeOffGlAccountId: v || null })}
+                ariaLabel="Write-offs"
+                className="w-56"
+              />
             </label>
             </div>
           </section>
@@ -281,16 +278,15 @@ export default function BillingPage() {
             </label>
             <label className="flex items-center justify-between border-b p-2 text-sm last:border-0">
               <span>Certification charge step code{savedMark("certChargeStepCodeId", "Certification charge step code")}</span>
-              <select
+              <Combobox
                 value={cfg.certChargeStepCodeId ?? ""}
+                options={labelledOptions(stepCodes, (c) => c.name, { blank: "(none)" })}
                 disabled={canEdit.disabled}
                 title={canEdit.title}
-                onChange={(e) => void save({ certChargeStepCodeId: e.target.value || null })}
-                className={`${INPUT_COMPACT} w-56 disabled:cursor-not-allowed disabled:bg-surface-50`}
-              >
-                <option value="">(none)</option>
-                {stepCodes.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+                onSelect={(v) => void save({ certChargeStepCodeId: v || null })}
+                ariaLabel="Certification charge step code"
+                className="w-56"
+              />
             </label>
             <label className="flex items-center justify-between border-b p-2 text-sm last:border-0">
               <span>Certification charge ($){savedMark("certChargeDefault", "Certification charge ($)")}</span>

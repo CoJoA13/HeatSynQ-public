@@ -165,7 +165,7 @@ Which one gets used where:
 | Document | Address used |
 |---|---|
 | Shipment and BOL | A **Ship to** you pick from that customer's live ship-to addresses; a shipment keeps showing and printing its own after it is made inactive or deleted |
-| Invoice | The default **Bill to** and **Ship to**, frozen onto the invoice when it is raised |
+| Invoice | The default **Bill to**, and the **Ship to** of the order's latest shipment (the customer's default **Ship to** when no shipment names one), frozen onto the invoice when it is raised |
 | Certificate and statement | The default **Bill to** |
 | Traveler | **Received from** |
 

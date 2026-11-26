@@ -91,7 +91,7 @@ describe("the quote page's shape (PR 3)", () => {
     expect(jsxTexts(PAGE, "th")).not.toContain("Printed");
     expect(jsxTexts(PAGE, "a")).toContain("Open PDF");
     expect(jsxTexts(PAGE, "button")).toContain("Add quote line");
-    expect(jsxTexts(PAGE, "option")).toContain("Add operation");
+    expect(named("Combobox").map((t) => t.attr("placeholder"))).toContain("Add operation");
     expect(src).not.toContain("Add operation: code…");
     expect(src).not.toContain(">Add line<");
   });

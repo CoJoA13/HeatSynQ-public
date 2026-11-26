@@ -47,7 +47,7 @@ import {
 } from "./template-canvas";
 import {
   BARCODE_MIN, CANVAS_GRID, CANVAS_PAGE,
-  type CanvasAnchor, type CanvasPage, type CanvasBox, type CanvasItem, type CanvasLayout, type CanvasTableKey,
+  type CanvasAnchor, type CanvasPage, type CanvasBox, type CanvasItem, type CanvasLayout, type CanvasTableKey, type CanvasTextStyle,
 } from "./template-contracts/canvas";
 import type { CanvasRuledField, FontsConfig, TemplateContract, TemplateDocTypeString } from "./template-contracts/types";
 
@@ -489,6 +489,18 @@ export function drawsBorder(item: CanvasItem, contract: TemplateContract): boole
 export function ruleOf(item: CanvasItem, contract: TemplateContract): CanvasRuledField | null {
   if (item.kind !== "field") return null;
   return contract.canvas?.ruledFields.find((ruled) => ruled.key === item.key) ?? null;
+}
+
+/** Where the stage draws a ruled field's label, as the paper prints it (owner ruling on #1053,
+ *  2026-11-25): the entry's label column and the gap before the rule, in points, and the type the
+ *  label is drawn at, the entry's fixed type set left where the paper fixes one (the bill of lading's
+ *  carrier, whose item style is its name's), else the item's own style. The stage wraps the label
+ *  inside the column, as pdfmake does. */
+export function ruledLabelOf(
+  item: Extract<CanvasItem, { kind: "field" }>, ruled: CanvasRuledField,
+): { width: number; gap: number; style: CanvasTextStyle } {
+  const { width, gap, type } = ruled.label;
+  return { width, gap, style: type === undefined ? item.style : { size: type.size, bold: type.bold, align: "left" } };
 }
 
 const TABLES_GROUP = "Tables";

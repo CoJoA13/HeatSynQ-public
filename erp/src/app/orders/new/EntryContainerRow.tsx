@@ -11,6 +11,7 @@ import { SCALE_GROSS } from "@/lib/order-boxes";
 import { EntryOptionalSection } from "./EntryWorkspace";
 import type { ContainerDraft, ContainerTypeOption } from "./order-draft";
 import { INPUT_COMPACT } from "@/lib/ui-classes";
+import { inMenuOrder } from "@/lib/menu-order";
 
 export function EntryContainerRow({ container: c, index, containerTypes, errorFieldIds, onChange, onRemove }: {
   container: ContainerDraft;
@@ -38,7 +39,7 @@ export function EntryContainerRow({ container: c, index, containerTypes, errorFi
                   aria-label={`Container ${n} type`}
                   className={`${INPUT_COMPACT} mt-1 w-full`}>
             <option value="">— choose —</option>
-            {containerTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            {inMenuOrder(containerTypes, (r) => r.name).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
         </label>
         <label className="block">

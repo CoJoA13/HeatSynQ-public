@@ -110,7 +110,8 @@ function picklistCatches(file: string): string[] {
 
 describe("the part page's options selects read the leaf (#684)", () => {
   it.each(SECTIONS)("%s: each select titled from the leaf is disabled until its own read is ready", (file, count) => {
-    const selects = jsxTags(file).filter((t) => t.name === "select" && /^optionsSelectTitle\(/.test(t.attr("title") ?? ""));
+    // A pick list's native select, or a Combobox picker (#1056: Pricing's step codes).
+    const selects = jsxTags(file).filter((t) => (t.name === "select" || t.name === "Combobox") && /^optionsSelectTitle\(/.test(t.attr("title") ?? ""));
     expect(selects).toHaveLength(count);
     for (const s of selects) {
       const read = /^optionsSelectTitle\([^,]+,\s*(\w+)\)$/.exec((s.attr("title") ?? "").replace(/\s+/g, " "))?.[1];
@@ -120,7 +121,7 @@ describe("the part page's options selects read the leaf (#684)", () => {
   });
 
   it.each(SECTIONS)("%s: no select keeps the old boolean title, which said the read failed while it was out", (file) => {
-    const selects = jsxTags(file).filter((t) => t.name === "select");
+    const selects = jsxTags(file).filter((t) => t.name === "select" || t.name === "Combobox");
     for (const s of selects) expect(s.attr("title") ?? "").not.toMatch(/Ready\b/);
   });
 

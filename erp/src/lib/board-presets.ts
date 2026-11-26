@@ -5,9 +5,9 @@
 // nothing keeps a stale tab lit. The status boxes alone define a preset; Include voided is the
 // explicit filter spec §4.5 leaves it (a preset neither sets nor reads it; PR 3, owner
 // 2026-10-31), and Search, Customer and the date ranges narrow within a preset and keep it shown.
-// The default board (`defaultFilters()`, `status: []`) therefore reads "All orders". Import-free
-// but for the filters type; client-safe.
-import type { BoardFilters } from "./board-columns";
+// The board opens on Open orders (`defaultFilters()`, #1057, owner ruling 2026-11-26) unless a default
+// saved view replaces it. Import-free but for the filters type and the open statuses; client-safe.
+import { OPEN_ORDER_STATUSES, type BoardFilters } from "./board-columns";
 
 export type BoardPresetKey = "open" | "all";
 
@@ -16,7 +16,7 @@ export const BOARD_PRESETS: { key: BoardPresetKey; label: string }[] = [
   { key: "all", label: "All orders" },
 ];
 
-const OPEN_STATUSES: BoardFilters["status"] = ["OPEN", "PARTIAL_SHIPPED", "REOPENED"];
+const OPEN_STATUSES = OPEN_ORDER_STATUSES;
 
 export function applyPreset(filters: BoardFilters, key: BoardPresetKey): BoardFilters {
   return { ...filters, status: key === "open" ? [...OPEN_STATUSES] : [] };

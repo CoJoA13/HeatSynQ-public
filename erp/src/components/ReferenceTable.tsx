@@ -26,6 +26,9 @@ import { ActionMenu } from "@/components/ActionMenu";
 import { askConfirm } from "@/lib/modal";
 import { BUTTON_NEUTRAL, BUTTON_PRIMARY, BUTTON_PRIMARY_COMPACT, CARD_FLUSH, INPUT_COMPACT, NOTICE, TABLE_HEAD } from "@/lib/ui-classes";
 import { oneShotHold } from "@/lib/single-flight";
+import { Combobox } from "@/components/Combobox";
+import { withBlank } from "@/lib/menu-options";
+import { inMenuOrder } from "@/lib/menu-order";
 
 type Row = { id: string; name: string; active: boolean } & Record<string, unknown>;
 
@@ -543,13 +546,22 @@ export function ReferenceTable({ kind, selector }: { kind: ReferenceKind; select
             </td>
             {extras.map((f) => (
               <td key={f.key} className="p-2">
-                {f.kind === "ref" ? (
+                {f.kind === "ref" && f.key === "glAccountId" ? (
+                  // A GL account is a growing record list, so it takes the typeahead picker, its
+                  // accounts by number, each segment by value (#1056 rulings 1, 2 and 4). The
+                  // Default scale beside it is a short pick list and stays a native select.
+                  <Combobox value={draft[nameKey(f.key)] ?? ""}
+                            options={withBlank("—", inMenuOrder(refOptions[f.key] ?? [], (o) => o.name).map((o) => ({ value: o.name, label: o.name })))}
+                            onSelect={(v) => setDraft({ ...draft, [nameKey(f.key)]: v })}
+                            disabled={canCreate.disabled} title={canCreate.title}
+                            ariaLabel={f.label} className="w-full" />
+                ) : f.kind === "ref" ? (
                   <select value={draft[nameKey(f.key)] ?? ""}
                           onChange={(e) => setDraft({ ...draft, [nameKey(f.key)]: e.target.value })}
                           disabled={canCreate.disabled} title={canCreate.title}
                           className={`${INPUT_COMPACT} w-full disabled:bg-surface-50`}>
                     <option value="">—</option>
-                    {(refOptions[f.key] ?? []).map((o) => <option key={o.id} value={o.name}>{o.name}</option>)}
+                    {inMenuOrder(refOptions[f.key] ?? [], (o) => o.name).map((o) => <option key={o.id} value={o.name}>{o.name}</option>)}
                   </select>
                 ) : f.kind === "boolean" ? (
                   <>

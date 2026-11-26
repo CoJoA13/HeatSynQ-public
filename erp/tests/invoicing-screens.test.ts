@@ -88,9 +88,11 @@ describe("Invoicing — the ready-to-invoice header select-all (C9a)", () => {
     // `invoice-shipped-order.mjs:209-212` asserts EXACTLY ONE control answers each of those four
     // labels, so a second element carrying one would red that flow rather than this file.
     const names = [...src.matchAll(/aria-label="([^"]+)"/g)].map(m => m[1]);
+    // #1057: Ready to invoice's own ship-date boxes, which show on its view alone, never beside the
+    // register's.
     expect(names).toEqual([
-      "Select all orders ready to invoice", "Invoice date from", "Invoice date to",
-      "Select all finalized invoices not yet printed",
+      "Ship date from", "Ship date to", "Select all orders ready to invoice", "Invoice date from", "Invoice date to",
+      "Select all drafts and finalized invoices not yet printed",
     ]);
   });
 });
@@ -111,8 +113,8 @@ describe("Invoicing — Print selected (#591)", () => {
   it("puts the named header box in the Invoices table's first column, titled with the gate's reason", () => {
     expect(flat(src)).toContain(
       '<input type="checkbox" ref={printSelectAllRef} checked={printSelectAll === "all"} ' +
-      "disabled={printSelectable.length === 0} title={!createGate.allowed ? createGate.title : undefined} " +
-      'aria-label="Select all finalized invoices not yet printed"',
+      "disabled={printSelectable.length === 0} title={!createGate.allowed && !editGate.allowed ? createGate.title : undefined} " +
+      'aria-label="Select all drafts and finalized invoices not yet printed"',
     );
   });
 
@@ -126,8 +128,8 @@ describe("Invoicing — Print selected (#591)", () => {
   });
 
   it("shows and writes the header box through the select-all leaf, over the tickable rows on screen", () => {
-    expect(src).toContain(
-      "const printSelectable = createGate.allowed ? invoices.filter((r) => printTickable(r)).map((r) => r.id) : [];",
+    expect(flat(src)).toContain(
+      "const printSelectable = invoices .filter((r) => (finalizeTickable(r) && editGate.allowed) || (printTickable(r) && createGate.allowed)) .map((r) => r.id);",
     );
     expect(src).toContain("const printSelectAll = selectAllState(printSelectable, printTicked);");
     expect(flat(src)).toContain('checked={printSelectAll === "all"}');
@@ -147,12 +149,15 @@ describe("Invoicing — Print selected (#591)", () => {
     );
   });
 
-  it("draws a row's box only while it is tickable, gated as the candidate rows are and unnamed", () => {
+  it("draws a row's box only while it is tickable, gated by its own action's grant and unnamed", () => {
+    // #1057: one box column, a draft's box Finalize selected's (`invoicing.edit`), a finalized
+    // unprinted row's Print selected's (`invoicing.create`).
     expect(flat(src)).toContain(
-      '{printTickable(inv) && ( <input type="checkbox" checked={printTicked.has(inv.id)} ' +
-      "disabled={!createGate.allowed} title={createGate.allowed ? undefined : createGate.title} " +
+      '{registerTickable(inv) && ( <input type="checkbox" checked={printTicked.has(inv.id)} ' +
+      "disabled={!boxGateOf(inv).allowed} title={boxGateOf(inv).allowed ? undefined : boxGateOf(inv).title} " +
       "onChange={(e) => togglePrintTicked(inv.id, e.target.checked)} /> )}",
     );
+    expect(src).toContain("const boxGateOf = (row: InvoiceRegisterRow) => (finalizeTickable(row) ? editGate : createGate);");
   });
 
   it("shows Printed last as date and time, and spans the empty list over all ten columns", () => {
@@ -168,6 +173,11 @@ describe("Invoicing — Print selected (#591)", () => {
       '<td className={`${TABLE_CELL} font-mono`}> <Link href={`/invoicing/${inv.id}`} className={LINK}>' +
       "{inv.documentNumber}</Link> {printErrors.has(inv.id) && ( " +
       '<p className="mt-1 max-w-xs text-xs text-red-700">{printErrors.get(inv.id)}</p> )} ' +
+      "{finalizeErrors.has(inv.id) && ( " +
+      '<p className="mt-1 max-w-xs text-xs text-red-700">{finalizeErrors.get(inv.id)}</p> )} ' +
+      "{finalizeWarnings.has(inv.id) && ( " +
+      '<ul className="mt-1 max-w-xs list-disc pl-4 text-xs text-accent-600"> ' +
+      "{finalizeWarnings.get(inv.id)!.map((w, i) => <li key={i}>{w}</li>)} </ul> )} " +
       "{printWarnings.has(inv.id) && ( " +
       '<p className="mt-1 max-w-xs text-xs text-accent-600">{printWarnings.get(inv.id)}</p> )} </td>',
     );
@@ -195,14 +205,17 @@ describe("Invoicing — Print selected (#591)", () => {
     // it. The query recorded is the closure's, the one this load's request was sent with (#592).
     expect(loadInvoices).toContain(
       "if (!invoicesLatest.isCurrent(t)) return; setInvoices(data.rows); setCut(data.cut); setInvoicesError(null); " +
-      "setInvoicesLoaded(true); const tickable = new Set(data.rows.filter((r) => printTickable(r)).map((r) => r.id)); " +
+      "setInvoicesLoaded(true); const tickable = new Set(data.rows.filter((r) => registerTickable(r)).map((r) => r.id)); " +
       "tickableRef.current = tickable; setPrintTicked((prev) => pruneToTickable(prev, tickable)); " +
       "setAppliedQuery(query);",
     );
-    // And nowhere else: the ref has this one write (`printSelected` only reads it), the ticks this
-    // one prune, the applied query this one write (both exports follow it).
+    // And nowhere else: the ref has this one write (`printSelected` and `finalizeSelected` only read
+    // it), the register's ticks this prune and Finalize selected's after its reload (#1057), beside
+    // the candidates load's own prune of Ready to invoice's ticks, the applied query this one write
+    // (both exports follow it).
     expect(src.match(/tickableRef\.current =(?!=)/g)).toHaveLength(1);
-    expect(src.match(/pruneToTickable\(prev/g)).toHaveLength(1);
+    expect(src.match(/setPrintTicked\(\(prev\) => pruneToTickable\(prev/g)).toHaveLength(2);
+    expect(src.match(/setTicked\(\(prev\) => pruneToTickable\(prev, applied\)\)/g)).toHaveLength(1);
     expect(src.match(/setAppliedQuery\(/g)).toHaveLength(1);
   });
 
@@ -221,10 +234,25 @@ describe("Invoicing — Print selected (#591)", () => {
     );
   });
 
+  it("titles Print as one PDF as Print selected, and Finalize selected by its own grant (#1057)", () => {
+    expect(flat(src)).toContain(
+      "<button onClick={() => void printSelected(\"joined\")} disabled={printTitle !== undefined} title={printTitle}",
+    );
+    expect(flat(src)).toContain(
+      "const finalizeTitle = !editGate.allowed ? editGate.title : finalizing ? \"Finalizing…\" : printing ? \"Printing…\" : " +
+      'finalizeRows.length === 0 ? "Tick at least one draft first" : undefined;',
+    );
+    expect(flat(src)).toContain(
+      "<button onClick={() => void finalizeSelected()} disabled={finalizeTitle !== undefined} title={finalizeTitle}",
+    );
+    expect(src).toContain("const finalizeRows = invoices.filter((r) => finalizeTickable(r) && printTicked.has(r.id));");
+    expect(src).toContain('const editGate = gate(perms, "invoicing.edit");');
+  });
+
   it("titles Print selected as Create invoices is titled, and disables it on any title", () => {
     expect(flat(src)).toContain(
       "const printTitle = !createGate.allowed ? createGate.title : printing ? \"Printing…\" : " +
-      'printRows.length === 0 ? "Tick at least one invoice first" : undefined;',
+      'finalizing ? "Finalizing…" : printRows.length === 0 ? "Tick at least one finalized invoice not yet printed first" : undefined;',
     );
     expect(flat(src)).toContain(
       "<button onClick={() => void printSelected()} disabled={printTitle !== undefined} title={printTitle}",
@@ -255,7 +283,7 @@ describe("Invoicing — Export to Excel and Export to PDF follow the list on scr
     expect(flat(src)).toContain(
       '<ExportLink base="/api/invoices/export" query={appliedQuery} ready={exportable} /> ' +
       '<ExportLink base="/api/invoices/register" query={appliedQuery} ready={exportable} label="Export to PDF" /> ' +
-      '<div className="ml-auto flex items-center gap-2">',
+      '<div className="ml-auto flex flex-wrap items-center gap-2">',
     );
     // The Excel `<a>` built from the live filter query is gone, and nothing else links an export.
     expect(src).not.toContain("/api/invoices/export${query");

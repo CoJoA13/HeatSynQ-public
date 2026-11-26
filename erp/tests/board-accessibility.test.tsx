@@ -133,7 +133,7 @@ describe("order board native controls (#224)", () => {
     );
 
     expect(hasAccessibleName(html, "input", "Search")).toBe(true);
-    expect(hasAccessibleName(html, "select", "Customer")).toBe(true);
+    expect(hasAccessibleName(html, "input", "Customer")).toBe(true);
     expect(hasAccessibleName(html, "input", "Received from")).toBe(true);
     expect(hasAccessibleName(html, "input", "Received to")).toBe(true);
     expect(hasAccessibleName(html, "input", "Request from")).toBe(true);

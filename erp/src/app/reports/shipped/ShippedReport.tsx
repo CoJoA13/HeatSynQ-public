@@ -18,6 +18,8 @@ import { ReportsNav } from "../ReportsNav";
 import { exportState } from "@/lib/report-export-state";
 import { NET_WEIGHT_LB } from "@/lib/weight-terms";
 import { BADGE_WARNING, BUTTON_NEUTRAL, CARD, CARD_FLUSH, INPUT_COMPACT, LINK, NOTICE, TABLE_CELL, TABLE_HEAD } from "@/lib/ui-classes";
+import { Combobox } from "@/components/Combobox";
+import { customerOptions, partOptions as partMenuOptions } from "@/lib/menu-options";
 
 // Local mirrors of src/server/reports/shipped.ts's row types — NOT imported from src/server/**
 // (CLAUDE.md "Constraints that will bite you": a client component pulling from there drags
@@ -36,7 +38,7 @@ type ShippedResult =
 // Slices of CustomerRow / PartRow needed to populate the filter dropdowns — the id/code/name and
 // id/partNumber/name the plain, active-only list endpoints already return.
 type CustomerOption = { id: string; code: string; name: string };
-type PartOption = { id: string; customerId: string; partNumber: string; name: string };
+type PartOption = { id: string; customerId: string; customerCode: string; partNumber: string; name: string };
 
 const GROUP_OPTIONS: { value: GroupBy; label: string }[] = [
   { value: "none", label: "Detail (per line)" },
@@ -185,25 +187,15 @@ export function ShippedReport() {
           </label>
           <label className="block">
             Customer
-            <select value={customerId} onChange={(e) => setCustomerId(e.target.value)}
-                    disabled={!customersGate.allowed} title={customersGate.allowed ? undefined : customersGate.title}
-                    className={`${INPUT_COMPACT} mt-1 block disabled:cursor-not-allowed disabled:bg-surface-50`}>
-              <option value="">All customers</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>{c.code} · {c.name}</option>
-              ))}
-            </select>
+            <Combobox value={customerId} options={customerOptions(customers, { blank: "All customers" })}
+                    onSelect={(v) => setCustomerId(v)}
+                    disabled={!customersGate.allowed} title={customersGate.allowed ? undefined : customersGate.title} ariaLabel="Customer" className="mt-1 w-64" />
           </label>
           <label className="block">
             Part
-            <select value={partId} onChange={(e) => setPartId(e.target.value)}
-                    disabled={!partsGate.allowed} title={partsGate.allowed ? undefined : partsGate.title}
-                    className={`${INPUT_COMPACT} mt-1 block disabled:cursor-not-allowed disabled:bg-surface-50`}>
-              <option value="">All parts</option>
-              {partOptions.map((p) => (
-                <option key={p.id} value={p.id}>{p.partNumber}{p.name ? ` · ${p.name}` : ""}</option>
-              ))}
-            </select>
+            <Combobox value={partId} options={partMenuOptions(partOptions, { blank: "All parts" })}
+                    onSelect={(v) => setPartId(v)}
+                    disabled={!partsGate.allowed} title={partsGate.allowed ? undefined : partsGate.title} ariaLabel="Part" className="mt-1 w-64" />
           </label>
           <label className="block">
             Group by

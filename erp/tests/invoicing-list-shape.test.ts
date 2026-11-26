@@ -56,12 +56,50 @@ describe("the Invoicing list's shape (PR 6)", () => {
     expect(src).toContain('<option value="">Printed or not</option>');
     expect(named("ExportLink").length).toBe(2);
     expect(src).toContain('{printing ? "Printing…" : "Print selected"}');
-    expect(src).toContain('aria-label="Select all finalized invoices not yet printed"');
+    expect(src).toContain('aria-label="Select all drafts and finalized invoices not yet printed"');
+  });
+
+  // #1057 (owner rulings 2026-11-26): the register's Balance select, Finalize selected and Print as
+  // one PDF beside Print selected; Ready to invoice's own Customer and ship-date range, and Create
+  // all shown beside Create invoices in the header.
+  it("adds a labelled Balance select, Finalize selected and Print as one PDF to the register's bar (#1057)", () => {
+    const balance = named("select").find((t) => t.attr("id") === "invoicing-balance");
+    expect(balance?.attr("value")).toBe("filters.balance");
+    expect(named("label").some((t) => t.attr("htmlFor") === "invoicing-balance")).toBe(true);
+    expect(src).toContain('if (filters.balance) params.set("balance", filters.balance);');
+    expect(src).toContain('<option value="">Any balance</option>');
+    expect(src).toContain('<option value="open">Open</option>');
+    expect(src).toContain('{finalizing ? "Finalizing…" : "Finalize selected"}');
+    expect(src).toMatch(/>\s*Print as one PDF\s*</);
+  });
+
+  it("gives Ready to invoice its own Customer and ship-date range, read through candidatesQuery, and Create all shown (#1057)", () => {
+    const customer = named("Combobox").find((t) => t.attr("id") === "ready-customer");
+    expect(customer?.attr("value")).toBe("ready.customerId");
+    expect(named("input").filter((t) => t.attr("aria-label")?.startsWith("Ship date")).map((t) => t.attr("type")))
+      .toEqual(['date', 'date']);
+    expect(src).toContain("const readyQuery = candidatesQuery(ready);");
+    // The list's own filters are recorded only where a load applies its rows, after the current-ticket
+    // return, so Create all shown stays closed over rows read for other filters.
+    expect(squash(src)).toContain(
+      "if (!candidatesLatest.isCurrent(t)) return null; setCandidates(data); setCandidatesError(null); " +
+      "setCandidatesLoaded(true); appliedCandidates.current = data; setAppliedReadyQuery(readyQuery);",
+    );
+    expect(src.match(/setAppliedReadyQuery\(/g)).toHaveLength(1);
+    expect(src).toContain("data = await api<InvoiceCandidate[]>(`/api/invoices?${readyQuery}`);");
+    const actions = squash(named("PageHeader")[0].attr("actions"));
+    expect(actions).toContain("createAllShown");
+    expect(src).toMatch(/>\s*Create all shown\s*</);
   });
 
   it("asks Print selected through the modal, with the ruled sentence split into title and body", () => {
     expect(src).not.toMatch(/\bconfirm\(/);
-    expect(mentions(PAGE, "askConfirm")).toBe(2); // the import and the ask
-    expect(src).toContain('await askConfirm({ ...confirmParts(ids.length), confirm: "Print selected" })');
+    // The import, Print selected's ask (the zip's or the joined PDF's question), Finalize selected's
+    // and Create all shown's (#1057).
+    expect(mentions(PAGE, "askConfirm")).toBe(4);
+    expect(src).toContain(': { ...confirmParts(ids.length), confirm: "Print selected" };');
+    expect(src).toContain('? { ...joinedConfirmParts(ids.length), confirm: "Print as one PDF" }');
+    expect(src).toContain('await askConfirm({ ...finalizeConfirmParts(ids.length), confirm: "Finalize selected" })');
+    expect(src).toContain('await askConfirm({ ...createAllConfirmParts(shown.length), confirm: "Create all shown" })');
   });
 });

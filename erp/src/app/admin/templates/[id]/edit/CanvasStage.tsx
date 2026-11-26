@@ -33,11 +33,12 @@
 // The bill of lading (BOL canvas PR 2) adds three more, each read from the profile through the leaf,
 // never from a document type or a field key: a field the profile draws on a rule (`ruleOf`,
 // `ruledFields`) is drawn as the form prints it, its label beside a rule under the rest of the box
-// ("beside", the label cut where the box is narrow and the rule kept at least a grid step; the
-// carrier's too since owner ruling R1 of 2026-11-24 retired the "under" drawing), or its label beside two rules
-// its `column` long ("lines", the caption not drawn); a list block (`isListBlock`: the Consignee's
-// ref/PO and TRV lists, and the shipping ticket's serial list, owner ruling (b) of 2026-11-10) as its
-// heading and one line over the hatch, with no column-header strip; and a column table that keeps
+// ("beside", the rule kept at least a grid step; the carrier's too since owner ruling R1 of
+// 2026-11-24 retired the "under" drawing), or its label beside two rules its `column` long ("lines",
+// the caption not drawn), each label wrapped in the paper's label column at the paper's type and the
+// rule after the paper's gap (`ruledLabelOf`, owner ruling on #1053, 2026-11-25); a list block
+// (`isListBlock`: the Consignee's ref/PO and TRV lists, and the shipping ticket's serial list, owner
+// ruling (b) of 2026-11-10) as its heading and one line over the hatch, with no column-header strip; and a column table that keeps
 // points beside its columns (`besideOf`, the freight block's sidebar) as its header strip in the
 // drawn width less those points, beside a plain outline of them at its right edge, the hatch under
 // the strip only. No table's strip draws a toggle (`tableSpec(...).toggles`, the Collect checkbox)
@@ -68,7 +69,7 @@
 import { useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
 import {
   DESIGNER_WORDS, NUDGE_COARSE, NUDGE_FINE, dragStart, drawsBorder, isRequired, itemTitle, moveBox, moveClampHeight, movedItem,
-  printsNothing, resizedBox, resizedItem, ruleOf, stageBox, type Handle,
+  printsNothing, resizedBox, resizedItem, ruleOf, ruledLabelOf, stageBox, type Handle,
 } from "@/lib/canvas-designer";
 import {
   bandHeight, bandTop, besideOf, continuedBox, isListBlock, tableHeadingKey, tableSpec, topMargin, type CanvasMeasure,
@@ -212,16 +213,27 @@ export function CanvasStage({
         const label = item.label ?? field?.defaultLabel ?? "";
         const ruled = ruleOf(item, contract);
         if (ruled !== null) {
-          // A field the form prints on a rule. Its label (or its muted name) is cut where the box is
-          // narrow; a rule beside it keeps at least a grid step, so it is always drawn.
+          // A field the form prints on a rule. Its label (or its muted name) wraps inside the label
+          // column the paper prints it in, at the type the paper prints it at (`ruledLabelOf`, owner
+          // ruling on #1053, 2026-11-25), and the rule starts after the paper's gap, beside the
+          // label's first line; a beside rule keeps at least a grid step, so it is always drawn.
           const words = label === "" ? (field?.name ?? item.key) : label;
           const tone = label === "" ? "text-ink-500 italic" : "text-ink-900";
-          const line = item.style.size * 1.15 * scale;
-          const shownLabel = <div className={`min-w-0 truncate ${tone}`} style={text(item.style)}>{words}</div>;
+          const shape = ruledLabelOf(item, ruled);
+          const line = shape.style.size * 1.15 * scale;
+          const shownLabel = (
+            <div
+              className={`flex-none ${tone}`}
+              style={{ ...text(shape.style), width: shape.width * scale, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
+            >
+              {words}
+            </div>
+          );
+          const gap = shape.gap * scale;
           if (ruled.draw === "lines") {
             const width = (ruled.column ?? 0) * scale;
             return (
-              <div className="flex">
+              <div className="flex items-start" style={{ columnGap: gap }}>
                 {shownLabel}
                 <div className="flex flex-none flex-col">
                   <span className={`block flex-none ${RULE_LINE}`} style={{ width, height: line }} />
@@ -231,9 +243,9 @@ export function CanvasStage({
             );
           }
           return (
-            <div className="flex">
+            <div className="flex items-start" style={{ columnGap: gap }}>
               {shownLabel}
-              <span className={`flex-1 ${RULE_LINE}`} style={{ minWidth: CANVAS_GRID * scale }} />
+              <span className={`flex-1 ${RULE_LINE}`} style={{ minWidth: CANVAS_GRID * scale, height: line }} />
             </div>
           );
         }

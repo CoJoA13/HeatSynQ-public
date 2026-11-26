@@ -3,7 +3,7 @@
 // first require the existing owned-server shutdown boundary, including failure.
 import assert from "node:assert/strict";
 import { createOrderViaUi, hubSection, openOrderTab, startNewShipment, waitForShipmentPage } from "./orders.mjs";
-import { waitForValue } from "./ui.mjs";
+import { pickComboboxValue, waitForValue } from "./ui.mjs";
 import { openRecordTab } from "./record-tabs.mjs";
 
 // A section on a page other than the order hub (the invoicing list, the quote page); a hub
@@ -116,7 +116,7 @@ export async function prepareDraftRecoveryFixtures(page, ctx) {
   assert.equal(batchResponse.ok(), true, "Owned marker-bearing receipt batch");
   const batch = await batchResponse.json(); remember("receipt-batch", batch.id);
   await page.goto(`${ctx.baseURL}/receivables/batches/${batch.id}`);
-  await page.locator("label", { hasText: "Payer customer" }).locator("select").selectOption(seed.customerId);
+  await pickComboboxValue(page, "Payer customer", seed.customerId);
   await page.locator("label", { hasText: "Payment type" }).locator("select").selectOption(seed.paymentTypeId);
   await page.getByLabel("Amount", { exact: true }).fill("700.00");
   const reference = "DR273-RAW-RECOVERY-PAYMENT";
@@ -144,12 +144,12 @@ export async function prepareDraftRecoveryFixtures(page, ctx) {
 
   await page.goto(`${ctx.baseURL}/quotes`);
   const form = section(page, "New quote");
-  await form.locator("label", { hasText: "Customer" }).locator("select").selectOption(seed.customerId);
-  await form.locator("label", { hasText: "First line: part" }).locator("select").selectOption(seed.parts[4].id);
+  await pickComboboxValue(form, "Customer", seed.customerId);
+  await pickComboboxValue(form, "First line: part", seed.parts[4].id);
   const quote = await created("quote", "/api/quotes", async () => { await form.getByRole("button", { name: "New quote", exact: true }).click(); });
   await page.getByRole("heading", { name: /^Quote #\d+/ }).waitFor({ state: "visible" });
   const card = section(page, "Lines").locator("div.space-y-4 > div").first();
-  await card.locator('select:has(option:text-is("Add operation"))').selectOption(seed.priceCodeId);
+  await pickComboboxValue(card, "Add operation", seed.priceCodeId);
   await card.getByLabel("Unit price", { exact: true }).fill("4.50");
   const quoteSave = await response(res => new URL(res.url()).pathname === `/api/quotes/${quote.id}` && res.request().method() === "PATCH",
     () => page.getByRole("button", { name: "Save quote", exact: true }).click());

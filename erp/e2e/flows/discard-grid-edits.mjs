@@ -37,7 +37,7 @@
 // does to A's panel. A's panel is found by its link to A's own hub page, never by a number.
 import assert from "node:assert/strict";
 import { assertShipmentLoadPreservesWarning } from "../lib/shipment-load-warning.mjs";
-import { assertNeverVisible, waitForChecked, waitForEnabled, waitForState, waitForTitle, waitForValue } from "../lib/ui.mjs";
+import { assertNeverVisible, pickComboboxValue, waitForChecked, waitForEnabled, waitForState, waitForTitle, waitForValue } from "../lib/ui.mjs";
 import { answerModal, modalTitle } from "../lib/modal.mjs";
 import { openRecordTab } from "../lib/record-tabs.mjs";
 import { createOrderViaUi, hubSection, openOrderTab, orderPanel, startNewShipment, waitForShipmentPage } from "../lib/orders.mjs";
@@ -463,7 +463,12 @@ export async function run(page, shot, ctx) {
   // none picked, Add order says what it waits for: `PICK_AN_ORDER_FIRST` (src/lib/waiting-titles.ts).
   const addOrderSection = page.locator("section")
     .filter({ has: page.getByRole("heading", { name: "Add order", exact: true }) });
-  await addOrderSection.locator(`select option[value="${orderA.id}"]`).waitFor({ state: "attached" });
+  // The Add order picker (a Combobox since #1056) shows its options while open: opened, read for
+  // order A, and closed again with nothing picked.
+  const addOrderPicker = addOrderSection.getByRole("combobox", { name: "Add order", exact: true });
+  await addOrderPicker.click();
+  await addOrderSection.locator(`[role="option"][data-value="${orderA.id}"]`).waitFor({ state: "attached" });
+  await addOrderPicker.press("Escape");
   await waitForTitle(addOrderSection.getByRole("button", { name: "Add order", exact: true }), "Pick an order first",
     "Add order while its list offers an order and none is picked");
   await shot("removed-order-keeps-other-order-draft");
@@ -513,8 +518,7 @@ export async function run(page, shot, ctx) {
   const routeBox = page.getByLabel("Route", { exact: true });
   const refusalLine = page.getByText(ROUTE_SAVE_ANSWERED_HERE, { exact: true });
   const pickOrderA = async () => {
-    await addOrderSection.locator(`select option[value="${orderA.id}"]`).waitFor({ state: "attached" });
-    await addOrderSection.locator("select").selectOption(orderA.id);
+    await pickComboboxValue(addOrderSection, "Add order", orderA.id);
     await waitForEnabled(addOrderButton, "Add order with order A picked");
   };
   // Click Add order, which the hold keeps from the server, then type a route and leave the box: its

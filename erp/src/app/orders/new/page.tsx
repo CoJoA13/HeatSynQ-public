@@ -37,7 +37,7 @@ import { chargeRefusalField } from "@/lib/charge-refusal-field";
 import { lineRefusalField } from "@/lib/line-refusal-field";
 import { orderTotals } from "@/lib/order-totals";
 import { OrderTotalsTable } from "@/components/OrderTotalsTable";
-import { Combobox, type ComboboxOption } from "./Combobox";
+import { Combobox, type ComboboxOption } from "@/components/Combobox";
 import { OrderLineCard, computeLineWeight, findDuplicateSerials } from "./OrderLineCard";
 import { EntryContainerRow } from "./EntryContainerRow";
 import { blankLine, blankContainer, blankCharge, type OrderDraftState, type LineDraft,
@@ -56,6 +56,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { ActionMenu } from "@/components/ActionMenu";
 import { ChargesDialog } from "./ChargesDialog";
 import { askDiscard } from "@/lib/use-unsaved-section";
+import { customerOptions } from "@/lib/menu-options";
 
 type EntryProblem = { message: string; tab: EntryTab; fieldId: string };
 /** What the page's red line shows: every problem's message, one per line, the first problem's tab
@@ -267,7 +268,7 @@ export default function NewOrderPage() {
   const displayedCertScope = draft.certScopeOverride ?? resolvedCertScope;
   const certPreviewReady = resolvedCertRequired !== null;
 
-  const customerOptions: ComboboxOption[] = customers.map((c) => ({ value: c.id, label: `${c.code} · ${c.name}` }));
+  const customerMenu: ComboboxOption[] = customerOptions(customers);
 
   useEffect(() => {
     const changed = changeLeadAdjustment(draft, leadPartId);
@@ -801,7 +802,7 @@ export default function NewOrderPage() {
                   containerCount={containerCount} preview={preview} availability={planAvailability} travelerCount={travelerCount} />}
                 detailsPanel={<div className="space-y-4"><section id="entry-customer" className={CARD}>
                 <h2 className="mb-2 font-medium">Customer</h2>
-                <Combobox value={draft.customerId} options={customerOptions} onSelect={(id) => patch({ customerId: id })}
+                <Combobox value={draft.customerId} options={customerMenu} onSelect={(id) => patch({ customerId: id })}
                            disabled={!customersGate.allowed} title={customersGate.allowed ? undefined : customersGate.title}
                            placeholder="Customer code or name" ariaLabel="Customer" />
                 {/* A resumed draft's customerId can outlive the customer it names (deactivated —

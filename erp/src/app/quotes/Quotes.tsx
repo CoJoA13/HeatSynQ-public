@@ -29,6 +29,8 @@ import {
   BADGE_WARNING, BUTTON_PRIMARY, BUTTON_PRIMARY_COMPACT, CARD, CARD_FLUSH, INPUT_COMPACT, LINK, NOTICE,
   TABLE_CELL, TABLE_HEAD,
 } from "@/lib/ui-classes";
+import { Combobox } from "@/components/Combobox";
+import { customerOptions, partOptions } from "@/lib/menu-options";
 
 // The orders board / InvoicingList precedent: only the slice each picker renders.
 type CustomerOption = { id: string; code: string; name: string };
@@ -247,29 +249,23 @@ export function Quotes() {
         <div className="flex flex-wrap items-end gap-3 text-sm">
           <label className="block">
             Customer
-            <select value={draft.customerId}
+            <Combobox value={draft.customerId} options={customerOptions(customers, { blank: "Customer…" })}
                     disabled={createGate.disabled || !customersGate.allowed}
                     title={createGate.disabled ? createGate.title : customersGate.allowed ? undefined : customersGate.title}
-                    onChange={(e) => setDraft({ customerId: e.target.value, partId: "", partNumberText: draft.partNumberText })}
-                    className={`${INPUT_COMPACT} mt-1 block disabled:cursor-not-allowed disabled:bg-surface-50`}>
-              <option value="">Customer…</option>
-              {customers.map((c) => <option key={c.id} value={c.id}>{c.code} · {c.name}</option>)}
-            </select>
+                    onSelect={(v) => setDraft({ customerId: v, partId: "", partNumberText: draft.partNumberText })}
+                    ariaLabel="Customer" className="mt-1 w-64" />
           </label>
           <label className="block">
             First line: part
-            <select value={draft.partId}
+            <Combobox value={draft.partId} options={partOptions(customerParts, { blank: "Part…", separator: " — " })}
                     disabled={createGate.disabled || !partsGate.allowed || !draft.customerId || draft.partNumberText.trim() !== ""}
                     title={createGate.disabled ? createGate.title
                       : !partsGate.allowed ? partsGate.title
                         : !draft.customerId ? "Pick a customer first"
                           : draft.partNumberText.trim() !== "" ? "Clear the free-text part number to pick a memorized part"
                             : undefined}
-                    onChange={(e) => setDraft({ ...draft, partId: e.target.value })}
-                    className={`${INPUT_COMPACT} mt-1 block disabled:cursor-not-allowed disabled:bg-surface-50`}>
-              <option value="">Part…</option>
-              {customerParts.map((p) => <option key={p.id} value={p.id}>{p.partNumber} — {p.name}</option>)}
-            </select>
+                    onSelect={(v) => setDraft({ ...draft, partId: v })}
+                    ariaLabel="First line: part" className="mt-1 w-64" />
           </label>
           <label className="block">
             …or free-text part number
@@ -322,12 +318,9 @@ export function Quotes() {
           </label>
           <div>
             <label htmlFor="quotes-customer" className="block text-xs text-ink-500">Customer</label>
-            <select id="quotes-customer" value={filters.customerId} onChange={(e) => updateFilters({ customerId: e.target.value })}
-                    disabled={!customersGate.allowed} title={customersGate.allowed ? undefined : customersGate.title}
-                    className={`${INPUT_COMPACT} disabled:cursor-not-allowed disabled:bg-surface-50`}>
-              <option value="">All customers</option>
-              {customers.map((c) => <option key={c.id} value={c.id}>{c.code} · {c.name}</option>)}
-            </select>
+            <Combobox id="quotes-customer" value={filters.customerId} options={customerOptions(customers, { blank: "All customers" })}
+                    onSelect={(v) => updateFilters({ customerId: v })}
+                    disabled={!customersGate.allowed} title={customersGate.allowed ? undefined : customersGate.title} ariaLabel="Customer" className="w-64" />
           </div>
           <div>
             <label className="block text-xs text-ink-500">Quote date</label>

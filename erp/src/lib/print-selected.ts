@@ -20,8 +20,10 @@ export const LOST_ANSWER = "It may have printed, but the answer was lost. Reload
 /** One print request, `POST /api/invoices/<id>/print?selected=1`, as the page sends it. */
 export type PostPrint = (id: string) => Promise<Response>;
 
-/** One printed row: its invoice id and the bytes the server stored. */
-export type PrintedRow = { id: string; bytes: Uint8Array };
+/** One printed row: its invoice id, the bytes the server stored and the stored document's id (its
+ *  answer's `x-document-id`, null when the answer carries none), which Print as one PDF (#1057)
+ *  names to the join. */
+export type PrintedRow = { id: string; bytes: Uint8Array; documentId: string | null };
 
 export type SelectedPrintRun = {
   /** Each printed row, in run order. */
@@ -62,7 +64,7 @@ export async function runSelectedPrints(
     if (typeof outcome === "string") {
       failures.set(id, outcome);
     } else {
-      printed.push({ id, bytes: outcome.bytes });
+      printed.push({ id, bytes: outcome.bytes, documentId: outcome.documentId });
       // "" is an empty header array, which the invoice page draws no line for (its `printWarning &&`).
       if (outcome.warning) warnings.set(id, outcome.warning);
     }
@@ -70,15 +72,18 @@ export async function runSelectedPrints(
   return { printed, failures, warnings, stopped: false };
 }
 
-/** One print's bytes and its folder sentence (`printWarningSentence`'s: null when its answer
- *  carries none), or the sentence its row shows when it did not print. */
-async function printOne(id: string, post: PostPrint): Promise<{ bytes: Uint8Array; warning: string | null } | string> {
+/** One print's bytes, its folder sentence (`printWarningSentence`'s: null when its answer carries
+ *  none) and its stored document's id, or the sentence its row shows when it did not print. */
+async function printOne(
+  id: string, post: PostPrint,
+): Promise<{ bytes: Uint8Array; warning: string | null; documentId: string | null } | string> {
   let refused: Response;
   try {
     const res = await post(id);
     if (res.ok) {
       const warning = printWarningSentence(res.headers.get("x-print-warnings"));
-      return { bytes: new Uint8Array(await res.arrayBuffer()), warning };
+      const documentId = res.headers.get("x-document-id");
+      return { bytes: new Uint8Array(await res.arrayBuffer()), warning, documentId: documentId || null };
     }
     // A 5xx is no answer the page can trust: the route resolves the download's file name after its
     // transaction commits, so a 5xx can follow a print that was stored.
@@ -126,9 +131,29 @@ function freeName(name: string, taken: Zippable): string {
 
 /** `invoices-YYYY-MM-DD.zip`, the browser's local date (the owner, 2026-10-20). */
 export function zipFileName(now: Date): string {
+  return `${runStem(now)}.zip`;
+}
+
+/** `invoices-YYYY-MM-DD.pdf`, Print as one PDF's file (#1057): the zip's name, a PDF's extension. */
+export function joinedFileName(now: Date): string {
+  return `${runStem(now)}.pdf`;
+}
+
+function runStem(now: Date): string {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
-  return `invoices-${now.getFullYear()}-${month}-${day}.zip`;
+  return `invoices-${now.getFullYear()}-${month}-${day}`;
+}
+
+/** The ids to join (#1057), in the order of `rows` (the table's): the stored document of each row
+ *  that printed in the run, a row without one left out (an answer carrying no `x-document-id`,
+ *  which the print route always sends, so this only keeps a join from naming nothing). */
+export function joinOrder(rows: readonly { id: string }[], printed: readonly PrintedRow[]): string[] {
+  const byRow = new Map(printed.map((p) => [p.id, p.documentId]));
+  return rows.flatMap((row) => {
+    const documentId = byRow.get(row.id);
+    return documentId ? [documentId] : [];
+  });
 }
 
 /**
@@ -177,12 +202,24 @@ export function confirmParts(count: number): { title: string; body: string } {
     : { title: `Print ${count} documents?`, body: "Each is filed under its own Documents, and the PDFs download as one zip file." };
 }
 
+/** Print as one PDF's confirm (#1057), the zip's sentence with its file said as one PDF. */
+export function joinedConfirmParts(count: number): { title: string; body: string } {
+  return count === 1
+    ? { title: "Print 1 document as one PDF?", body: "It is filed under its own Documents, and it downloads as a PDF file." }
+    : { title: `Print ${count} documents as one PDF?`, body: "Each is filed under its own Documents, and they download joined as one PDF file." };
+}
+
 /** Said after the closing line when the prints were filed but their zip could not be built (the
  *  owner, 2026-10-21: "Say so, carry on"). */
 export const ZIP_FAILED = "The zip could not be made; each print is under its own Documents.";
 
-/** The line beside the button after a run, then `ZIP_FAILED` when the zip could not be made. */
-export function resultText(printed: number, count: number, zipFailed = false): string {
+/** `ZIP_FAILED`'s sentence for Print as one PDF (#1057): the join could not be made or read. */
+export const JOIN_FAILED = "The joined PDF could not be made; each print is under its own Documents.";
+
+/** The line beside the button after a run, then the failure sentence when the run's file could not
+ *  be made: `ZIP_FAILED`, or `JOIN_FAILED` for a run printed as one PDF. */
+export function resultText(printed: number, count: number, fileFailed = false, output: "zip" | "joined" = "zip"): string {
   const line = `Printed ${printed} of ${count}.`;
-  return zipFailed ? `${line} ${ZIP_FAILED}` : line;
+  if (!fileFailed) return line;
+  return `${line} ${output === "joined" ? JOIN_FAILED : ZIP_FAILED}`;
 }

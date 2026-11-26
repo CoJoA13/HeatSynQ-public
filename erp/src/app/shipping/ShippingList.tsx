@@ -16,6 +16,8 @@ import { ListTabs } from "@/components/ListTabs";
 import {
   BADGE_WARNING, BUTTON_PRIMARY, CARD, CARD_FLUSH, INPUT_COMPACT, LINK, NOTICE, BADGE_DANGER, TABLE_CELL, TABLE_HEAD,
 } from "@/lib/ui-classes";
+import { Combobox } from "@/components/Combobox";
+import { customerOptions } from "@/lib/menu-options";
 
 // Local mirror of src/server/shippers.ts's ShipperRow — not imported from src/server/** (CLAUDE.md
 // "Constraints that will bite you": a client component pulling from there drags node:async_hooks
@@ -177,12 +179,9 @@ export function ShippingList() {
 
         <div>
           <label htmlFor="shipping-customer" className="block text-xs text-ink-500">Customer</label>
-          <select id="shipping-customer" value={filters.customerId} onChange={(e) => updateFilters({ customerId: e.target.value })}
-                  disabled={!customersGate.allowed} title={customersGate.allowed ? undefined : customersGate.title}
-                  className={`${INPUT_COMPACT} disabled:cursor-not-allowed disabled:bg-surface-50`}>
-            <option value="">All customers</option>
-            {customers.map((c) => <option key={c.id} value={c.id}>{c.code} · {c.name}</option>)}
-          </select>
+          <Combobox id="shipping-customer" value={filters.customerId} options={customerOptions(customers, { blank: "All customers" })}
+                  onSelect={(v) => updateFilters({ customerId: v })}
+                  disabled={!customersGate.allowed} title={customersGate.allowed ? undefined : customersGate.title} ariaLabel="Customer" className="w-64" />
         </div>
 
         <div>

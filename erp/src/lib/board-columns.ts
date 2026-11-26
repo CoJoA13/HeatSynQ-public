@@ -95,7 +95,13 @@ export type BoardFilters = {
   includeVoided: boolean;
 };
 
-export function defaultFilters(): BoardFilters {
+/** The order statuses still in play: the board's Open orders preset (`board-presets.ts`) and the
+ *  board's opening filter (#1057, below). */
+export const OPEN_ORDER_STATUSES: readonly OrderStatusValue[] = ["OPEN", "PARTIAL_SHIPPED", "REOPENED"];
+
+/** Every filter blank and no status predicate: what a stored view's missing or malformed field reads
+ *  as (`normalizeFilters`), so a view saved before #1057 keeps meaning what it meant. */
+function noFilters(): BoardFilters {
   return {
     search: "", status: [], customerId: "",
     receivedFrom: "", receivedTo: "", requestFrom: "", requestTo: "",
@@ -103,10 +109,18 @@ export function defaultFilters(): BoardFilters {
   };
 }
 
+/** The board's opening filters, for a user with no default saved view (#1057, owner ruling
+ *  2026-11-26: "The Orders board opens on Open orders"): the Open orders preset's three statuses and
+ *  nothing else. A default saved view still replaces it on load (`page.tsx`), and the "Default board"
+ *  choice in the views list applies it. */
+export function defaultFilters(): BoardFilters {
+  return { ...noFilters(), status: [...OPEN_ORDER_STATUSES] };
+}
+
 const STATUS_SET = new Set<string>(ORDER_STATUSES);
 
 function normalizeFilters(input: unknown): BoardFilters {
-  const d = defaultFilters();
+  const d = noFilters();
   if (!input || typeof input !== "object") return d;
   const f = input as Record<string, unknown>;
   const status = Array.isArray(f.status)

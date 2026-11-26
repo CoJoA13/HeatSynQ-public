@@ -6,7 +6,7 @@
 // Save — the entry page's own richer behaviours (drafts, serial ranges, warnings panel) are
 // order-entry-full.mjs's job to demonstrate, not this helper's.
 import assert from "node:assert/strict";
-import { pickCombobox } from "./ui.mjs";
+import { pickCombobox, pickComboboxValue } from "./ui.mjs";
 import { hubTabForId, orderHubTabs } from "../../src/lib/order-hub-tabs.ts";
 import { openRecordTab } from "./record-tabs.mjs";
 
@@ -88,12 +88,12 @@ export async function createOrderViaUi(page, ctx, { customerCode, lines, expectW
 export async function startNewShipment(page, ctx, customerId, orders) {
   await page.goto(`${ctx.baseURL}/shipping/new`);
   await page.getByRole("heading", { name: "New shipment" }).waitFor({ state: "visible" });
-  await page.getByLabel("Customer", { exact: true }).selectOption(customerId);
+  await pickComboboxValue(page, "Customer", customerId);
   // The Add order list and the order panels sit on Orders & containers (PR 4); the page is left
   // on that tab, where the callers edit the panels. The customer's own tab is Customer & route.
   await openRecordTab(page, "Orders & containers");
   for (const order of orders) {
-    await page.getByLabel("Add order", { exact: true }).selectOption(order.id);
+    await pickComboboxValue(page, "Add order", order.id);
     await page.getByRole("button", { name: "Add order", exact: true }).click();
     await page.getByRole("link", { name: `#${order.number}`, exact: true }).waitFor({ state: "visible", timeout: 15000 });
   }
@@ -127,6 +127,24 @@ export async function waitForShipmentPage(page) {
   const match = text.match(/Packing list #(\d+)/);
   assert.ok(match, `Could not parse a packing-list number out of "${text}"`);
   return { id: page.url().split("/").pop(), shipperNumber: Number(match[1]) };
+}
+
+/** The board's view preset named `label` ("Open orders" or "All orders"), a pressed button in the
+ *  "Order views" group (src/lib/board-presets.ts). */
+export function boardPreset(page, label) {
+  return page.getByRole("group", { name: "Order views", exact: true }).getByRole("button", { name: label, exact: true });
+}
+
+/** Opens the order board and shows All orders (#1057: the board opens on Open orders, which leaves
+ *  a Shipped or Invoiced order out), for a flow that reads an order whatever its status. Waits for
+ *  the pill to read pressed, so the board's next read is the unfiltered one. */
+export async function openBoardAllOrders(page, baseURL) {
+  await page.goto(`${baseURL}/`);
+  await page.getByRole("heading", { name: "Orders" }).waitFor({ state: "visible" });
+  const all = boardPreset(page, "All orders");
+  await all.waitFor({ state: "visible", timeout: 15000 });
+  if ((await all.getAttribute("aria-pressed")) !== "true") await all.click();
+  await boardPreset(page, "All orders").and(page.locator('[aria-pressed="true"]')).waitFor({ state: "visible", timeout: 15000 });
 }
 
 /**

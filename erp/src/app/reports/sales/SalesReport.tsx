@@ -22,6 +22,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { ReportsNav } from "../ReportsNav";
 import { exportState } from "@/lib/report-export-state";
 import { BUTTON_NEUTRAL, CARD, CARD_FLUSH, INPUT_COMPACT, LINK, NOTICE, TABLE_CELL, TABLE_HEAD } from "@/lib/ui-classes";
+import { Combobox } from "@/components/Combobox";
+import { customerOptions } from "@/lib/menu-options";
 
 // Local mirrors of src/server/reports/sales.ts's row types — NOT imported from src/server/**
 // (CLAUDE.md "Constraints that will bite you": a client component pulling from there drags
@@ -169,14 +171,9 @@ export function SalesReport() {
           </label>
           <label className="block">
             Customer
-            <select value={customerId} onChange={(e) => setCustomerId(e.target.value)}
-                    disabled={!customersGate.allowed} title={customersGate.allowed ? undefined : customersGate.title}
-                    className={`${INPUT_COMPACT} mt-1 block disabled:cursor-not-allowed disabled:bg-surface-50`}>
-              <option value="">All customers</option>
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>{c.code} · {c.name}</option>
-              ))}
-            </select>
+            <Combobox value={customerId} options={customerOptions(customers, { blank: "All customers" })}
+                    onSelect={(v) => setCustomerId(v)}
+                    disabled={!customersGate.allowed} title={customersGate.allowed ? undefined : customersGate.title} ariaLabel="Customer" className="mt-1 w-64" />
           </label>
           <label className="block">
             Group by

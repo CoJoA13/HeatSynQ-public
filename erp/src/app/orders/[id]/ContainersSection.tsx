@@ -25,6 +25,7 @@ import { useUnsavedPresent } from "@/lib/use-unsaved-section";
 import { useDraftIdentity } from "@/lib/use-recoverable-draft";
 import { containerTagsGate, containerTagsHref, NOT_PRINTED_ON_A_TAG } from "@/lib/container-tags-gate";
 import { CARD, INPUT_COMPACT, LINK, NOTICE } from "@/lib/ui-classes";
+import { inMenuOrder } from "@/lib/menu-order";
 
 type Row = ComposedRow<ContainerFields>;
 
@@ -235,7 +236,7 @@ export function ContainersSection({
                     aria-label={`Container ${i + 1} type`}
                     className={`${INPUT_COMPACT} mt-1 w-full disabled:bg-surface-50`}>
               <option value="">— choose —</option>
-              {containerTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              {inMenuOrder(containerTypes, (r) => r.name).map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
           </label>
           <label className="block">

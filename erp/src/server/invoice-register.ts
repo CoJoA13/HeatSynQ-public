@@ -60,7 +60,8 @@ function printedRow(r: InvoiceRegisterRow): InvoiceRegisterPrintedRow {
 
 /** The applied filter under the title (Amendment 7), its three parts joined by three spaces, and a
  *  fourth, "Printed: …", only when the Printed filter is set (the UX redesign PR 6, owner
- *  2026-10-31), so a register with none keeps its approved line. The dates are the filter's PARSED
+ *  2026-10-31), and a last, "Balance: Open", only when the Balance filter is (#1057), so a register
+ *  with neither keeps its approved line. The dates are the filter's PARSED
  *  dates (`parseDateOnly` trims), so the caller has the read answer a malformed date's 400 before
  *  this formats one; a blank date is none, as the list's `where` reads it. */
 function filterLine(filter: InvoiceFilter, customer: RegisterCustomer | null): string {
@@ -75,6 +76,7 @@ function filterLine(filter: InvoiceFilter, customer: RegisterCustomer | null): s
     filter.status === undefined ? "Status: All statuses" : `Status: ${INVOICE_STATUS_LABELS[filter.status]}`,
     `Invoice date: ${dates}`,
     ...(filter.printed === undefined ? [] : [`Printed: ${filter.printed === "1" ? "Printed" : "Not printed"}`]),
+    ...(filter.balance === undefined ? [] : ["Balance: Open"]),
   ].join("   ");
 }
 

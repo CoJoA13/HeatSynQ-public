@@ -13,8 +13,10 @@ import {
 // saved view usable at all).
 // The last block holds each column's label by value (the weights design §11.3, O12).
 
+// Over no status filter (the board opens on Open orders since #1057, which every query case below
+// would otherwise carry).
 const filtersWith = (patch: Partial<BoardFilters>): BoardFilters => ({
-  ...defaultViewConfig().filters, ...patch,
+  ...defaultViewConfig().filters, status: [], ...patch,
 });
 const SORT_DEFAULT: SortState = { sort: "orderNumber", dir: "desc" };
 
@@ -24,10 +26,11 @@ describe("defaultViewConfig", () => {
     expect(columns).toEqual(BOARD_COLUMNS.map((c) => ({ key: c.key, visible: true })));
   });
 
-  it("starts with empty filters and the orderNumber-desc sort orderByFor defaults to", () => {
+  // #1057 (owner ruling 2026-11-26): the board opens on Open orders.
+  it("starts on the three open statuses, every other filter empty, and the orderNumber-desc sort orderByFor defaults to", () => {
     const config = defaultViewConfig();
     expect(config.filters).toEqual({
-      search: "", status: [], customerId: "",
+      search: "", status: ["OPEN", "PARTIAL_SHIPPED", "REOPENED"], customerId: "",
       receivedFrom: "", receivedTo: "", requestFrom: "", requestTo: "",
       includeVoided: false,
     });
@@ -41,15 +44,23 @@ describe("defaultViewConfig", () => {
     a.columns[0].visible = false;
     a.filters.status.push("OPEN");
     expect(b.columns[0].visible).toBe(true);
-    expect(b.filters.status).toEqual([]);
+    expect(b.filters.status).toEqual(["OPEN", "PARTIAL_SHIPPED", "REOPENED"]);
   });
 });
 
 describe("normalizeViewConfig", () => {
-  it("recovers the full default from a non-object config (null, undefined, a bare string)", () => {
+  it("recovers the default columns and sort, and NO status filter, from a non-object config (null, undefined, a bare string)", () => {
+    // #1057: a stored view's missing filter reads as no filter, never as the board's opening Open
+    // orders, so a view saved before the opening filter changed keeps meaning what it meant.
     for (const input of [null, undefined, "not-a-config", 42]) {
-      expect(normalizeViewConfig(input)).toEqual(defaultViewConfig());
+      expect(normalizeViewConfig(input)).toEqual({ ...defaultViewConfig(), filters: { ...defaultViewConfig().filters, status: [] } });
     }
+  });
+
+  it("reads a stored view with no status, or a malformed one, as no status filter (#1057)", () => {
+    expect(normalizeViewConfig({ filters: {} }).filters.status).toEqual([]);
+    expect(normalizeViewConfig({ filters: { status: "OPEN" } }).filters.status).toEqual([]);
+    expect(normalizeViewConfig({ filters: { status: ["SHIPPED", "NOPE"] } }).filters.status).toEqual(["SHIPPED"]);
   });
 
   it("keeps a saved column arrangement's order and visibility", () => {
@@ -140,7 +151,9 @@ describe("normalizeViewConfig", () => {
 
 describe("buildOrderQuery", () => {
   it("emits only sort/dir for the default board — every empty filter key is omitted, not sent blank", () => {
-    expect(buildOrderQuery(defaultViewConfig().filters, SORT_DEFAULT)).toBe("sort=orderNumber&dir=desc");
+    expect(buildOrderQuery({ ...defaultViewConfig().filters, status: [] }, SORT_DEFAULT)).toBe("sort=orderNumber&dir=desc");
+    expect(buildOrderQuery(defaultViewConfig().filters, SORT_DEFAULT))
+      .toBe("status=OPEN%2CPARTIAL_SHIPPED%2CREOPENED&sort=orderNumber&dir=desc");
   });
 
   it("trims search, and omits it entirely when whitespace-only", () => {

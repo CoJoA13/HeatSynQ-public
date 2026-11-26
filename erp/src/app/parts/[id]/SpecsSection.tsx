@@ -8,6 +8,7 @@ import { useLatest } from "@/lib/use-latest";
 import { invalidateHistory } from "@/components/HistoryPanel";
 import { BUTTON_PRIMARY_COMPACT, CARD, INPUT_COMPACT } from "@/lib/ui-classes";
 import { oneShotHold } from "@/lib/single-flight";
+import { inMenuOrder } from "@/lib/menu-order";
 
 type SpecLink = { id: string; specificationId: string; specificationName: string };
 type SpecOption = { id: string; name: string; active: boolean };
@@ -120,7 +121,7 @@ export function SpecsSection({
                 title={optionsSelectTitle(canEdit, optionsRead)}
                 className={`${INPUT_COMPACT} disabled:bg-surface-50`}>
           <option value="">Add a specification…</option>
-          {options
+          {inMenuOrder(options, (r) => r.name)
             .filter((o) => !links.some((l) => l.specificationId === o.id))
             .map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
         </select>

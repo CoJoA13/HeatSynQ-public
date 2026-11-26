@@ -30,14 +30,15 @@
 // h1, the invoice page's kind+number h1).
 //
 // HANDOFF §5a's select-inside-label trap is live on this page: the quote header's "Ending
-// statement" and the New-quote section's pickers are `<select>`s nested inside their own
-// `<label>`s, whose Playwright label-text is polluted by every option's text — so those are all
-// located with the scoped `locator("label", { hasText: … }).locator("select")` shape, never
-// `getByLabel`. Plain `<input>`s (the date fields) keep `getByLabel`. The invoice grid's amount
+// statement" is a `<select>` nested inside its own `<label>`, whose Playwright label-text is
+// polluted by every option's text — so it is located with the scoped
+// `locator("label", { hasText: … }).locator("select")` shape, never `getByLabel`. The record-list
+// pickers (customer, part, step code) are Combobox inputs since #1056, each with its own
+// `aria-label`, so `pickCombobox` / `pickComboboxValue` find them by it. Plain `<input>`s (the date fields) keep `getByLabel`. The invoice grid's amount
 // is a React controlled `<input>` (value invisible to getByText — the same §5a trap the
 // invoice-shipped-order flow documents), so it is read via `waitForValue` on its aria-label.
 import assert from "node:assert/strict";
-import { assertNeverVisible, pickCombobox, waitForEnabled, waitForValue } from "../lib/ui.mjs";
+import { assertNeverVisible, pickCombobox, pickComboboxValue, waitForEnabled, waitForValue } from "../lib/ui.mjs";
 import { startNewShipment, orderPanel, waitForShipmentPage, openOrderTab } from "../lib/orders.mjs";
 import { openRecordTab } from "../lib/record-tabs.mjs";
 import { answerModal, modalTitle } from "../lib/modal.mjs";
@@ -105,11 +106,10 @@ async function createQuoteViaUi(page, ctx, firstLine) {
       `the Quotes list must expose exactly one ${name} filter control`);
   }
   const section = sectionByHeading(page, "New quote");
-  await section.locator("label", { hasText: "Customer" }).locator("select")
-    .selectOption(ctx.fixtures.quoteCustomerId);
+  // The customer is typed, proving the picker filters (#1056); the part is picked by its id.
+  await pickCombobox(section, "Customer", ctx.fixtures.quoteCustomerCode, new RegExp(`^${ctx.fixtures.quoteCustomerCode} · `));
   if (firstLine.partId) {
-    await section.locator("label", { hasText: "First line: part" }).locator("select")
-      .selectOption(firstLine.partId);
+    await pickComboboxValue(section, "First line: part", firstLine.partId);
   } else {
     await section.locator("label", { hasText: "free-text part number" }).locator("input")
       .fill(firstLine.partNumberText);
@@ -260,8 +260,8 @@ export async function run(page, shot, ctx) {
   const cards = linesSection.locator("div.space-y-4 > div");
   const card1 = cards.nth(0);
 
-  await card1.locator(`select:has(option:text-is("Add operation"))`)
-    .selectOption({ label: `${fixtures.quoteStepCodeCode} ${EM_DASH} ${fixtures.quoteStepCodeName}` });
+  await pickCombobox(card1, "Add operation", fixtures.quoteStepCodeCode,
+    new RegExp(`^${fixtures.quoteStepCodeCode} ${EM_DASH} ${fixtures.quoteStepCodeName}$`));
   await card1.getByLabel("Setup charge", { exact: true }).fill("25.00");
   await card1.getByLabel("Unit price", { exact: true }).fill("4.50");
   await card1.getByLabel("Minimum charge", { exact: true }).fill("50.00");

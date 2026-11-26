@@ -24,6 +24,8 @@ import { useSavedMarks } from "@/lib/use-saved-marks";
 import { enterBox, focusRecord, heldText, leaveBox, noteFocus, trimmedText, withoutSettledDraft, type BoxCommit, type SameText } from "@/lib/focus-record";
 import { BADGE_WARNING, BUTTON_NEUTRAL, BUTTON_PRIMARY, BUTTON_PRIMARY_COMPACT, CARD, CARD_FLUSH, INPUT_COMPACT, LINK, NOTICE, TABLE_CELL, TABLE_HEAD } from "@/lib/ui-classes";
 import { oneShotHold } from "@/lib/single-flight";
+import { Combobox } from "@/components/Combobox";
+import { glAccountOptions } from "@/lib/menu-options";
 
 // A saved suggestion always carries its id (`listStepCodes`); only a field being added lacks one.
 type Field = { id: string; label: string; type: StepFieldType; unit: string | null; sort: number };
@@ -411,12 +413,10 @@ export default function StepCodesPage() {
 
             <label className="mb-4 block text-sm">
               GL account
-              <select value={current.glAccountId ?? ""} disabled={canEdit.disabled} title={canEdit.title}
-                      className={`${INPUT_COMPACT} ml-2 disabled:bg-surface-50`}
-                      onChange={(e) => void save(current.id, { body: { glAccountId: e.target.value || null } })}>
-                <option value="">(needs GL account)</option>
-                {gls.map((g) => <option key={g.id} value={g.id}>{g.name} {g.description}</option>)}
-              </select>
+              <Combobox value={current.glAccountId ?? ""} disabled={canEdit.disabled} title={canEdit.title}
+                        options={glAccountOptions(gls, { blank: "(needs GL account)" })}
+                        onSelect={(v) => void save(current.id, { body: { glAccountId: v || null } })}
+                        ariaLabel="GL account" className="ml-2 inline-block w-72 align-middle" />
             </label>
 
             <label className="mb-4 block text-sm">

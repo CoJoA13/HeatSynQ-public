@@ -13,6 +13,7 @@ import { enterBox, focusRecord, leaveBox, noteFocus, type BoxCommit } from "@/li
 import { SavedMark } from "@/components/SavedMark";
 import { useSavedMarks } from "@/lib/use-saved-marks";
 import { BUTTON_PRIMARY_COMPACT, CARD, INPUT_COMPACT } from "@/lib/ui-classes";
+import { inMenuOrder } from "@/lib/menu-order";
 
 type InspRow = {
   id: string; inspectionCodeId: string; inspectionCodeName: string;
@@ -291,7 +292,7 @@ export function InspectionsSection({
                         title={optionsSelectTitle(canEdit, codesRead)}
                         onChange={(e) => void saveRow(r.id, { inspectionCodeId: e.target.value })}
                         className={INPUT_COMPACT}>
-                  {codes.map((c) => (
+                  {inMenuOrder(codes, (r) => r.name).map((c) => (
                     <option key={c.id} value={c.id}>{c.name}{!c.active && " (inactive)"}</option>
                   ))}
                 </select>
@@ -302,7 +303,7 @@ export function InspectionsSection({
                         onChange={(e) => void saveRow(r.id, { scaleId: e.target.value || null })}
                         className={INPUT_COMPACT}>
                   <option value="">—</option>
-                  {scales.map((s) => (
+                  {inMenuOrder(scales, (r) => r.name).map((s) => (
                     <option key={s.id} value={s.id}>{s.name}{!s.active && " (inactive)"}</option>
                   ))}
                 </select>
@@ -378,7 +379,7 @@ export function InspectionsSection({
                       onChange={(e) => setDraft({ ...draft, inspectionCodeId: e.target.value })}
                       className={INPUT_COMPACT}>
                 <option value="">Code…</option>
-                {codes.map((c) => <option key={c.id} value={c.id}>{c.name}{!c.active && " (inactive)"}</option>)}
+                {inMenuOrder(codes, (r) => r.name).map((c) => <option key={c.id} value={c.id}>{c.name}{!c.active && " (inactive)"}</option>)}
               </select>
             </td>
             <td>
@@ -387,7 +388,7 @@ export function InspectionsSection({
                       onChange={(e) => setDraft({ ...draft, scaleId: e.target.value })}
                       className={INPUT_COMPACT}>
                 <option value="">Scale…</option>
-                {scales.map((s) => <option key={s.id} value={s.id}>{s.name}{!s.active && " (inactive)"}</option>)}
+                {inMenuOrder(scales, (r) => r.name).map((s) => <option key={s.id} value={s.id}>{s.name}{!s.active && " (inactive)"}</option>)}
               </select>
             </td>
             <td>

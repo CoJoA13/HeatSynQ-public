@@ -43,6 +43,9 @@ describe("sameViewConfig", () => {
     const base = live();
     const stored = { columns: base.columns.slice(0, -1), filters: base.filters, sort: base.sort, dir: base.dir };
     expect(sameViewConfig(base, stored)).toBe(true);
-    expect(sameViewConfig(base, null)).toBe(true);
+    // A null config reads as the default columns and sort and no status filter (#1057: never as the
+    // board's opening Open orders), so it matches the board with every status box clear.
+    expect(sameViewConfig({ ...base, filters: { ...base.filters, status: [] } }, null)).toBe(true);
+    expect(sameViewConfig(base, null)).toBe(false);
   });
 });

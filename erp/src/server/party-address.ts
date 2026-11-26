@@ -12,7 +12,8 @@
  * keep what they printed); the statement, the quote, the ticket and the certification read it
  * live at each build. The SHIP-TO rule is deliberately NOT here: a ship-to row's name prints
  * alone, else the customer's (the invoice's `renderAddress`, the ticket's and the bill of lading's
- * ship-to), and the issue left it as it is.
+ * ship-to), and the issue left it as it is. Which row an invoice's ship-to is, the latest
+ * shipment's (#1055), is `src/lib/invoice-ship-to.ts`'s.
  */
 
 type PartyRow = { name: string; street: string; city: string; state: string; zip: string };

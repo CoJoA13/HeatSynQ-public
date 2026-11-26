@@ -315,7 +315,8 @@ describe("ShipmentDetail: the Add order candidates read sets the select's state"
 
 describe("ShipmentDetail: the Add order select's first option", () => {
   it("is the leaf's placeholder, and the page words none of the five sentences itself", () => {
-    expect(detailText.split('<option value="">{addSelect.placeholder}</option>')).toHaveLength(2);
+    // The Add order picker (a Combobox since #1056) shows it as its placeholder.
+    expect(detailText.split("placeholder={addSelect.placeholder}")).toHaveLength(2);
     for (const sentence of [
       "No unshipped orders for this customer", "Loading orders…", "Orders could not be loaded", "Choose an order…",
     ]) expect(detailText, sentence).not.toContain(sentence);

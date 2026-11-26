@@ -26,6 +26,9 @@ history forever. Tick **Include voided** to see them.
 
 Above the filters, **Open orders** and **All orders** are presets of the status boxes: Open orders
 ticks Open, Partially shipped and Reopened with voided left out; All orders clears every status box.
+The board opens on **Open orders**, so a shipped or invoiced order is under **All orders**; a saved
+view you have set as your default opens instead, and choosing **Default board** in the views list
+goes back to Open orders.
 The preset the boxes equal is lit, so a saved view that matches one shows it; ticking a status box
 or Include voided yourself leaves neither lit. Search, Customer and the date ranges narrow within a
 preset and keep it lit.

@@ -4,6 +4,8 @@ import type { Gate } from "@/lib/permission-ui";
 import { ORDER_STATUSES, ORDER_STATUS_LABELS, type OrderStatusValue } from "@/lib/order-constants";
 import type { BoardFilters } from "@/lib/board-columns";
 import { INPUT_COMPACT, LINK } from "@/lib/ui-classes";
+import { Combobox } from "@/components/Combobox";
+import { customerOptions } from "@/lib/menu-options";
 
 // Presentational only (#33's bounded slice): filter state and its update handlers stay in the
 // board page (src/app/page.tsx) — this file renders the filter row, the Export link (built from
@@ -52,14 +54,9 @@ export function FilterBar({
 
       <div>
         <label htmlFor={`${id}-customer`} className="block text-xs text-ink-500">Customer</label>
-        <select id={`${id}-customer`} value={filters.customerId} onChange={(e) => onUpdateFilters({ customerId: e.target.value })}
-                disabled={!customersGate.allowed} title={customersGate.allowed ? undefined : customersGate.title}
-                className={`${INPUT_COMPACT} disabled:cursor-not-allowed disabled:bg-surface-50`}>
-          <option value="">All customers</option>
-          {customers.map((c) => (
-            <option key={c.id} value={c.id}>{c.code} · {c.name}{!c.active && " (inactive)"}</option>
-          ))}
-        </select>
+        <Combobox id={`${id}-customer`} value={filters.customerId} options={customerOptions(customers, { blank: "All customers", markInactive: true })}
+                onSelect={(v) => onUpdateFilters({ customerId: v })}
+                disabled={!customersGate.allowed} title={customersGate.allowed ? undefined : customersGate.title} ariaLabel="Customer" className="w-64" />
       </div>
 
       <div>

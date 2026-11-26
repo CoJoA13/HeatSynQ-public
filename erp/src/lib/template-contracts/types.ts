@@ -538,8 +538,14 @@ export type CanvasRequired =
 /** A field the stage draws on a rule, as the paper prints it (design 2026-11-09 §4.1; owner ruling
  *  (a), 2026-11-10): "beside", its label beside a rule under the rest of the box; "lines", its label
  *  beside two rules `column` points long. ("under", a rule with the label under it, was the carrier's
- *  until owner ruling R1 of 2026-11-24 printed every label beside its rule.) */
-export type CanvasRuledField = { key: string; draw: "beside" | "lines"; column?: number };
+ *  until owner ruling R1 of 2026-11-24 printed every label beside its rule.) `label` is where the
+ *  paper prints the label (owner ruling on #1053, 2026-11-25): its column `width`, the `gap` before
+ *  the rule, and, where the paper fixes the label's type whatever the item's style, that `type` (the
+ *  bill of lading's carrier, 9 pt bold, set left); the stage wraps the label inside its column. */
+export type CanvasRuledField = {
+  key: string; draw: "beside" | "lines"; column?: number;
+  label: { width: number; gap: number; type?: { size: number; bold: boolean } };
+};
 /** What the shared canvas code reads from a document (design 2026-11-08 §4.1): the tables a layout
  *  may place, the items it must hold and nothing may cover, whether it may place a barcode, the
  *  fields it never places as a field item, the fields that print in a border, the fields the stage

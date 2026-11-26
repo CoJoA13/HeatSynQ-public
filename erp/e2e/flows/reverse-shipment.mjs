@@ -39,7 +39,7 @@ import { answerModal, modalTitle } from "../lib/modal.mjs";
 import { watchRequests } from "../lib/refusal-lines.mjs";
 import { openRecordTab } from "../lib/record-tabs.mjs";
 import { chooseMenuItem, invoicesSection as registerSection, openInvoicingView } from "../lib/invoicing.mjs";
-import { boardRow, createOrderViaUi, startNewShipment, orderPanel, waitForShipmentPage } from "../lib/orders.mjs";
+import { boardRow, openBoardAllOrders, createOrderViaUi, startNewShipment, orderPanel, waitForShipmentPage } from "../lib/orders.mjs";
 import { SHIPMENT_TOTALS, totalsFor, waitForShipmentTotals } from "../lib/shipment-totals.mjs";
 
 const REVERSE_REASON =
@@ -93,8 +93,8 @@ const voidButton = (page) => page.getByRole("button", { name: "Void shipment", e
  * carry `statusText`. Returns the row locator so a caller can go on to drive the status filters.
  */
 async function boardRowFor(page, ctx, orderNumber) {
-  await page.goto(`${ctx.baseURL}/`);
-  await page.getByRole("heading", { name: "Orders" }).waitFor({ state: "visible" });
+  // #1057: the board opens on Open orders; this flow's order is Invoiced or Shipped at times.
+  await openBoardAllOrders(page, ctx.baseURL);
   await page.getByPlaceholder("Order #, PO, VS #, lead part, customer").fill(String(orderNumber));
   // #167a: narrowing by the board's own search is not enough on its own — the search matches PO,
   // VS #, lead part and customer too, so it can still return several rows, and the row picked out
@@ -234,8 +234,9 @@ export async function run(page, shot, ctx) {
   await waitForTitle(invoicedPanel.getByRole("button", { name: "Save lines", exact: true }), changeFrozen,
     "Save lines under a finalized invoice");
   const addOrder = sectionByHeading(page, "Add order");
-  await waitForTitle(addOrder.locator("select"), changeFrozen, "the Add order list under a finalized invoice");
-  assert.equal(await addOrder.locator("select").isDisabled(), true, "a finalized invoice must grey the Add order list");
+  const addOrderList = addOrder.getByRole("combobox", { name: "Add order", exact: true });
+  await waitForTitle(addOrderList, changeFrozen, "the Add order list under a finalized invoice");
+  assert.equal(await addOrderList.isDisabled(), true, "a finalized invoice must grey the Add order list");
   const addOrderButton = addOrder.getByRole("button", { name: "Add order", exact: true });
   await waitForTitle(addOrderButton, changeFrozen, "the Add order button under a finalized invoice");
   assert.equal(await addOrderButton.isDisabled(), true, "a finalized invoice must grey Add order");

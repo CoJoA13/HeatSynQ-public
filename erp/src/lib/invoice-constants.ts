@@ -38,6 +38,13 @@ export const INVOICE_STATUS_LABELS: Record<InvoiceStatusValue, string> = {
 export const INVOICE_PRINTED = ["1", "0"] as const;
 export type InvoicePrinted = (typeof INVOICE_PRINTED)[number];
 
+/** The register's Balance filter (#1057 ruling 4, owner 2026-11-26): "open" keeps the finalized
+ *  invoices whose open balance is above $0, unpaid or part-paid; a credit memo and a draft never.
+ *  Nothing is stored: the server derives each row's balance from its live applications
+ *  (`invoiceOpenBalance`, src/server/ar-balances.ts) and keeps the rows it names. */
+export const INVOICE_BALANCE = ["open"] as const;
+export type InvoiceBalance = (typeof INVOICE_BALANCE)[number];
+
 export const INVOICE_LINE_KINDS = ["PART", "OPERATION", "SURCHARGE", "FREIGHT", "CHARGE", "CERT", "TAX"] as const;
 export type InvoiceLineKindValue = (typeof INVOICE_LINE_KINDS)[number];
 export const INVOICE_LINE_KIND_LABELS: Record<InvoiceLineKindValue, string> = {

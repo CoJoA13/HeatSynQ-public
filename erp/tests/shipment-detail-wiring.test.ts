@@ -31,15 +31,16 @@ function only(what: string, pick: (tag: JsxTag) => boolean): JsxTag {
 
 /**
  * Every header field, in source order, as `[field, the attribute that locks it, that attribute's
- * expression, its title's expression]`. A header field is an input, select or textarea whose
- * `onChange` writes one field of the shipment: straight to the server through `patchHeader`, or
- * into local state ahead of a save on blur.
+ * expression, its title's expression]`. A header field is an input, select, textarea or Combobox
+ * picker (the Ship-to address since #1056) whose `onChange` (a picker's `onSelect`) writes one
+ * field of the shipment: straight to the server through `patchHeader`, or into local state ahead
+ * of a save on blur.
  */
 function headerFields(): (string | undefined)[][] {
   return tags
-    .filter((tag) => ["input", "select", "textarea"].includes(tag.name))
+    .filter((tag) => ["input", "select", "textarea", "Combobox"].includes(tag.name))
     .map((tag) => ({
-      tag, field: /(?:patchHeader\(\{|patchDraft\(\{) (\w+):/.exec(tag.attr("onChange") ?? "")?.[1],
+      tag, field: /(?:patchHeader\(\{|patchDraft\(\{) (\w+):/.exec(tag.attr("onChange") ?? tag.attr("onSelect") ?? "")?.[1],
     }))
     .filter(({ field }) => field !== undefined)
     .map(({ tag, field }) => [
@@ -201,7 +202,7 @@ describe("ShipmentDetail wiring, Task 4: the Add order section and the override 
     expect(declared(SD, "addSelect")).toEqual([
       "addOrderSelect({ gate: linesAddGate, ordersGate, state: addableState, count: addableOrders.length })",
     ]);
-    const select = theOne("select", "value", "addOrderChoice");
+    const select = theOne("Combobox", "value", "addOrderChoice");
     expect(select.attr("disabled")).toBe("addSelect.disabled");
     expect(select.attr("title")).toBe("addSelect.title");
   });
@@ -339,18 +340,18 @@ describe("#484: the ship-to address each answer carries", () => {
   });
 
   it("the Ship-to select keeps its value, its edit gate and its save", () => {
-    const select = only("the Ship-to select", (tag) => tag.name === "select" && tag.attr("value") === 'shipper.shipToAddressId ?? ""');
-    expect([select.attr("disabled"), select.attr("title"), oneLine(select.attr("onChange"))]).toEqual([
-      "!editGate.allowed", "editGate.title", "(e) => void patchHeader({ shipToAddressId: e.target.value || null })",
+    const select = only("the Ship-to select", (tag) => tag.name === "Combobox" && tag.attr("value") === 'shipper.shipToAddressId ?? ""');
+    expect([select.attr("disabled"), select.attr("title"), oneLine(select.attr("onSelect"))]).toEqual([
+      "!editGate.allowed", "editGate.title", "(v) => void patchHeader({ shipToAddressId: v || null })",
     ]);
   });
 
   it("offers \"— none —\", then the leaf's own option when it answers one, then the list in the leaf's format", () => {
     // Where Carrier offers its own option: after "— none —" and before the list.
-    expect(jsxTexts(SD, "select").filter((text) => text.includes("shipTo"))).toEqual([
-      "<option> {shipTo.own !== null && <option value={shipTo.own.value}>{shipTo.own.label}</option>} " +
-      "{addresses.map((a) => <option key={a.id} value={a.id}>{shipToOptionLabel(a)}</option>)}",
-    ]);
+    // The list is sorted by its label, each digit run by value (#1056 rulings 3 and 4).
+    const select = only("the Ship-to select", (tag) => tag.name === "Combobox" && tag.attr("value") === 'shipper.shipToAddressId ?? ""');
+    expect(oneLine(select.attr("options"))).toBe(
+      '[ { value: "", label: "— none —" }, ...(shipTo.own !== null ? [shipTo.own] : []), ...labelledOptions(addresses, shipToOptionLabel), ]');
   });
 
   it("\"Ships to:\" shows the leaf's text, on that alone", () => {
@@ -369,7 +370,7 @@ describe("#484: the ship-to address each answer carries", () => {
   });
 
   it("the text sits outside the select's label, so the select's accessible name stays \"Ship-to address\"", () => {
-    expect(jsxTexts(SD, "label").filter((text) => text.startsWith("Ship-to address"))).toEqual(["Ship-to address <select>"]);
+    expect(jsxTexts(SD, "label").filter((text) => text.startsWith("Ship-to address"))).toEqual(["Ship-to address <Combobox>"]);
   });
 
   it("the select stays open without customers.view: its one lock is the edit gate", () => {

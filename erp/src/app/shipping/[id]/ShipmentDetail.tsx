@@ -40,7 +40,8 @@ import { AtAGlance } from "@/components/AtAGlance";
 import { SHIPMENT_TAB_LABEL, shipmentTabs } from "@/lib/shipment-tabs";
 import { shipmentOrderScope, unsavedPresentInScope } from "@/lib/unsaved-guard";
 import {
-  addOrderSelect, invoiceNotice, reasonRequiredGate, removeOrderFacts, shipmentFreightGate, shipmentLinesGate, type AddableState,
+  addOrderOptionLabel, addOrderSelect, invoiceNotice, reasonRequiredGate, removeOrderFacts, shipmentFreightGate, shipmentLinesGate,
+  type AddableState,
 } from "@/lib/shipment-gates";
 import type { InvoicedOrder } from "@/lib/invoice-freeze";
 import { NOTHING_PRINTED, mergePrinted, removeOrderRefusal, type PrintedOrders } from "@/lib/shipment-remove-order";
@@ -53,6 +54,9 @@ import { useSavedMarks } from "@/lib/use-saved-marks";
 import {
   BUTTON_NEUTRAL, BUTTON_PRIMARY_COMPACT, CARD, INPUT_COMPACT, LINK, NOTICE,
 } from "@/lib/ui-classes";
+import { Combobox } from "@/components/Combobox";
+import { labelledOptions } from "@/lib/menu-options";
+import { inMenuOrder } from "@/lib/menu-order";
 
 // ---------------------------------------------------------------------------------------------
 // Types. Local mirrors of src/server/shippers.ts's exported row shapes — not imported from
@@ -1199,16 +1203,13 @@ export function ShipmentDetail({ id }: { id: string }) {
       <section id="add-order" className={`${CARD} mb-6`}>
         <h2 className="mb-2 font-medium">Add order</h2>
         <div className="flex flex-wrap items-center gap-2">
-          <select value={addOrderChoice} onChange={(e) => setAddOrderChoice(e.target.value)}
-                  disabled={addSelect.disabled} title={addSelect.title}
-                  className={`${INPUT_COMPACT} disabled:cursor-not-allowed disabled:bg-surface-50`}>
-            {/* The first option says what the list is: the permission it needs, loading, failed,
-                nothing to add, or a prompt to choose. `addOrderSelect` words all five (#472). */}
-            <option value="">{addSelect.placeholder}</option>
-            {addableOrders.map((o) => (
-              <option key={o.id} value={o.id}>#{o.orderNumber}{o.poNumber ? ` · PO ${o.poNumber}` : ""}</option>
-            ))}
-          </select>
+          {/* The placeholder says what the list is: the permission it needs, loading, failed,
+              nothing to add, or a prompt to choose. `addOrderSelect` words all five (#472). Newest
+              order first, as the server lists them: an order on purpose (#1056 ruling 3). */}
+          <Combobox value={addOrderChoice} onSelect={(v) => setAddOrderChoice(v)}
+                    options={addableOrders.map((o) => ({ value: o.id, label: addOrderOptionLabel(o) }))}
+                    placeholder={addSelect.placeholder} disabled={addSelect.disabled} title={addSelect.title}
+                    ariaLabel="Add order" className="w-64" />
           <button onClick={() => void addOrder()}
                   disabled={reasonGate.disabled || !addOrderChoice || addingOrder}
                   title={addOrderButtonTitle({ gate: reasonGate, listOffers: !addSelect.disabled, choice: addOrderChoice })}
@@ -1264,13 +1265,14 @@ export function ShipmentDetail({ id }: { id: string }) {
           <div>
             <label className="block">
               Ship-to address
-              <select value={shipper.shipToAddressId ?? ""} disabled={!editGate.allowed} title={editGate.title}
-                      onChange={(e) => void patchHeader({ shipToAddressId: e.target.value || null })}
-                      className={`${INPUT_COMPACT} mt-1 w-full disabled:bg-surface-50`}>
-                <option value="">— none —</option>
-                {shipTo.own !== null && <option value={shipTo.own.value}>{shipTo.own.label}</option>}
-                {addresses.map((a) => <option key={a.id} value={a.id}>{shipToOptionLabel(a)}</option>)}
-              </select>
+              <Combobox value={shipper.shipToAddressId ?? ""} disabled={!editGate.allowed} title={editGate.title}
+                        onSelect={(v) => void patchHeader({ shipToAddressId: v || null })}
+                        options={[
+                          { value: "", label: "— none —" },
+                          ...(shipTo.own !== null ? [shipTo.own] : []),
+                          ...labelledOptions(addresses, shipToOptionLabel),
+                        ]}
+                        ariaLabel="Ship-to address" className="mt-1 w-full" />
             </label>
             {/* Without customers.view the address list is never read, so the select can offer no
                 address but the shipment's own (#484, owner ruling 2026-10-15). The gate's title
@@ -1296,7 +1298,7 @@ export function ShipmentDetail({ id }: { id: string }) {
               {shipper.carrierId && !carriers.some((c) => c.id === shipper.carrierId) && (
                 <option value={shipper.carrierId}>{shipper.carrierName ?? "(inactive carrier)"}</option>
               )}
-              {carriers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {inMenuOrder(carriers, (r) => r.name).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </label>
           <label className="block">

@@ -79,11 +79,11 @@ import assert from "node:assert/strict";
 import { mkdir, readdir, readFile, rename } from "node:fs/promises";
 import path from "node:path";
 import { unzipSync } from "fflate";
-import { assertNeverVisible, waitForEnabled, waitForState, waitForTitle, waitForValue } from "../lib/ui.mjs";
+import { assertNeverVisible, pickComboboxValue, waitForEnabled, waitForState, waitForTitle, waitForValue } from "../lib/ui.mjs";
 import { openRecordTab } from "../lib/record-tabs.mjs";
 import { answerModal, modalTitle } from "../lib/modal.mjs";
 import { chooseMenuItem, glanceCard, glanceValue, invoicesSection as registerSection, menuItem, openInvoicingView } from "../lib/invoicing.mjs";
-import { boardRow, createOrderViaUi, hubSection, startNewShipment, orderPanel, waitForShipmentPage } from "../lib/orders.mjs";
+import { boardPreset, boardRow, openBoardAllOrders, createOrderViaUi, hubSection, startNewShipment, orderPanel, waitForShipmentPage } from "../lib/orders.mjs";
 import { bounded, holdRequest, readJson } from "../lib/order-entry-workspace.mjs";
 import { assertRun, printedPages, storedPdf } from "../lib/printed-page.mjs";
 import { heardAfter, readAfter, readAfterAnswerFrom, withCleanups, wireRecordReads, writeBeforeRead } from "../lib/record-reads.mjs";
@@ -101,6 +101,10 @@ const UNLOCK_REASON =
   "E2E invoice-shipped-order flow: intentional unlock, demonstrating the unlock UX for the demo.";
 const SECOND_UNLOCK_REASON =
   "E2E invoice-shipped-order flow: intentional second unlock, after the #573 part's second finalize.";
+// #1057: the unlock after Finalize selected, so the flow still ends with its invoice a draft (the
+// close-month-end scope rule run.mjs states for this flow).
+const THIRD_UNLOCK_REASON =
+  "E2E invoice-shipped-order flow: intentional third unlock, after the #1057 part's Finalize selected.";
 // What this flow's own route answers a PO number save with in the #573 parts. No server sentence
 // reads so.
 const PO_SAVE_ANSWERED_HERE = "Answered by the invoice-shipped-order flow: the PO number was not saved.";
@@ -112,6 +116,13 @@ const CANDIDATES_READ_LOST = "E2E invoice-shipped-order: the candidates read aft
 // src/lib/print-selected.ts), written out because a flow cannot import a src/ TypeScript module.
 const PRINT_ONE_TITLE = "Print 1 document?"; // the modal's title (PR 6, `confirmParts`)
 const PRINTED_ONE_OF_ONE = "Printed 1 of 1.";
+// #1057: the owner's rulings' words for one row (src/lib/invoicing-list.ts's `createAllConfirmParts`,
+// src/lib/finalize-selected.ts's, and `joinedConfirmParts` in src/lib/print-selected.ts), written out.
+const CREATE_ALL_ONE_TITLE = "Create 1 draft invoice?";
+const FINALIZE_ONE_TITLE = "Finalize 1 draft?";
+const FINALIZED_ONE_OF_ONE = "Finalized 1 of 1.";
+const JOINED_ONE_TITLE = "Print 1 document as one PDF?";
+const READY_NONE_MATCH = "No orders ready to invoice match these filters";
 // #592: the Invoice register's ten column headers and its summary's words for one row
 // (src/server/pdf/invoice-register.ts, `summaryLabel` in src/lib/invoice-register-summary.ts),
 // written out for the same reason.
@@ -137,8 +148,8 @@ const PRINT_WINDOW_BLOCKED =
   "The browser blocked the print window — the document was archived and is in Documents & history.";
 
 async function assertBoardStatus(page, ctx, orderNumber, statusText, absentText) {
-  await page.goto(`${ctx.baseURL}/`);
-  await page.getByRole("heading", { name: "Orders" }).waitFor({ state: "visible" });
+  // #1057: the board opens on Open orders; this flow's order is Shipped or Invoiced here.
+  await openBoardAllOrders(page, ctx.baseURL);
   // #167a: `boardRow` matches the ORDER-NUMBER CELL, never "any cell holding these digits" — see
   // its comment in e2e/lib/orders.mjs for the collision that shape produced for real.
   const row = await boardRow(page, orderNumber);
@@ -166,6 +177,11 @@ function zipNameOn(date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `invoices-${date.getFullYear()}-${month}-${day}.zip`;
+}
+
+/** #1057: Print as one PDF's file name, the zip's with a PDF's extension (`joinedFileName`). */
+function joinedNameOn(date) {
+  return zipNameOn(date).replace(/\.zip$/, ".pdf");
 }
 
 // #592: the Invoice register's clock, the plant's (`PLANT_TIME_ZONE`, src/lib/build-version.ts),
@@ -233,6 +249,12 @@ export async function run(page, shot, ctx) {
   await waitForShipmentPage(page);
   await shot("shipment-saved");
 
+  // #1057 (owner ruling 2026-11-26): the board opens on Open orders, which leaves a Shipped order out.
+  await page.goto(`${ctx.baseURL}/`);
+  await boardPreset(page, "Open orders").and(page.locator('[aria-pressed="true"]'))
+    .waitFor({ state: "visible", timeout: 15000 });
+  const hiddenShipped = await boardRow(page, order.number);
+  await assertNeverVisible(hiddenShipped, "#1057: the board's opening Open orders must not list a Shipped order");
   await assertBoardStatus(page, ctx, order.number, "· Shipped");
   await shot("board-shipped");
 
@@ -241,7 +263,7 @@ export async function run(page, shot, ctx) {
   await page.getByRole("heading", { name: "Invoicing", exact: true }).waitFor({ state: "visible" });
   // PR 6: the register's filters are on its three views, the candidates on Ready to invoice.
   await openInvoicingView(page, "Register");
-  for (const name of ["Customer", "Status", "Printed", "Invoice date from", "Invoice date to"]) {
+  for (const name of ["Customer", "Status", "Printed", "Balance", "Invoice date from", "Invoice date to"]) {
     assert.equal(await page.getByLabel(name, { exact: true }).count(), 1,
       `the Invoicing list must expose exactly one ${name} filter control`);
   }
@@ -249,6 +271,34 @@ export async function run(page, shot, ctx) {
   const readySection = sectionByHeading(page, "Ready to invoice");
   const readyRow = readySection.locator("tr").filter({ has: page.getByText(String(order.number), { exact: true }) });
   await readyRow.waitFor({ state: "visible", timeout: 15000 });
+
+  // --- #1057 ruling 6: Ready to invoice's own Customer and ship-date range, and Create all shown. ---
+  // The range is read on each order's last live shipment; one starting after every shipment lists
+  // nothing, and clearing it lists the order again. The Customer narrows to this flow's customer,
+  // whose only candidate is this order, so Create all shown's confirm counts one; it is cancelled
+  // here (the run's create goes through Create invoices below, the path both buttons share).
+  const shipFrom = page.getByLabel("Ship date from", { exact: true });
+  await shipFrom.fill("2999-01-01");
+  await waitForState(readySection.getByText(READY_NONE_MATCH, { exact: true }), "visible",
+    "#1057: a ship-date range after every shipment must list no order", 15000);
+  await assertNeverVisible(readyRow, "#1057: an order whose last shipment is before the range must not be listed");
+  await shipFrom.fill("");
+  await readyRow.waitFor({ state: "visible", timeout: 15000 });
+  await pickComboboxValue(page, "Customer", fixtures.invCustomerId);
+  await waitForState(readySection.locator("tbody tr").filter({ has: page.locator('input[type="checkbox"]') }).nth(1), "hidden",
+    "#1057: the Customer filter must list only this flow's customer's one candidate", 15000);
+  await readyRow.waitFor({ state: "visible", timeout: 15000 });
+  const createAllButton = page.getByRole("button", { name: "Create all shown", exact: true });
+  await waitForEnabled(createAllButton, "#1057: Create all shown with one order listed");
+  await createAllButton.click();
+  assert.equal(await modalTitle(page), CREATE_ALL_ONE_TITLE, "#1057: Create all shown must ask first, naming the count it makes");
+  await answerModal(page, { confirm: false });
+  assert.equal(await readyRow.locator('input[type="checkbox"]').isChecked(), false,
+    "#1057: a cancelled Create all shown must tick and send nothing");
+  await readyRow.waitFor({ state: "visible", timeout: 5000 });
+  await pickComboboxValue(page, "Customer", "");
+  await shot("ready-to-invoice-filters");
+
   await readyRow.locator('input[type="checkbox"]').check();
   await shot("ready-to-invoice-ticked");
 
@@ -725,7 +775,7 @@ export async function run(page, shot, ctx) {
   const documentNoCell = unprinted.row.locator("td").filter({ has: page.locator(`a[href="/invoicing/${invoiceId}"]`) });
   await waitForState(documentNoCell.getByText(PRINT_NO_FOLDER, { exact: true }), "visible",
     "#591: a row that printed but was not filed must say why under its Document No", 15000);
-  await waitForTitle(printSelectedButton, "Tick at least one invoice first",
+  await waitForTitle(printSelectedButton, "Tick at least one finalized invoice not yet printed first",
     "#591: Print selected once the row it printed has no box");
   await shot("invoicing-print-selected");
 
@@ -750,7 +800,7 @@ export async function run(page, shot, ctx) {
     match: (request) => new URL(request.url()).searchParams.get("customerId") === fixtures.invCustomerId,
   });
   const registerRows = await withCleanups(async () => {
-    await customerFilter.selectOption({ value: fixtures.invCustomerId }, { timeout: 15000 });
+    await pickComboboxValue(page, "Customer", fixtures.invCustomerId);
     const served = await heldList.arrived();
     assert.equal(served.response.status(), 200, "#592: the server must answer the list's read of the flow's customer");
     const { rows, cut } = await served.response.json();
@@ -779,8 +829,9 @@ export async function run(page, shot, ctx) {
   assert.equal(registered.customerCode, fixtures.invCustomerCode, "#592: the listed invoice must be the flow's customer's");
   assert.ok(registered.finalizedAt && registered.printedAt,
     `#592: the listed invoice must carry its finalize and its selected print: ${JSON.stringify(registered)}`);
-  // The filter line names the customer as its picker option does: code · name, both read live.
-  const customerOption = await textOf(customerFilter.locator(`option[value="${fixtures.invCustomerId}"]`));
+  // The filter line names the customer as its picker option does: code · name, both read live. The
+  // closed picker shows the picked option's text.
+  const customerOption = await customerFilter.inputValue();
   assert.ok(customerOption.startsWith(`${fixtures.invCustomerCode} · `),
     `#592: the customer's option must read code · name; it reads ${JSON.stringify(customerOption)}`);
 
@@ -1085,10 +1136,92 @@ export async function run(page, shot, ctx) {
   await waitForState(draftBadge, "visible", "the second Unlock must return the invoice to Draft", 15000);
   assert.equal(await poInput.evaluate((el) => el.readOnly), false, "a header field must unlock after the second Unlock");
 
-  // #591 (owner ruling 591-1): a draft reads its newest print, the single Print's, and takes no box.
+  // #591 (owner ruling 591-1): a draft reads its newest print, the single Print's. Since #1057 a
+  // draft takes a box, Finalize selected's (the register's one box column), and not Print selected's.
   const unlocked = await listedInvoice();
   assert.equal(await textOf(unlocked.printed), newestPrintShown, "#591: a draft must read its newest print under Printed");
-  await assertNeverVisible(unlocked.box, "#591: a draft must take no Print selected box");
+  assert.equal(await unlocked.box.count(), 1, "#1057: a draft must take a Finalize selected box");
+
+  // --- #1057 ruling 2b: Finalize selected, then Print as one PDF over the same tick. ---
+  await unlocked.box.check();
+  const printAsOneButton = invoicesSection.getByRole("button", { name: "Print as one PDF", exact: true });
+  await waitForTitle(printAsOneButton, "Tick at least one finalized invoice not yet printed first",
+    "#1057: a ticked draft is not a row Print selected or Print as one PDF takes");
+  const finalizeSelectedButton = invoicesSection.getByRole("button", { name: "Finalize selected", exact: true });
+  const finalizeAnswer = settled(page.waitForResponse((res) =>
+    new URL(res.url()).pathname === `/api/invoices/${invoiceId}/finalize` && res.request().method() === "POST", { timeout: 30000 }));
+  await finalizeSelectedButton.click();
+  assert.equal(await modalTitle(page), FINALIZE_ONE_TITLE, "#1057: Finalize selected must ask first, naming the count");
+  await answerModal(page);
+  const finalized = await finalizeAnswer;
+  assert.equal(finalized.value?.status(), 200, `#1057: Finalize selected must finalize the draft through the single Finalize's route: ${finalized.error?.message ?? ""}`);
+  await waitForState(invoicesSection.getByText(FINALIZED_ONE_OF_ONE, { exact: true }), "visible",
+    "#1057: the run must say how many of its drafts finalized", 15000);
+  await waitForState(unlocked.row.getByText("Finalized", { exact: true }), "visible",
+    "#1057: the finalized draft's row must read Finalized after the run's reload", 15000);
+  assert.equal(await unlocked.box.isChecked(), true,
+    "#1057: a draft that finalizes stays ticked, so Print selected can follow it");
+  // Owner ruling 2026-11-26 on #1063 ("Yes, show warnings"): each warning the finalize answered with
+  // is listed under the row, in the server's own words.
+  const finalizedBody = await finalized.value.json();
+  assert.ok(Array.isArray(finalizedBody.warnings), "#1063: the finalize answer must carry its warnings list");
+  for (const warning of finalizedBody.warnings) {
+    await waitForState(unlocked.row.getByText(warning, { exact: true }), "visible",
+      `#1063: Finalize selected must show the finalize's warning "${warning}" under its row`, 15000);
+  }
+
+  // Print as one PDF: the row prints through Print selected's own route, then the server joins the
+  // stored print, and the browser downloads one PDF holding exactly the stored pages.
+  const joinedPrint = settled(page.waitForResponse((res) => {
+    const url = new URL(res.url());
+    return url.pathname === `/api/invoices/${invoiceId}/print` && url.searchParams.get("selected") === "1"
+      && res.request().method() === "POST";
+  }, { timeout: 30000 }));
+  const joinedAnswer = settled(page.waitForResponse((res) =>
+    new URL(res.url()).pathname === "/api/invoices/joined" && res.request().method() === "POST", { timeout: 30000 }));
+  const joinedDownload = settled(page.waitForEvent("download", { timeout: 30000 }));
+  const joinedFrom = new Date();
+  await waitForEnabled(printAsOneButton, "#1057: Print as one PDF over the finalized, unprinted row");
+  await printAsOneButton.click();
+  assert.equal(await modalTitle(page), JOINED_ONE_TITLE, "#1057: Print as one PDF must ask in its own words");
+  await answerModal(page);
+  const printedForJoin = await joinedPrint;
+  assert.equal(printedForJoin.value?.status(), 200, `#1057: Print as one PDF must print the row through the selected print: ${printedForJoin.error?.message ?? ""}`);
+  const joinedDocumentId = printedForJoin.value.headers()["x-document-id"];
+  const joinResponse = await joinedAnswer;
+  assert.equal(joinResponse.value?.status(), 200, `#1057: the join must answer the joined PDF: ${joinResponse.error?.message ?? ""}`);
+  assert.deepEqual(joinResponse.value.request().postDataJSON(), { documentIds: [joinedDocumentId] },
+    "#1057: the join must name the document the row's print stored");
+  const joinedFile = await joinedDownload;
+  assert.ok(joinedFile.value, `#1057: Print as one PDF must download a file: ${joinedFile.error?.message}`);
+  assert.ok([joinedNameOn(joinedFrom), joinedNameOn(new Date())].includes(joinedFile.value.suggestedFilename()),
+    `#1057: the joined file must be named for the day it was made; it is ${JSON.stringify(joinedFile.value.suggestedFilename())}`);
+  const joinedPath = await settled(bounded(joinedFile.value.path(), "#1057: the joined PDF must finish downloading"));
+  assert.ok(joinedPath.value, `#1057: the joined PDF must finish downloading: ${joinedPath.error?.message}`);
+  const joinedBytes = await readFile(joinedPath.value);
+  const storedForJoin = await storedPdf(page, ctx.baseURL, joinedDocumentId, "#1057: the print the join took");
+  const joinedText = printedPages(joinedBytes, { pages: 1, what: "#1057: the joined PDF" }).flat();
+  const storedText = printedPages(storedForJoin, { pages: 1, what: "#1057: the stored print" }).flat();
+  assert.deepEqual(joinedText, storedText, "#1057: the joined PDF must print the stored print's page");
+  await waitForState(invoicesSection.getByText(PRINTED_ONE_OF_ONE, { exact: true }), "visible",
+    "#1057: Print as one PDF must say how many of its rows printed", 15000);
+  await assertNeverVisible(unlocked.box, "#1057: a row Print as one PDF printed has printed since it was finalized and takes no box");
+
+  // --- #1057 ruling 4: the Balance filter's Open keeps this unpaid, finalized invoice. ---
+  await page.getByLabel("Balance", { exact: true }).selectOption("open");
+  await waitForState(invoicesSection.locator('a[href*="balance=open"]', { hasText: "Export to PDF" }), "visible",
+    "#1057: the exports must follow the Open filter once its list has landed", 15000);
+  await waitForState(unlocked.row, "visible", "#1057: an unpaid finalized invoice must be listed under Open", 15000);
+  await page.getByLabel("Balance", { exact: true }).selectOption("");
+  await shot("invoicing-finalize-selected-and-joined");
+
+  // Back to Draft, as the flow left the invoice before this part (its close-month-end rule).
+  await page.goto(`${ctx.baseURL}/invoicing/${invoiceId}`);
+  await invoiceHeading.waitFor({ state: "visible", timeout: 15000 });
+  await chooseMenuItem(page, "Unlock invoice");
+  assert.match(await modalTitle(page), /^Unlock Invoice/);
+  await answerModal(page, { reason: THIRD_UNLOCK_REASON });
+  await waitForState(draftBadge, "visible", "the third Unlock must return the invoice to Draft", 15000);
 
   await assertBoardStatus(page, ctx, order.number, "· Shipped", "· Invoiced");
   await shot("board-shipped-again");

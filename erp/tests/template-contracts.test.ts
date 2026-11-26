@@ -1767,14 +1767,14 @@ describe("profileProblems (design 2026-11-09 §4.1)", () => {
       .toEqual(['The boxedFields key "nope" is not a field of the contract.']);
   });
   it("a ruledFields key is a field of the contract", () => {
-    expect(profileProblems(changed((x) => { x.canvas.ruledFields = [{ key: "nope", draw: "beside" }]; })))
+    expect(profileProblems(changed((x) => { x.canvas.ruledFields = [{ key: "nope", draw: "beside", label: { width: 10, gap: 4 } }]; })))
       .toEqual(['The ruledFields key "nope" is not a field of the contract.']);
   });
   it("a ruledFields entry drawn on two lines names its column", () => {
-    expect(profileProblems(changed((x) => { x.canvas.ruledFields = [{ key: "a", draw: "lines" }]; })))
+    expect(profileProblems(changed((x) => { x.canvas.ruledFields = [{ key: "a", draw: "lines", label: { width: 10, gap: 4 } }]; })))
       .toEqual(['The ruledFields key "a" draws two lines but names no column.']);
     // The neighbouring entry, with its column, is sound: the sentence is the missing column's.
-    expect(profileProblems(changed((x) => { x.canvas.ruledFields = [{ key: "a", draw: "lines", column: 40 }]; }))).toEqual([]);
+    expect(profileProblems(changed((x) => { x.canvas.ruledFields = [{ key: "a", draw: "lines", column: 40, label: { width: 10, gap: 4 } }]; }))).toEqual([]);
   });
   it("a leastWidths key is a field or a table of the profile", () => {
     const c = changed((x) => { x.canvas.leastWidths = { ...x.canvas.leastWidths, nope: 1 }; });

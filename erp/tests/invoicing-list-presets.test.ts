@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { INVOICING_PRESETS, applyPreset, presetFor, type InvoicingPresetKey } from "@/lib/invoicing-list";
+import {
+  CREATE_ALL_LIST_CHANGED, INVOICING_PRESETS, READY_DEFAULTS, applyPreset, candidatesQuery, createAllConfirmParts,
+  presetFor, type InvoicingPresetKey,
+} from "@/lib/invoicing-list";
 import { confirmParts, confirmText } from "@/lib/print-selected";
 
 // The Invoicing list's four views (spec 2026-10-30-ux-redesign-design.md §4.5; the UX redesign
@@ -65,5 +68,30 @@ describe("confirmParts: the Print selected modal's title and body (review focus 
       const { title, body } = confirmParts(n);
       expect(`${title} ${body}`).toBe(confirmText(n));
     }
+  });
+});
+
+// #1057 ruling 6 (owner, 2026-11-26): Ready to invoice's own Customer and ship-date filters, sent on
+// the candidates read under the names `parseInvoiceFilter` reads; Create all shown's confirm names
+// how many drafts it makes.
+describe("candidatesQuery (#1057)", () => {
+  it("sends the read the page always sent while no filter is set", () => {
+    expect(candidatesQuery(READY_DEFAULTS)).toBe("candidates=1");
+  });
+  it("adds each filter set, under the parse's names", () => {
+    expect(candidatesQuery({ customerId: "c1", from: "2026-11-01", to: "2026-11-30" }))
+      .toBe("candidates=1&customerId=c1&from=2026-11-01&to=2026-11-30");
+    expect(candidatesQuery({ ...READY_DEFAULTS, to: "2026-11-30" })).toBe("candidates=1&to=2026-11-30");
+    expect(candidatesQuery({ ...READY_DEFAULTS, customerId: "c 1" })).toBe("candidates=1&customerId=c+1");
+  });
+});
+
+describe("Create all shown's words (#1057)", () => {
+  it("names the count of drafts it will make, one and several", () => {
+    expect(createAllConfirmParts(1)).toEqual({ title: "Create 1 draft invoice?", body: "One draft for the order listed, dated today." });
+    expect(createAllConfirmParts(7)).toEqual({ title: "Create 7 draft invoices?", body: "One draft for each of the 7 orders listed, dated today." });
+  });
+  it("says so when the list changed under the confirm", () => {
+    expect(CREATE_ALL_LIST_CHANGED).toBe("The list changed while you were asked; nothing was created. Check it and try again.");
   });
 });

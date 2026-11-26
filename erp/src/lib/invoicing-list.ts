@@ -38,3 +38,33 @@ export function presetFor(filters: PresetFields): InvoicingPresetKey | null {
   if (filters.status === "" && filters.printed === "") return "register";
   return null;
 }
+
+/** Ready to invoice's own filters (#1057 ruling 6, owner 2026-11-26): a Customer and a ship-date
+ *  range From/To, which the server applies to each order's last live shipment
+ *  (`listInvoiceCandidates`). Their own, never the register's: the register's dates are invoice
+ *  dates (ruling 3), and its Customer narrows the register. */
+export type ReadyFilters = { customerId: string; from: string; to: string };
+
+export const READY_DEFAULTS: ReadyFilters = { customerId: "", from: "", to: "" };
+
+/** The candidates read's query string, `GET /api/invoices?candidates=1` and the filters set, each
+ *  under the name `parseInvoiceFilter` reads (src/app/api/invoices/query.ts). A blank filter is left
+ *  out, so the default read is the one the page always sent. */
+export function candidatesQuery(filters: ReadyFilters): string {
+  const params = new URLSearchParams({ candidates: "1" });
+  if (filters.customerId) params.set("customerId", filters.customerId);
+  if (filters.from) params.set("from", filters.from);
+  if (filters.to) params.set("to", filters.to);
+  return params.toString();
+}
+
+/** Create all shown's confirm (#1057 ruling 6b): it names how many drafts it will make, before
+ *  anything is sent. */
+export function createAllConfirmParts(count: number): { title: string; body: string } {
+  return count === 1
+    ? { title: "Create 1 draft invoice?", body: "One draft for the order listed, dated today." }
+    : { title: `Create ${count} draft invoices?`, body: `One draft for each of the ${count} orders listed, dated today.` };
+}
+
+/** Said when the list changed while Create all shown's confirm was open, so nothing was sent. */
+export const CREATE_ALL_LIST_CHANGED = "The list changed while you were asked; nothing was created. Check it and try again.";

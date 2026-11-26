@@ -33,6 +33,9 @@ import { yesNo } from "@/lib/format";
 import { SavedMark } from "@/components/SavedMark";
 import { useSavedMarks } from "@/lib/use-saved-marks";
 import { BUTTON_PRIMARY_COMPACT, CARD, INPUT_COMPACT, NOTICE } from "@/lib/ui-classes";
+import { Combobox } from "@/components/Combobox";
+import { customerOptions } from "@/lib/menu-options";
+import { inMenuOrder } from "@/lib/menu-order";
 
 /** The customer header's decimal boxes, whose Saved mark reads the box as a figure. */
 const CUSTOMER_DECIMAL_FIELDS: ReadonlySet<string> = new Set(["creditLimit", "financeChargeRate", "salesTaxRate"]);
@@ -1111,7 +1114,7 @@ function CustomerDetail({ id }: { id: string }) {
                     onChange={(e) => save({ termsId: e.target.value || null })}
                     className={`${INPUT_COMPACT} ml-2`}>
               <option value="">—</option>
-              {terms.map((t) => (
+              {inMenuOrder(terms, (r) => r.name).map((t) => (
                 <option key={t.id} value={t.id}>{t.name}{!t.active && " (inactive)"}</option>
               ))}
             </select>
@@ -1122,16 +1125,9 @@ function CustomerDetail({ id }: { id: string }) {
                 list; everything else the service rejects (self-parent, cycle, deleted parent)
                 is surfaced through saveParent()'s existing error path rather than re-checked
                 here. */}
-            <select value={c.parentId ?? ""} disabled={!canEdit.allowed} title={canEdit.title}
-                    onChange={(e) => void saveParent(e.target.value)}
-                    className={`${INPUT_COMPACT} ml-2`}>
-              <option value="">— none —</option>
-              {customers.filter((x) => x.id !== id).map((x) => (
-                <option key={x.id} value={x.id}>
-                  {x.code} — {x.name}{!x.active && " (inactive)"}
-                </option>
-              ))}
-            </select>
+            <Combobox value={c.parentId ?? ""} disabled={!canEdit.allowed} title={canEdit.title}
+                      options={customerOptions(customers.filter((x) => x.id !== id), { blank: "— none —", separator: " — ", markInactive: true })}
+                      onSelect={(v) => void saveParent(v)} ariaLabel="Parent" className="ml-2 inline-block w-64 align-middle" />
           </label>
           <label className="block text-sm">
             Default PO

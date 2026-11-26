@@ -109,7 +109,8 @@ describe("EntryContainerRow: the fields", () => {
     const options = (markup: string) => [...markup.matchAll(/<option value="([^"]*)"( selected="")?>([^<]*)<\/option>/g)]
       .map((option) => [option[1], option[3], option[2] !== undefined]);
     expect(options(html)).toEqual([
-      ["", "— choose —", false], ["steel", "Steel Basket", false], ["wire", "Wire Basket", false], ["bin", "Bin", true],
+      // The types by name, each digit run by value (#1056 ruling 6), not in the order they were read.
+      ["", "— choose —", false], ["bin", "Bin", true], ["steel", "Steel Basket", false], ["wire", "Wire Basket", false],
     ]);
     // A row with no type shows the blank line.
     expect(options(render({ typeId: null })).filter((option) => option[2])).toEqual([["", "— choose —", true]]);

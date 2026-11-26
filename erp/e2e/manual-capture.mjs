@@ -1364,24 +1364,30 @@ async function captureCanvasDesigner(page, probe, rows, spec) {
     let opened = false;
     for (let index = 1; index <= tries && !opened; index += 1) {
       await openRecordTab(page, "Preview");
+      // The Preview record is a Combobox picker (#1056): its options show while it is open, the
+      // first of them the blank "— pick … —", as a native select's option 0 was.
       const record = page.getByRole("combobox", { name: "Preview record" });
       await record.waitFor({ state: "visible", timeout: 15000 });
-      if (index === 1) await record.locator("option").nth(1).waitFor({ state: "attached", timeout: 15000 });
-      if (await record.locator("option").count() <= index) {
+      await record.click();
+      const options = record.locator("xpath=..").getByRole("option");
+      if (index === 1) await options.nth(1).waitFor({ state: "attached", timeout: 15000 });
+      if (await options.count() <= index) {
         row.notes.push(`the Preview picker holds no record #${index} to try`);
+        await record.press("Escape");
         break;
       }
       if (spec.orderNumber) {
-        const option = record.locator("option").filter({ hasText: new RegExp(`^#${spec.orderNumber} — `) }).first();
+        const option = record.locator("xpath=..").getByRole("option", { name: new RegExp(`^#${spec.orderNumber} — `) }).first();
         if (await option.count() === 0) {
           row.notes.push(`the Preview picker does not list order #${spec.orderNumber}`);
+          await record.press("Escape");
           break;
         }
-        await record.selectOption(await option.getAttribute("value"));
+        await option.click();
       } else {
-        await record.selectOption({ index });
+        await options.nth(index).click();
       }
-      const picked = (await record.locator("option:checked").textContent().catch(() => null)) ?? "(label unreadable)";
+      const picked = (await record.inputValue().catch(() => null)) ?? "(label unreadable)";
 
       await openRecordTab(page, "Sections");
       const failuresBefore = win.failedRequests.length;

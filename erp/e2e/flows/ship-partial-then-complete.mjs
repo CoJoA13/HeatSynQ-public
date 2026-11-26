@@ -29,13 +29,13 @@
 import assert from "node:assert/strict";
 import { assertNeverVisible, waitForTitle, waitForValue } from "../lib/ui.mjs";
 import { bounded } from "../lib/order-entry-workspace.mjs";
-import { boardRow, createOrderViaUi, hubAnchor, startNewShipment, orderPanel, waitForShipmentPage, openOrderTab } from "../lib/orders.mjs";
+import { boardRow, openBoardAllOrders, createOrderViaUi, hubAnchor, startNewShipment, orderPanel, waitForShipmentPage, openOrderTab } from "../lib/orders.mjs";
 import { SHIPMENT_TOTALS, totalsFor, waitForShipmentTotals } from "../lib/shipment-totals.mjs";
 import { routeRequests } from "../route-keep-alive.mjs";
 
 async function assertBoardStatus(page, ctx, orderNumber, statusText, absentText) {
-  await page.goto(`${ctx.baseURL}/`);
-  await page.getByRole("heading", { name: "Orders" }).waitFor({ state: "visible" });
+  // #1057: the board opens on Open orders; a Shipped order is read under All orders.
+  await openBoardAllOrders(page, ctx.baseURL);
   // #167a: the ORDER-NUMBER CELL, never "any cell holding these digits" — and this flow's own
   // order is the one whose Weight cell collided (e2e/lib/orders.mjs's `boardRow`).
   const row = await boardRow(page, orderNumber);

@@ -3,7 +3,7 @@
 // here once.
 import { HttpError } from "@/server/http";
 import type { InvoiceFilter } from "@/server/invoices";
-import { INVOICE_PRINTED, INVOICE_STATUSES } from "@/lib/invoice-constants";
+import { INVOICE_BALANCE, INVOICE_PRINTED, INVOICE_STATUSES } from "@/lib/invoice-constants";
 
 /** An absent param and a blank one both mean "not set" — the orders/query.ts `orUndefined`
  *  precedent, duplicated rather than imported (the shippers/query.ts precedent: not worth the
@@ -35,6 +35,17 @@ function parsePrinted(url: URL): InvoiceFilter["printed"] {
   return raw as InvoiceFilter["printed"];
 }
 
+const BALANCE_VALUES = new Set<string>(INVOICE_BALANCE);
+
+/** The Balance filter (#1057): "open", any other value a field-anchored 400 (the `parsePrinted`
+ *  shape). The list, the Excel and the register PDF share it through this one parse. */
+function parseBalance(url: URL): InvoiceFilter["balance"] {
+  const raw = orUndefined(url.searchParams.get("balance"));
+  if (raw === undefined) return undefined;
+  if (!BALANCE_VALUES.has(raw)) throw new HttpError(400, `Unknown balance filter "${raw}"`);
+  return raw as InvoiceFilter["balance"];
+}
+
 /** Turns the invoicing list's query string into the `InvoiceFilter` shape `listInvoices` expects.
  *  `from`/`to` pass through unvalidated on purpose — `listInvoices` already turns a malformed date
  *  into its own field-anchored 400 via `parseDate`, so re-checking here would just be a second
@@ -46,6 +57,7 @@ export function parseInvoiceFilter(url: URL): InvoiceFilter {
     from: orUndefined(url.searchParams.get("from")),
     to: orUndefined(url.searchParams.get("to")),
     printed: parsePrinted(url),
+    balance: parseBalance(url),
   };
 }
 

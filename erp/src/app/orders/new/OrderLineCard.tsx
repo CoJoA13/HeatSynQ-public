@@ -8,12 +8,13 @@ import { EACH_WEIGHT_LB, NET_WEIGHT_LB } from "@/lib/weight-terms";
 import { useUnsavedSection } from "@/lib/use-unsaved-section";
 import { expandSerialRange } from "@/lib/serial-range";
 import type { Gate } from "@/lib/permission-ui";
-import { Combobox, type ComboboxOption } from "./Combobox";
+import { Combobox, type ComboboxOption } from "@/components/Combobox";
 import { QuoteLinkPicker } from "./QuoteLinkPicker";
 import type { LineDraft, PartOption, SerialDraft } from "./order-draft";
 import { EntryOptionalSection } from "./EntryWorkspace";
 import { newId } from "@/lib/client-id";
 import { INPUT_COMPACT, LINK } from "@/lib/ui-classes";
+import { partOptions } from "@/lib/menu-options";
 
 // Mirrors src/server/part-process-steps.ts's RevisionSummary/RevisionDetail (narrowed to what
 // this preview renders) — not imported, same reason every client file in this app keeps its own
@@ -172,11 +173,9 @@ export function OrderLineCard({
   // Spec §11: the picker shows step-status up front rather than only after a pick — but only for
   // the LEAD slot. Riders never lock a revision (resolveLineParts exempts them from the
   // orderability check server-side too), so a steps-less part is perfectly valid there.
-  const partOptions: ComboboxOption[] = parts.map((p) => ({
-    value: p.id, label: `${p.partNumber} — ${p.name}`,
-    disabled: isLead && !p.hasProcessSteps,
-    disabledReason: isLead && !p.hasProcessSteps ? "No process steps" : undefined,
-  }));
+  const partMenu: ComboboxOption[] = partOptions(parts, {
+    separator: " — ", disabledReason: (p) => (isLead && !p.hasProcessSteps ? "No process steps" : undefined),
+  });
   const dupes = findDuplicateSerials(line.serials);
 
   function addRange() {
@@ -232,7 +231,7 @@ export function OrderLineCard({
           {/* A part swap resets the quote pick to auto (spec §5.2's "swapping a line's part
               clears and re-resolves its link") — an explicit pick made for the OLD part must
               never ride onto the new one; the fresh part's preview re-resolves from scratch. */}
-          <Combobox value={line.partId} options={partOptions}
+          <Combobox value={line.partId} options={partMenu}
                      onSelect={(partId) => onChange({ partId, quoteLineIdOverride: undefined })}
                      disabled={!customerChosen || !partsGate.allowed} title={partsTitle}
                      placeholder="Part number or name" ariaLabel={`Line ${index + 1} part`} />

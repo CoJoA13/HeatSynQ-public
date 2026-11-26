@@ -690,10 +690,20 @@ const CONTROL_VERDICTS: Map<string, Verdict> = new Map([
   ["src/app/receivables/statements/Statements.tsx :: /api/receivables/statements/run",
     { allowed: "ARCHIVES, NOTHING TO GUARD — the run-for-everyone form of the same page; see the "
       + "entry for /api/receivables/statements above." }],
+  ["src/app/invoicing/InvoicingList.tsx :: /api/invoices/{}/finalize",
+    { allowed:
+      "REPLACES, NOTHING TO GUARD. Finalize selected (#1057) finalizes each ticked draft through the "
+      + "single Finalize's route. Finalize freezes an invoice's line grid, which this page does not "
+      + "mount: the list holds no explicit-save editor, so a gate would be constant false. The draft's "
+      + "own page refuses its Finalize over unsaved lines (`finalizeGate`), and an overlay held there "
+      + "while this list finalizes the draft is the cross-tab case no in-page gate reaches. This "
+      + "reason fails OPEN the day an editor is added here — the backstop is that such an editor must "
+      + "register, which unsaved-registration-sweep enforces." }],
   ["src/app/invoicing/InvoicingList.tsx :: /api/invoices/{}/print",
     { allowed:
       "ARCHIVES, NOTHING TO GUARD. Print selected (#591) prints each ticked invoice from server state. "
-      + "The only other control on the Invoicing list that writes is Create invoices; there is no "
+      + "Print as one PDF (#1057) sends the same prints. The list's other writing controls are Create "
+      + "invoices, Create all shown and Finalize selected; there is no "
       + "explicit-save editor on it, so a gate would be constant false. This "
       + "reason fails OPEN the day an editor is added here — the backstop is that such an editor must "
       + "register, which unsaved-registration-sweep enforces." }],

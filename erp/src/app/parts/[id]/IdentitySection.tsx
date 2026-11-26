@@ -15,6 +15,7 @@ import type { Part } from "./page";
 import { SavedMark } from "@/components/SavedMark";
 import { useSavedMarks } from "@/lib/use-saved-marks";
 import { CARD, INPUT_COMPACT, LINK } from "@/lib/ui-classes";
+import { inMenuOrder } from "@/lib/menu-order";
 
 type MaterialOption = { id: string; name: string; active: boolean };
 
@@ -210,7 +211,7 @@ export function IdentitySection({
                   onChange={(e) => void save({ materialId: e.target.value || null })}
                   className={`${INPUT_COMPACT} mt-1 w-full disabled:bg-surface-50`}>
             <option value="">— none —</option>
-            {materials.map((m) => (
+            {inMenuOrder(materials, (r) => r.name).map((m) => (
               <option key={m.id} value={m.id}>{m.name}{!m.active && " (inactive)"}</option>
             ))}
           </select>

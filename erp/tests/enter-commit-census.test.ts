@@ -32,7 +32,7 @@ const NOT_BLUR_SAVES: Record<string, string> = {
   "app/invoicing/[id]/StepWordsBox.tsx": "the onBlur closes the step-words picker; nothing is saved",
   "app/orders/[id]/LinesSection.tsx": "Qty and Net weight keep their own leaf, whose Enter commits already (\"Saved order, Lines\")",
   "app/orders/[id]/SerialsSection.tsx": "the range box adds rows to an explicit-save grid on blur; nothing is saved",
-  "app/orders/new/Combobox.tsx": "the onBlur closes the list",
+  "components/Combobox.tsx": "the onBlur closes the list",
   "app/orders/new/OrderLineCard.tsx": "the range box adds rows to the whole-form draft; nothing is saved",
   "app/parts/[id]/ProcessCodeSearch.tsx": "the onBlur closes the list",
   "components/InlineDecimalBox.tsx": "the pick lists' box keeps its own Enter commit and pending dedupe (P8 CORR 4)",

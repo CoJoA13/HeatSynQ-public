@@ -21,6 +21,8 @@ import { useSavedMarks } from "@/lib/use-saved-marks";
 import { sameSentValue } from "@/lib/line-field-saves";
 import { isEnterCommit, type EnterKeyEvent } from "@/lib/enter-commit";
 import { BUTTON_PRIMARY_COMPACT, CARD, INPUT_COMPACT } from "@/lib/ui-classes";
+import { Combobox } from "@/components/Combobox";
+import { labelledOptions } from "@/lib/menu-options";
 
 // Local mirrors of src/server/part-prices.ts's PartPriceRow/PartBreakRow — not imported from
 // src/server/**, since a client component pulling from there drags node:async_hooks and Prisma
@@ -431,17 +433,14 @@ export function PricingSection({
           return (
             <div key={row.id} className="rounded border p-3">
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <select value={row.processStepCodeId} disabled={disabled || codesRead !== "ready"}
-                        title={optionsSelectTitle(priceEdit, codesRead)}
-                        onChange={(e) => void saveRow(row.id, { processStepCodeId: e.target.value })}
-                        className={INPUT_COMPACT}>
-                  {!hasCode && (
-                    <option value={row.processStepCodeId}>{row.stepCode} — {row.stepName}</option>
-                  )}
-                  {codes.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}{!c.active && " (inactive)"}</option>
-                  ))}
-                </select>
+                <Combobox value={row.processStepCodeId} disabled={disabled || codesRead !== "ready"}
+                          title={optionsSelectTitle(priceEdit, codesRead)}
+                          onSelect={(v) => void saveRow(row.id, { processStepCodeId: v })}
+                          options={[
+                            ...(!hasCode ? [{ value: row.processStepCodeId, label: `${row.stepCode} — ${row.stepName}` }] : []),
+                            ...labelledOptions(codes, (c) => `${c.name}${c.active ? "" : " (inactive)"}`),
+                          ]}
+                          ariaLabel="Operation step code" className="w-72" />
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => move(idx, -1)}
                           {...moveGate({ disabled, title }, idx, rows.length, -1)} aria-label="Move up"
@@ -568,13 +567,11 @@ export function PricingSection({
       </div>
 
       <div className="flex flex-wrap items-end gap-2">
-        <select value={addCodeId} disabled={disabled || codesRead !== "ready"}
-                title={optionsSelectTitle(priceEdit, codesRead)}
-                onChange={(e) => setAddCodeId(e.target.value)}
-                className={INPUT_COMPACT}>
-          <option value="">Add operation: code…</option>
-          {codes.filter((c) => c.active).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
+        <Combobox value={addCodeId} disabled={disabled || codesRead !== "ready"}
+                  title={optionsSelectTitle(priceEdit, codesRead)}
+                  onSelect={(v) => setAddCodeId(v)}
+                  options={labelledOptions(codes.filter((c) => c.active), (c) => c.name, { blank: "Add operation: code…" })}
+                  ariaLabel="Add operation: code" className="w-72" />
         <button onClick={addRow} disabled={disabled || !addCodeId || addingRow || !rowsReady}
                 title={!rowsReady ? "Price rows have not finished loading yet — reload the page and try again."
                   : addingRow ? "Adding…" : title}

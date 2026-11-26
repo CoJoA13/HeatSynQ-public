@@ -17,7 +17,7 @@ import { PageStatus } from "@/components/PageStatus";
 import { PanelMessage } from "@/components/PanelMessage";
 import { CHECK_AGAIN } from "@/lib/draft-recovery-words";
 import { addOrderRefusalSentence } from "@/lib/add-order-refusal";
-import { addOrderSelect, type AddableState } from "@/lib/shipment-gates";
+import { addOrderOptionLabel, addOrderSelect, type AddableState } from "@/lib/shipment-gates";
 import { ShipmentTotalsTable } from "@/components/ShipmentTotalsTable";
 import { PageHeader } from "@/components/PageHeader";
 import { NET_WEIGHT_LB, TARE_TOTAL_LB } from "@/lib/weight-terms";
@@ -36,6 +36,10 @@ import { markRefused, refusedBox } from "@/lib/refused-boxes";
 import { SHIPMENT_BOX, shipmentContainerBoxId, shipmentLineBoxId, shipmentServerRefusalBox } from "@/lib/shipment-box-ids";
 import { newShipmentTotalsInput, shipmentTotals } from "@/lib/shipment-totals";
 import { BUTTON_PRIMARY, BUTTON_PRIMARY_COMPACT, CARD, INPUT_COMPACT, LINK, NOTICE } from "@/lib/ui-classes";
+import { Combobox } from "@/components/Combobox";
+import { customerOptions } from "@/lib/menu-options";
+import { labelledOptions } from "@/lib/menu-options";
+import { inMenuOrder } from "@/lib/menu-order";
 
 type CustomerOption = { id: string; code: string; name: string; creditHold: boolean; shippingNotes: string };
 type OrderOption = { id: string; orderNumber: number; poNumber: string };
@@ -342,12 +346,9 @@ export function NewShipment() {
           {/* ---- Customer ---- */}
           <section id="customer" className={`${CARD} mb-6`}>
             <h2 className="mb-2 font-medium">Customer</h2>
-            <select value={customerId} onChange={(e) => pickCustomer(e.target.value)}
-                    disabled={!customersGate.allowed || pickingCustomer} title={customersGate.title} aria-label="Customer" id={SHIPMENT_BOX.customer}
-                    className={`${INPUT_COMPACT} w-full max-w-md disabled:cursor-not-allowed disabled:bg-surface-50`}>
-              <option value="">— choose a customer —</option>
-              {customers.map((c) => <option key={c.id} value={c.id}>{c.code} · {c.name}</option>)}
-            </select>
+            <Combobox value={customerId} options={customerOptions(customers, { blank: "— choose a customer —" })}
+                    onSelect={(v) => pickCustomer(v)}
+                    disabled={!customersGate.allowed || pickingCustomer} title={customersGate.title} id={SHIPMENT_BOX.customer} ariaLabel="Customer" className="w-full max-w-md" />
             {pickingCustomer && <span className="ml-2 text-sm text-ink-500">Loading customer…</span>}
 
             {/* The credit-hold gate, made visible BEFORE the refused round trip (spec §5.4): named,
@@ -383,12 +384,10 @@ export function NewShipment() {
             <div className="grid grid-cols-2 gap-3 text-sm md:grid-cols-3">
               <label className="block">
                 Ship-to address
-                <select value={shipToAddressId} onChange={(e) => changeField("shipToAddressId", e.target.value)}
-                        disabled={!customerId} title={customerId ? undefined : "Pick a customer first"}
-                        className={`${INPUT_COMPACT} mt-1 w-full disabled:bg-surface-50`}>
-                  <option value="">— none —</option>
-                  {addresses.map((a) => <option key={a.id} value={a.id}>{a.name} — {a.street}, {a.city} {a.state}</option>)}
-                </select>
+                <Combobox value={shipToAddressId} options={labelledOptions(addresses, (a) => `${a.name} — ${a.street ?? ""}, ${a.city ?? ""} ${a.state ?? ""}`, { blank: "— none —" })}
+                          onSelect={(v) => changeField("shipToAddressId", v)}
+                          disabled={!customerId} title={customerId ? undefined : "Pick a customer first"}
+                          ariaLabel="Ship-to address" className="mt-1 w-full" />
               </label>
               <label className="block">
                 Ship date
@@ -400,7 +399,7 @@ export function NewShipment() {
                 <select value={carrierId} onChange={(e) => changeField("carrierId", e.target.value)}
                         className={`${INPUT_COMPACT} mt-1 w-full`}>
                   <option value="">— none —</option>
-                  {carriers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {inMenuOrder(carriers, (r) => r.name).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </label>
               <label className="block">
@@ -483,15 +482,12 @@ export function NewShipment() {
             <h2 className="mb-2 font-medium">Orders</h2>
             {!customerId && <p className="mb-2 text-sm text-ink-500">Pick a customer to add their orders.</p>}
             <div className="flex flex-wrap items-center gap-2">
-              <select value={addChoice} onChange={(e) => setAddChoice(e.target.value)}
-                      disabled={addListClosed}
-                      title={addSelect.title} aria-label="Add order" id={SHIPMENT_BOX.addOrder}
-                      className={`${INPUT_COMPACT} disabled:cursor-not-allowed disabled:bg-surface-50`}>
-                <option value="">{!customerId ? "Pick a customer first" : addSelect.placeholder}</option>
-                {addable.map((o) => (
-                  <option key={o.id} value={o.id}>#{o.orderNumber}{o.poNumber ? ` · PO ${o.poNumber}` : ""}</option>
-                ))}
-              </select>
+              {/* Newest order first, as the server lists them: an order on purpose (#1056 ruling 3). */}
+              <Combobox value={addChoice} onSelect={(v) => setAddChoice(v)}
+                        options={addable.map((o) => ({ value: o.id, label: addOrderOptionLabel(o) }))}
+                        placeholder={!customerId ? "Pick a customer first" : addSelect.placeholder}
+                        disabled={addListClosed}
+                        title={addSelect.title} ariaLabel="Add order" id={SHIPMENT_BOX.addOrder} className="w-64" />
               <button onClick={() => void addOrder()} disabled={!addChoice || addingOrder}
                       title={addOrderButtonTitle({ listOffers: !addListClosed, choice: addChoice })}
                       className={BUTTON_PRIMARY_COMPACT}>

@@ -378,15 +378,64 @@ describe("the stage", () => {
     expect(itemMarkup(stage(standardLayout()), "Process steps table")).not.toContain("data-sidebar");
   });
 
-  it("at a ruled field's least width a long label may shrink (it truncates), and the rule keeps a one-grid-step floor", () => {
+  // Owner ruling on #1053 (2026-11-25): every ruled label in the paper's label column at the paper's
+  // type, wrapping inside it as pdfmake does, and the rule after the paper's gap beside its first line.
+  /** The label's element: the one whose style sets the column's width. */
+  const labelStyle = (html: string, words: string) => {
+    // `bolItem` decodes, so the style's quoted font family is plain `"` inside it: match up to the words.
+    const escaped = words.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const found = html.match(new RegExp(`<div class="flex-none text-ink-(?:900|500 italic)" style="([^>]*?)">${escaped}</div>`));
+    expect(found, `the label "${words}"`).not.toBeNull();
+    return found![1];
+  };
+
+  it("draws every ruled field's label wrapped in its paper column and the rule after the paper's gap", () => {
+    const fields = BOL_CONTRACT.sections.flatMap((section) => section.fields);
+    expect(BOL_CONTRACT.canvas!.ruledFields).toHaveLength(14);
+    for (const ruled of BOL_CONTRACT.canvas!.ruledFields) {
+      // Each one placed alone, wider than its least width.
+      const layout = layoutOf([bolField(ruled.key, { box: { x: 24, y: 24, w: 300, h: 12 } })]);
+      const drawn = bolItem(bolStage(layout), fields.find((f) => f.key === ruled.key)!.name);
+      const style = labelStyle(drawn, bolLabel(ruled.key));
+      expect(style).toContain(`width:${ruled.label.width * SCALE}px`);
+      expect(style).toContain("white-space:pre-wrap");
+      expect(style).toContain("overflow-wrap:anywhere");
+      expect(drawn).toContain(`class="flex items-start" style="column-gap:${ruled.label.gap * SCALE}px"`);
+    }
+  });
+
+  it("draws the carrier's label at the paper's 9 pt bold whatever its item's style, which is its name's", () => {
+    const layout = standardBolLayout();
+    const carrier = byId(layout, "field-carrier_name");
+    if (carrier.kind !== "field") throw new Error("the carrier is a field item");
+    const restyled = layoutOf(layout.items.map((i) => (i.id === carrier.id ? { ...carrier, style: { size: 12, bold: false, align: "right" as const } } : i)));
+    const style = labelStyle(bolItem(bolStage(restyled), "Carrier name"), bolLabel("carrier_name"));
+    expect(style).toContain(`font-size:${9 * SCALE}px`);
+    expect(style).toContain("font-weight:700");
+    expect(style).toContain("text-align:left");
+    // Its rule beside the label's first line, at the label's type.
+    expect(bolItem(bolStage(restyled), "Carrier name"))
+      .toContain(`class="flex-1 ${RULE}" style="min-width:${CANVAS_GRID * SCALE}px;height:${9 * 1.15 * SCALE}px"`);
+    // Any other ruled label keeps its item's style.
+    const pro = byId(layout, "field-pro_number");
+    if (pro.kind !== "field") throw new Error("the pro number is a field item");
+    const big = layoutOf(layout.items.map((i) => (i.id === pro.id ? { ...pro, style: { size: 12, bold: false, align: "right" as const } } : i)));
+    const proStyle = labelStyle(bolItem(bolStage(big), "Carrier's pro number"), bolLabel("pro_number"));
+    expect(proStyle).toContain(`font-size:${12 * SCALE}px`);
+    expect(proStyle).toContain("font-weight:400");
+    expect(proStyle).toContain("text-align:right");
+  });
+
+  it("at a ruled field's least width a long label wraps in its column, and the rule keeps a one-grid-step floor", () => {
     const least = leastWidth(BOL_CONTRACT, bolField("pro_number"));
     expect(least).toBeGreaterThan(0);
     const label = "A forty-character label for the pro nos.";
     expect(label).toHaveLength(40);
     const layout = layoutOf([bolField("pro_number", { label, box: { x: 338, y: 24, w: least, h: 12 } })]);
     const html = bolItem(bolStage(layout), "Carrier's pro number");
-    expect(html).toMatch(new RegExp(`class="min-w-0 truncate text-ink-900"[^>]*>${label}<`));
-    expect(html).toContain(`class="flex-1 ${RULE}" style="min-width:${CANVAS_GRID * SCALE}px"`);
+    expect(html).not.toContain("truncate");
+    expect(labelStyle(html, label)).toContain(`width:${110 * SCALE}px`);
+    expect(html).toMatch(new RegExp(`class="flex-1 ${RULE}" style="min-width:${CANVAS_GRID * SCALE}px;height:[0-9.]+px"`));
   });
 
   it("draws a measured item at its measured height where taller, else its drawn height", () => {

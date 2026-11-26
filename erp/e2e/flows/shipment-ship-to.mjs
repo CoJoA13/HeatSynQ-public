@@ -24,15 +24,14 @@
 // shipment belong to the shipping fixture customer, whose teardown reaps them; the address goes
 // with that customer. The flow leaves a fully shipped order and a shipment with no ship-to.
 //
-// The select is found by role and accessible name, never by an exact getByLabel: Playwright's
-// label match reads the whole text of the <label> that wraps this <select>, its options included,
-// so it never equals "Ship-to address" exactly. The accessible name leaves the select's own
-// options out, and it would take in "Requires customers.view" if that text sat inside the label.
+// The Ship-to address is a Combobox picker since #1056. It is found by role and accessible name
+// (its own `aria-label`), which would take in "Requires customers.view" if that text sat inside
+// the label. Its options show while it is open, so they are read by opening it.
 import assert from "node:assert/strict";
 import { login } from "../lib/auth.mjs";
 import { createOrderViaUi, orderPanel, startNewShipment, waitForShipmentPage } from "../lib/orders.mjs";
 import { rolePermissions, setRolePermissions } from "../lib/roles.mjs";
-import { assertNeverVisible, waitForEnabled, waitForValue } from "../lib/ui.mjs";
+import { assertNeverVisible, comboboxOptionTexts, pickComboboxOption, waitForComboboxValue, waitForEnabled, waitForValue } from "../lib/ui.mjs";
 import { openRecordTab } from "../lib/record-tabs.mjs";
 import { routeRequests } from "../route-keep-alive.mjs";
 
@@ -50,7 +49,7 @@ async function waitForOptions(select, expected, what, timeoutMs = 10000) {
   const deadline = Date.now() + timeoutMs;
   let last;
   for (;;) {
-    last = await select.locator("option").allTextContents().catch(() => undefined);
+    last = await comboboxOptionTexts(select).catch(() => undefined);
     if (JSON.stringify(last) === JSON.stringify(expected)) return;
     if (Date.now() > deadline) {
       assert.fail(`${what}: timed out waiting for the Ship-to options ${JSON.stringify(expected)}; last saw ${JSON.stringify(last)}`);
@@ -62,8 +61,8 @@ async function waitForOptions(select, expected, what, timeoutMs = 10000) {
 /** The select holds `options`, its value is `value`, and the option it shows reads `shown`. */
 async function assertShipTo(select, { options, value, shown }, what) {
   await waitForOptions(select, options, what);
-  await waitForValue(select, value);
-  assert.equal(await select.evaluate((el) => el.selectedOptions[0]?.textContent ?? null), shown,
+  await waitForComboboxValue(select, value);
+  assert.equal(await select.inputValue(), shown,
     `${what}: the Ship-to select must show ${JSON.stringify(shown)}`);
 }
 
@@ -99,7 +98,7 @@ export async function run(page, shot, ctx) {
     // 2. The list read: the address is offered once, from the list, and picking it saves it.
     await assertShipTo(select, { options: [NONE, option], value: "", shown: NONE }, "the list read, nothing set");
     const picked = nextPatch(page, shipment.id);
-    await select.selectOption({ label: option });
+    await pickComboboxOption(select, option);
     assert.equal((await picked).shipper.shipToAddressId, f.shipToAddressId, "the pick must save the fixture address");
     await assertShipTo(select, { options: [NONE, option], value: f.shipToAddressId, shown: option }, "the list read, the address set");
     await shipsTo.waitFor();
@@ -143,7 +142,7 @@ export async function run(page, shot, ctx) {
 
     // 5. The one-way clear: once cleared, this viewer has no address to pick again.
     const cleared = nextPatch(page, shipment.id);
-    await select.selectOption({ value: "" });
+    await pickComboboxOption(select, NONE);
     assert.equal((await cleared).shipper.shipToAddressId, null, "the clear must save no ship-to address");
     await assertShipTo(select, { options: [NONE], value: "", shown: NONE }, "after the clear");
     await assertNeverVisible(header(page).getByText(/Ships to:/), `"Ships to:" must be gone after the clear`);

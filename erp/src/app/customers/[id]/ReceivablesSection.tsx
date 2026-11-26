@@ -48,6 +48,7 @@ import { AMOUNT_TO_APPLY, AMOUNT_TO_WRITE_OFF } from "@/lib/money-boxes";
 import { AGING_BUCKETS, AGING_BUCKET_LABELS, type AgingBucketValue } from "@/lib/ar-constants";
 import { askReason } from "@/lib/modal";
 import { BADGE_WARNING, BUTTON_PRIMARY_COMPACT, CARD, INPUT_COMPACT, LINK, NOTICE } from "@/lib/ui-classes";
+import { Combobox } from "@/components/Combobox";
 
 // Local mirrors of src/server/aging.ts's `AgingRow` and src/server/applications.ts's
 // `OpenInvoiceRow` — not imported from src/server/** (CLAUDE.md: a client component pulling from
@@ -484,20 +485,18 @@ export function OpenItemRow({ item, invoices, applyGate, writeOffGate, voidGate,
             <div className="flex flex-wrap items-end gap-3">
               <label className="text-sm">
                 <span className="mr-2">Apply to</span>
-                <select
+                {/* Oldest invoice first, as the server lists them: an order on purpose (#1056 ruling 3). */}
+                <Combobox
                   value={invoiceId}
-                  onChange={(e) => {
-                    const next = invoices.find((i) => i.id === e.target.value);
-                    setInvoiceId(e.target.value);
+                  options={invoices.map((i) => ({ value: i.id, label: `${i.documentNumber} — ${formatMoney(i.open)} open` }))}
+                  onSelect={(v) => {
+                    const next = invoices.find((i) => i.id === v);
+                    setInvoiceId(v);
                     if (next) setAmount(Math.min(remaining, next.open).toFixed(2));
                   }}
-                  className={INPUT_COMPACT}
-                  aria-label="Invoice to apply the credit to"
-                >
-                  {invoices.map((i) => (
-                    <option key={i.id} value={i.id}>{i.documentNumber} — {formatMoney(i.open)} open</option>
-                  ))}
-                </select>
+                  ariaLabel="Invoice to apply the credit to"
+                  className="inline-block w-72 align-middle"
+                />
               </label>
               <label className="text-sm">
                 <span className="mr-2">Amount</span>

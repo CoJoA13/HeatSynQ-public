@@ -1,5 +1,6 @@
 "use client";
 import { BUTTON_PRIMARY_COMPACT, INPUT_COMPACT, LINK } from "@/lib/ui-classes";
+import { inMenuOrder } from "@/lib/menu-order";
 
 // Presentational only (#33's bounded slice): every piece of state and every handler stays in the
 // board page (src/app/page.tsx) — this file receives values + callbacks as props and renders the
@@ -52,7 +53,9 @@ export function SavedViewsBar({
           <select value={selectedViewId} onChange={(e) => onApplyView(e.target.value)}
                   className={INPUT_COMPACT}>
             <option value="">Default board</option>
-            {savedViews.map((v) => <option key={v.id} value={v.id}>{v.name}{v.id === selectedViewId && viewChanged ? " (changed)" : ""}</option>)}
+            {/* By name, each digit run by value, so a view saved during the visit takes its place at
+                once (#1056 rulings 3 and 4). */}
+            {inMenuOrder(savedViews, (v) => v.name).map((v) => <option key={v.id} value={v.id}>{v.name}{v.id === selectedViewId && viewChanged ? " (changed)" : ""}</option>)}
           </select>
         </label>
         {selectedViewId && (

@@ -31,6 +31,7 @@ import { INPUT_COMPACT } from "@/lib/ui-classes";
 import { pageFrame, viewerSrc } from "@/lib/preview-frame";
 import { canvasPageFor } from "@/lib/template-contracts/canvas";
 import { useMeasuredWidth, useWindowHeight } from "@/lib/use-viewer-size";
+import { Combobox } from "@/components/Combobox";
 
 /** A raw list row — the pane reads only the identity fields it labels, so it mirrors no server
  *  type (the client/server boundary). */
@@ -244,16 +245,18 @@ export function PreviewPane({
         <div className="flex flex-wrap items-end gap-2">
           <label className="text-xs text-ink-500">
             <span className="mr-1">Preview against:</span>
-            <select aria-label="Preview record" value={recordId}
-                    onChange={(e) => {
-                      const id = e.target.value;
-                      const picked = (options ?? []).find((o) => o.id === id);
-                      onRecordId(id, picked?.label ?? "", picked?.recordNumber);
-                    }}
-                    className={INPUT_COMPACT}>
-              <option value="">— pick {withArticle(spec.noun)} —</option>
-              {(options ?? []).map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
-            </select>
+            {/* The records in the order their list reads them, newest first (customers by code): an
+                order on purpose (#1056 ruling 3). Typing filters on any part of the label. */}
+            <Combobox ariaLabel="Preview record" value={recordId}
+                      options={[
+                        { value: "", label: `— pick ${withArticle(spec.noun)} —` },
+                        ...(options ?? []).map((o) => ({ value: o.id, label: o.label })),
+                      ]}
+                      onSelect={(id) => {
+                        const picked = (options ?? []).find((o) => o.id === id);
+                        onRecordId(id, picked?.label ?? "", picked?.recordNumber);
+                      }}
+                      className="inline-block w-96 align-middle" />
           </label>
 
           {spec.kind === "customer" && (

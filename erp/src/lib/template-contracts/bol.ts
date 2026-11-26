@@ -95,15 +95,18 @@ export const BOL_LEAST_WIDTHS: Record<string, number> = {
 /** The fields the stage draws on a rule, as bol.ts prints them (design 2026-11-09 §4.1; owner ruling
  *  (a), 2026-11-10): the form rules, the write-in rules and the carrier's name beside their label (the
  *  carrier's since owner ruling R1, 2026-11-24, its label printed under the rule before), the
- *  consignee's label beside its two 180 pt rules (the flow's `consignedRule`). A literal here;
- *  tests/bol-canvas.test.ts holds it to the server's families and widths. */
+ *  consignee's label beside its two 180 pt rules (the flow's `consignedRule`). Each label in the
+ *  flow's label column, the flow's gap before its rule, and the carrier's label at the consignee
+ *  labels' 9 pt bold (owner ruling on #1053, 2026-11-25). A literal here; tests/bol-canvas.test.ts
+ *  holds it to the server's families and widths, and each least width above to its label, gap and rule. */
+const beside = (key: string, width: number, gap = 4): CanvasRuledField => ({ key, draw: "beside", label: { width, gap } });
 const BOL_RULED_FIELDS: CanvasRuledField[] = [
-  ...[
-    "pro_number", "bol_number", "scac_code", "destination", "destination_state", "destination_zip", // the form rules
-    "delivering_carrier", "vehicle_initials", "vehicle_no", "shipper_per", "agent_per", "po_address", // the write-ins
-    "carrier_name",
-  ].map((key): CanvasRuledField => ({ key, draw: "beside" })),
-  { key: "consigned_to", draw: "lines", column: 180 },
+  beside("pro_number", 110), beside("bol_number", 110), beside("scac_code", 110),                    // the form rules
+  beside("destination", 70), beside("destination_state", 16), beside("destination_zip", 18),
+  beside("delivering_carrier", 80), beside("vehicle_initials", 105), beside("vehicle_no", 22),      // the write-ins
+  beside("shipper_per", 60, 6), beside("agent_per", 60, 6), beside("po_address", 165),
+  { key: "carrier_name", draw: "beside", label: { width: 70, gap: 4, type: { size: 9, bold: true } } },
+  { key: "consigned_to", draw: "lines", column: 180, label: { width: 70, gap: 4 } },
 ];
 
 /** The freight description's second heading line, printed under its label by the builder itself

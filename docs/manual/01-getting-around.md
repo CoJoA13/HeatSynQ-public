@@ -90,6 +90,18 @@ server can finish after you leave; leaving or discarding cannot cancel that requ
 Order entry's existing automatic server draft is separate; its **Resume** behavior
 is described in [chapter 2](02-orders.md).
 
+## Picking from a long list
+
+The lists that grow are search boxes: customers, parts, ship-to addresses, GL accounts,
+process step codes, the orders a shipment can add, the invoices a credit can be applied to,
+and a template's preview record. Click one or tab into it and its list opens. Type any part
+of an entry, its code or its name, and the list narrows to the entries that hold it. Pick with
+**Down/Up Arrow** and **Enter**, or click; **Esc** closes the list and keeps what was picked.
+Customers are listed by name, parts by part number and GL accounts by number, and the numbers
+in them run by value, so **A2** comes before **A10**; so do the short pick lists, such as
+materials and carriers. The orders, invoices and preview records
+keep their own order: newest order first, oldest open invoice first.
+
 ## Reading dates and amounts
 
 Dates on lists and reports use **MM/DD/YYYY**, such as **09/11/2026**. History and

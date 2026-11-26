@@ -24,7 +24,7 @@
 // back through a GET. It ends with nothing unsaved.
 import assert from "node:assert/strict";
 import { mutate, readJson } from "../lib/order-entry-workspace.mjs";
-import { assertNeverVisible, waitForValue } from "../lib/ui.mjs";
+import { assertNeverVisible, pickComboboxValue, waitForValue } from "../lib/ui.mjs";
 import { openRecordTab } from "../lib/record-tabs.mjs";
 import { panelMessage, redLine, waitForRedLines, watchRequests } from "../lib/refusal-lines.mjs";
 
@@ -153,7 +153,7 @@ async function receiptBatch(page, shot, ctx, batchId, reference, invoices) {
 
   // Add a payment: customer, type and date set, Amount blank.
   const adds = watchRequests(page, "POST", `/api/receivables/batches/${batchId}/payments`, { exact: true });
-  await page.locator("label", { hasText: "Payer customer" }).locator("select").selectOption(fixtures.moneyCustomerId);
+  await pickComboboxValue(page, "Payer customer", fixtures.moneyCustomerId);
   await page.locator("label", { hasText: "Payment type" }).locator("select").selectOption(fixtures.arPaymentTypeId);
   await page.getByLabel("Received date", { exact: true }).fill(new Date().toISOString().slice(0, 10));
   await page.getByLabel("Amount", { exact: true }).fill("");

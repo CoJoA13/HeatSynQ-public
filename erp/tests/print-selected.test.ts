@@ -3,8 +3,8 @@ import { strFromU8, strToU8, unzipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 import { PRINT_NO_FOLDER, PRINT_WARNING_UNREADABLE } from "@/lib/customer-folder-words";
 import {
-  confirmText, LOST_ANSWER, printTicksAfterRun, pruneToTickable, resultText, runSelectedPrints,
-  ZIP_FAILED, zipFileName, zipPrints,
+  confirmText, JOIN_FAILED, joinedConfirmParts, joinedFileName, joinOrder, LOST_ANSWER, printTicksAfterRun,
+  pruneToTickable, resultText, runSelectedPrints, ZIP_FAILED, zipFileName, zipPrints,
 } from "@/lib/print-selected";
 
 // #591 (owner rulings 591-4 to 591-8 and the words approved 2026-10-20): the Invoicing list's Print
@@ -17,7 +17,11 @@ import {
 const REFUSAL = "Invoice 1001 has already printed since it was finalized, so it was not printed again.";
 
 const pdf = (id: string) => strToU8(`%PDF-1.7 ${id}`);
-const printedAnswer = (id: string) => new Response(pdf(id), { status: 200, headers: { "content-type": "application/pdf" } });
+/** The print route's answer: the bytes, and the stored document's id in `x-document-id` (#1057). */
+const printedAnswer = (id: string) =>
+  new Response(pdf(id), { status: 200, headers: { "content-type": "application/pdf", "x-document-id": `doc-${id}` } });
+/** One printed row as the run keeps it. */
+const row = (id: string) => ({ id, bytes: pdf(id), documentId: `doc-${id}` });
 const refusedAnswer = (status: number, body: unknown) => Response.json(body, { status });
 /** The print route's `x-print-warnings` value (#588): a URI-encoded JSON array of one sentence. */
 const encodedWarning = (sentence: string) => encodeURIComponent(JSON.stringify([sentence]));
@@ -64,7 +68,7 @@ describe("runSelectedPrints: the run", () => {
     const result = await running;
     expect(posted).toEqual(["c", "a", "b"]);
     expect(result.printed).toEqual([
-      { id: "c", bytes: pdf("c") }, { id: "a", bytes: pdf("a") }, { id: "b", bytes: pdf("b") },
+      row("c"), row("a"), row("b"),
     ]);
     expect(result.failures).toEqual(new Map());
     expect(result.stopped).toBe(false);
@@ -127,7 +131,7 @@ describe("runSelectedPrints: a printed row's folder sentence (#591 follow-up, th
   it("keeps the sentence of a print's x-print-warnings header under its id, and its bytes as printed", async () => {
     const result = await run(["a", "b"], { a: warnedAnswer("a", encodedWarning(PRINT_NO_FOLDER)) });
     expect(result.warnings).toEqual(new Map([["a", PRINT_NO_FOLDER]]));
-    expect(result.printed).toEqual([{ id: "a", bytes: pdf("a") }, { id: "b", bytes: pdf("b") }]);
+    expect(result.printed).toEqual([{ ...row("a"), documentId: null }, row("b")]);
     expect(result.failures).toEqual(new Map());
   });
 
@@ -185,7 +189,7 @@ describe("runSelectedPrints: leaving the page (591-6)", () => {
     held.resolve(printedAnswer("a"));
     const result = await running;
     expect(posted).toEqual(["a"]);
-    expect(result.printed).toEqual([{ id: "a", bytes: pdf("a") }]);
+    expect(result.printed).toEqual([row("a")]);
     expect(result.stopped).toBe(true);
   });
 
@@ -336,6 +340,34 @@ describe("the words (owner, 2026-10-20)", () => {
     expect(resultText(240, 240, true))
       .toBe("Printed 240 of 240. The zip could not be made; each print is under its own Documents.");
     expect(resultText(240, 240, false)).toBe("Printed 240 of 240.");
+  });
+
+  it("says when the joined PDF could not be made, for a run printed as one PDF (#1057)", () => {
+    expect(JOIN_FAILED).toBe("The joined PDF could not be made; each print is under its own Documents.");
+    expect(resultText(3, 4, true, "joined"))
+      .toBe("Printed 3 of 4. The joined PDF could not be made; each print is under its own Documents.");
+    expect(resultText(3, 4, true, "zip")).toBe(`Printed 3 of 4. ${ZIP_FAILED}`);
+    expect(resultText(3, 4, false, "joined")).toBe("Printed 3 of 4.");
+  });
+
+  it("confirms Print as one PDF in the singular and the plural (#1057)", () => {
+    expect(joinedConfirmParts(1)).toEqual({
+      title: "Print 1 document as one PDF?", body: "It is filed under its own Documents, and it downloads as a PDF file.",
+    });
+    expect(joinedConfirmParts(3)).toEqual({
+      title: "Print 3 documents as one PDF?", body: "Each is filed under its own Documents, and they download joined as one PDF file.",
+    });
+  });
+
+  it("names the joined file as the zip is named, with a PDF's extension (#1057)", () => {
+    const at = new Date(2026, 10, 6, 9, 30);
+    expect(joinedFileName(at)).toBe("invoices-2026-11-06.pdf");
+    expect(zipFileName(at)).toBe("invoices-2026-11-06.zip");
+  });
+
+  it("joins the printed rows' documents in the table's order, leaving out a row that did not print (#1057)", () => {
+    const printed = [row("c"), row("a"), { ...row("b"), documentId: null }];
+    expect(joinOrder([{ id: "a" }, { id: "x" }, { id: "b" }, { id: "c" }], printed)).toEqual(["doc-a", "doc-c"]);
   });
 
   it("states a lost answer", () => {

@@ -1641,6 +1641,26 @@ export async function renderSheetGroupsWithPositions(
 }
 
 /**
+ * Joins already-rendered PDFs end to end, in the order given (#1057: the Invoicing list's Print as
+ * one PDF, which joins the stored copies its selected prints filed). The merge is
+ * `renderSheetGroupsWithPositions`' own: `copyPages` per document, `dedupeImages` so a logo the
+ * invoices share is kept once, and `useObjectStreams: false` for the uncompressed `/Count N` marker.
+ * It is NEVER practice-stamped: each input is a stored print, already stamped once when it was
+ * rendered in the practice copy, and stamping the join would mark every page twice. Nothing renders
+ * here, so no pdfmake state is touched.
+ */
+export async function joinPdfs(parts: readonly Uint8Array[]): Promise<Buffer> {
+  if (parts.length === 0) throw new Error("joinPdfs needs at least one PDF");
+  const merged = await PDFDocument.create();
+  for (const bytes of parts) {
+    const src = await PDFDocument.load(bytes);
+    for (const page of await merged.copyPages(src, src.getPageIndices())) merged.addPage(page);
+  }
+  dedupeImages(merged);
+  return Buffer.from(await merged.save({ useObjectStreams: false }));
+}
+
+/**
  * The positions half of `renderSheetGroupsWithPositions` alone: each definition laid out through
  * `renderPdfCore` with one shared memo and its id'd nodes read off the laid-out content. No pdf-lib
  * document is created, loaded, merged, deduplicated, stamped or saved, so a caller that wants only

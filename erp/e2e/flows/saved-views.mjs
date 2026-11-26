@@ -20,6 +20,16 @@ export async function run(page, shot, ctx) {
   // An option inside a select is never "visible" to Playwright, so the wait is for attachment.
   const settled = (text, marked) => select.locator("option:checked", { hasText: text, ...(marked ? {} : { hasNotText: "(changed)" }) }).waitFor({ state: "attached" });
 
+  // #1057 (owner ruling 2026-11-26): with no default saved view the board opens on Open orders.
+  // The rest of this flow starts from no status box, as it did before, so it shows All orders first.
+  const openPill = page.getByRole("button", { name: "Open orders", exact: true });
+  await page.getByRole("checkbox", { name: "Open", exact: true, checked: true }).waitFor();
+  assert.equal(await openPill.getAttribute("aria-pressed"), "true", "#1057: the board opens on Open orders");
+  assert.equal(await select.locator("option:checked").textContent(), "Default board",
+    "#1057: Open orders is the Default board, with no saved view picked");
+  await page.getByRole("button", { name: "All orders", exact: true }).click();
+  await page.getByRole("checkbox", { name: "Open", exact: true, checked: false }).waitFor();
+
   // Save the board as it stands under a name; the select then shows it, unmarked.
   const created = page.waitForResponse((res) =>
     new URL(res.url()).pathname === "/api/saved-views" && res.request().method() === "POST" && res.ok());

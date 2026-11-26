@@ -99,7 +99,8 @@ async function customerCreditLimit(page, shot, ctx) {
   await openPartsView(page, "Active parts");
   await activePartRead;
   await page.getByRole("button", { name: "Add part", exact: true }).click();
-  assert.equal(await focused(page.locator("select").filter({ hasText: "Customer…" })), true, "Add part puts the cursor in the inline row's Customer select");
+  assert.equal(await focused(page.getByRole("combobox", { name: "Customer", exact: true })), true, "Add part puts the cursor in the inline row's Customer picker");
+  await page.getByRole("combobox", { name: "Customer", exact: true }).press("Escape");
   assert.equal(partPosts.count(), 0, "Add part creates nothing by itself");
   partPosts.stop();
 

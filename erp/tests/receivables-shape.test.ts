@@ -122,7 +122,7 @@ describe("the A/R aging screen's shape (PR 7)", () => {
     const exportLink = named(PAGE, "a").find((t) => (t.attr("href") ?? "").includes("/api/receivables/aging/export"));
     expect(exportLink?.attr("className")).toBe("BUTTON_NEUTRAL");
     expect(jsxTexts(PAGE, "a")).toContain("Export to Excel");
-    expect(jsxTexts(PAGE, "label")).toContain("Customer <select>");
+    expect(jsxTexts(PAGE, "label")).toContain("Customer <Combobox>");
     expect(src).not.toContain("Customer / family");
     const card = squash(named(PAGE, "AtAGlance")[0].attr("rows"));
     expect(card).toContain('"Current"');

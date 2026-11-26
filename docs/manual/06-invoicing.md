@@ -23,15 +23,30 @@ The tick box in the **header row** selects or clears every order in the list at 
 dash while only some of them are ticked. It is greyed out when there is nothing to tick — either
 the list is empty or you do not have the right to raise invoices, and hovering it says which.
 
+Above the list, **Customer** narrows it to one customer's orders, and **Last ship date**, a From and a
+To box you can type a date into or pick from a calendar, to the orders whose last shipment is in
+that range (the date the **Last Ship Date** column shows; an earlier shipment of the same order does
+not count). A filter that hides a ticked order clears its tick. The drafts you create are dated the
+day you create them, whatever the range.
+
+**Create all shown**, beside **Create invoices**, makes one draft for every order the list shows
+under its filters, ticked or not. A dialog names the count first — *Create 12 draft invoices?* —
+and **Cancel** sends nothing. The drafts are made exactly as **Create invoices** makes them, one at a
+time, each failure beside its order's row. If the list changes while the dialog is open (a slow load
+landing, say), nothing is created and a red line asks you to check the list and try again.
+
 You pick nothing but the order. The customer, PO number, terms, bill-to and ship-to addresses,
 material, process names, tax rate and every line are worked out for you.
 
-**Invoices & credits** is the register, filtered by customer, status, printed or not, and invoice
-date, with **Export to Excel** and **Export to PDF** beside the filters. **Drafts** is the register
+**Invoices & credits** is the register, filtered by customer, status, printed or not, balance and
+invoice date, with **Export to Excel** and **Export to PDF** beside the filters. **Drafts** is the register
 with **Status** set to *Draft*; **To print** is **Status** *Finalized* and **Printed** *Not
 printed*, the finalized invoices and credits still to print; **Register** clears both. Change
-either box by hand and the view that matches it lights, or none does. The customer and date
-filters narrow within a view. The **Document No** column is an invoice's order number (with the
+either box by hand and the view that matches it lights, or none does. The customer, balance and
+date filters narrow within a view. **Balance** set to *Open* keeps the finalized invoices that still
+carry a balance, unpaid or part-paid; a draft carries none, and a credit memo is never listed under
+it. The balance is worked out from the payments, discounts, credits and write-offs applied to the
+invoice when the list is read, so a payment posted a moment ago counts. The **Document No** column is an invoice's order number (with the
 shop's prefix, if one is set) or, for a credit, its own credit number. The **Printed** column reads
 the date and time of the newest print made since the invoice or credit was last finalized, and is
 blank when it has not printed since. A draft shows its newest print. Unlock an invoice and finalize
@@ -62,7 +77,8 @@ title a line names the filter, such as
 *Customer: CASC · Cascade Spring Co   Status: Finalized   Invoice date: 10/18/2026 – 10/24/2026*,
 with *All customers*, *All statuses* or *Any date* where none is set (*from 10/18/2026* or
 *through 10/24/2026* for one date), and *Printed: Not printed* or *Printed: Printed* after them
-only when the **Printed** filter is set, then the time it was made, such as *Made 10/20/2026,
+only when the **Printed** filter is set, and *Balance: Open* last only when the **Balance** filter is,
+then the time it was made, such as *Made 10/20/2026,
 9:15 AM*.
 The table has the Excel file's ten columns in its order, with the header row repeated on every
 page, and a row is never split between two pages. Kind and Status read in words, dates as
@@ -81,15 +97,31 @@ credit's total is negative, so credits net it. With no rows the PDF reads *No in
 the whole **Total** column in Excel counts it as well and doubles the figure; add up the rows above
 it instead.
 
+### Finalize selected
+
+A draft has a tick box in the first column of **Invoices & credits** too, unless its order has been
+voided. Tick the drafts you want and press **Finalize selected**, which needs the right to edit
+invoices, as **Finalize invoice** on an invoice's own page does. A dialog names the count first —
+*Finalize 3 drafts?* — and **Cancel** sends nothing. The drafts are then finalized one at a time, in
+the order the list shows them, each with every check **Finalize invoice** makes; one that cannot be
+finalized says why under its **Document No** (*"Order #1031 is Partially shipped — ship the rest or
+close the line short, then finalize"*, say) and the run carries on. A draft that finalizes with
+warnings lists them under its **Document No** in amber, the same warnings its own page shows after
+**Finalize invoice** (a line that needs a price, a line with no GL account, and the like). Beside the button the result
+reads, for example, *"Finalized 2 of 3."* A finalized draft stays ticked: it is now a finalized
+invoice not yet printed, so **Print selected** or **Print as one PDF** can follow at once. **Finalize
+selected** counts only the ticked drafts and the print buttons only the ticked finalized rows, so one
+tick column serves both.
+
 ### Print selected
 
 A finalized invoice or credit memo that has not printed since it was finalized has a tick box in the
 first column of **Invoices & credits**, on whichever of its three views shows it (**To print** shows
 exactly those rows), unless its order has been voided: nothing new prints for a voided order. Tick the ones you want and press **Print selected**, which needs the right to raise invoices
-as well as the right to see them. The tick box in the header row ticks or clears every such row the
-list shows, with the same dash as the one over **Ready to invoice**, and is greyed out when no row
-has a box. Without the right to raise invoices the boxes and the button are greyed out, and hovering
-one says so. A filter that hides a ticked row clears its tick.
+as well as the right to see them. The tick box in the header row ticks or clears every row the list
+shows a box for, drafts included, with the same dash as the one over **Ready to invoice**, and is
+greyed out when no row has a box. Without the right to raise invoices the print boxes and buttons
+are greyed out, and hovering one says so. A filter that hides a ticked row clears its tick.
 
 A dialog names the count first — *Print 12 documents?* — with the rest of the sentence under it,
 *Each is filed under its own Documents, and the PDFs download as one zip file.*; **Cancel** sends
@@ -115,6 +147,16 @@ was lost. Reload to see."* If it did print, it is under its **Documents** and th
 Leave the page while a run is going and the run stops after the print in flight, without a warning:
 nothing more is sent and no zip arrives. What printed before then is filed under its own
 **Documents**.
+
+### Print as one PDF
+
+**Print as one PDF**, beside **Print selected**, takes the same ticked rows and prints each one the
+same way — filed under its own **Documents**, copied into its customer's folder, each refusal beside
+its row — and then downloads them joined end to end as one PDF, in the order the list shows them,
+named for that day such as `invoices-2026-10-21.pdf`, in place of the zip. The dialog reads *Print
+12 documents as one PDF?* The joined file itself is a download only: it is not filed anywhere, since
+each invoice in it already was. If it cannot be made, each print is still filed and the line says
+so: *"Printed 12 of 12. The joined PDF could not be made; each print is under its own Documents."*
 
 Each print in a run is also copied into its customer's **Invoice folder**, as a single Print is
 (Printing, below). A row that printed but was not filed there says why in amber under its
@@ -385,8 +427,8 @@ this customer."*, or *"Not filed in the customer folder — the shared folder is
 again once it is reconnected."* Print again once the cause is put right.
 
 To print several finalized invoices and credits in one go, tick them on the invoicing screen and
-press **Print selected** (above). It prints no draft, and nothing that has printed since its
-finalize.
+press **Print selected** or **Print as one PDF** (above). Neither prints a draft, nor anything that
+has printed since its finalize.
 
 ---
 

@@ -3,7 +3,7 @@
 // inspector are thin wrappers proven by their shape tests and the templates-admin flow.
 import { describe, expect, it } from "vitest";
 import {
-  CANVAS_RECORD_WORDS, designOnCanvasGate, drawsBorder, ruleOf,
+  CANVAS_RECORD_WORDS, designOnCanvasGate, drawsBorder, ruleOf, ruledLabelOf,
   DESIGNER_WORDS, INCH, NUDGE_COARSE, isRequired, NUDGE_FINE, clearedLayout, dragStart, dropBox, fitScale, fromInches, itemTitle, moveBox,
   moveClampHeight, movedItem, paletteEntries, placeNew, printsNothing, readSize, removeItem, sameItemPlace, replaceItem, resizeBox, resizeStart, resizedBox, resizedItem, setAnchor, snap, stageBox, toInches, zeroSide,
   type PaletteEntry,
@@ -15,7 +15,7 @@ import {
 import { round2, tableOverhead } from "@/lib/printed-width-core";
 import { canvasSaveBlock } from "@/lib/template-editor";
 import { TRAVELER_DEFAULT_CONFIG } from "@/lib/template-contracts/index";
-import { CANVAS_GRID, canvasLayoutSchema, type CanvasBox, type CanvasItem, type CanvasLayout } from "@/lib/template-contracts/canvas";
+import { CANVAS_GRID, canvasLayoutSchema, type CanvasBox, type CanvasItem, type CanvasLayout, type CanvasTextStyle } from "@/lib/template-contracts/canvas";
 import { BOL_CONTRACT, BOL_FIRST_TABLE_ROOM, BOL_LEAST_WIDTHS, BOL_ROW_FLOOR } from "@/lib/template-contracts/bol";
 import { CERT_CONTRACT, CERT_FIRST_TABLE_ROOM, CERT_LEAST_WIDTHS, CERT_ROW_FLOOR } from "@/lib/template-contracts/cert";
 import {
@@ -884,8 +884,10 @@ describe("the boxed fields", () => {
 
 describe("the ruled fields, the list blocks and what a block keeps beside its strip (design 2026-11-09 §4.1)", () => {
   it("ruleOf: a field the profile draws on a rule, as its paper prints it, and nothing else", () => {
-    expect(ruleOf(bolField("pro_number"), BOL_CONTRACT)).toEqual({ key: "pro_number", draw: "beside" });
-    expect(ruleOf(bolField("carrier_name"), BOL_CONTRACT)).toEqual({ key: "carrier_name", draw: "beside" });
+    expect(ruleOf(bolField("pro_number"), BOL_CONTRACT)).toEqual({ key: "pro_number", draw: "beside", label: { width: 110, gap: 4 } });
+    expect(ruleOf(bolField("carrier_name"), BOL_CONTRACT)).toEqual({
+      key: "carrier_name", draw: "beside", label: { width: 70, gap: 4, type: { size: 9, bold: true } },
+    });
     expect(ruleOf(bolField("consigned_to"), BOL_CONTRACT)?.draw).toBe("lines");
     // A field the profile does not name prints bare.
     expect(ruleOf(bolField("title"), BOL_CONTRACT)).toBeNull();
@@ -901,6 +903,24 @@ describe("the ruled fields, the list blocks and what a block keeps beside its st
     }
     // A contract with no profile draws no rule.
     expect(ruleOf(field("pro_number"), testContract())).toBeNull();
+  });
+  it("ruledLabelOf: the label's paper column, its gap and its type (owner ruling on #1053, 2026-11-25)", () => {
+    const styled = (key: string, style: CanvasTextStyle): Extract<CanvasItem, { kind: "field" }> =>
+      ({ ...(bolField(key) as Extract<CanvasItem, { kind: "field" }>), style });
+    const big: CanvasTextStyle = { size: 12, bold: false, align: "right" };
+    // A label the paper prints at the item's style: the item's style, in its column.
+    const pro = styled("pro_number", big);
+    expect(ruledLabelOf(pro, ruleOf(pro, BOL_CONTRACT)!)).toEqual({ width: 110, gap: 4, style: big });
+    const per = styled("shipper_per", big);
+    expect(ruledLabelOf(per, ruleOf(per, BOL_CONTRACT)!)).toEqual({ width: 60, gap: 6, style: big });
+    const consigned = styled("consigned_to", big);
+    expect(ruledLabelOf(consigned, ruleOf(consigned, BOL_CONTRACT)!)).toEqual({ width: 70, gap: 4, style: big });
+    // The carrier's label at its fixed 9 pt bold, set left, whatever the item's style (which is the
+    // carrier's name's).
+    const carrier = styled("carrier_name", big);
+    expect(ruledLabelOf(carrier, ruleOf(carrier, BOL_CONTRACT)!)).toEqual({
+      width: 70, gap: 4, style: { size: 9, bold: true, align: "left" },
+    });
   });
   it("besideOf: the points a column table's block keeps beside its columns, else 0", () => {
     expect(besideOf(BOL_CONTRACT, "freight")).toBe(178);

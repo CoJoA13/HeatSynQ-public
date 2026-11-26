@@ -33,6 +33,8 @@ import { enterBox, focusRecord, heldText, leaveBox, noteFocus, trimmedText, with
 import { HistoryPanel, invalidateHistory } from "@/components/HistoryPanel";
 import { BADGE_WARNING, BUTTON_PRIMARY, BUTTON_PRIMARY_COMPACT, CARD, CARD_FLUSH, INPUT_COMPACT, LINK, NOTICE, TABLE_CELL, TABLE_HEAD } from "@/lib/ui-classes";
 import { oneShotHold } from "@/lib/single-flight";
+import { Combobox } from "@/components/Combobox";
+import { glAccountOptions } from "@/lib/menu-options";
 
 type Gl = { id: string; name: string; description?: string };
 type StepCodeOption = { id: string; name: string; active: boolean };
@@ -616,12 +618,10 @@ export default function SurchargesPage() {
 
               <label className="mb-4 block text-sm">
                 GL account
-                <select value={current.glAccountId ?? ""} disabled={canEdit.disabled} title={canEdit.title}
-                        className={`${INPUT_COMPACT} ml-2 w-full disabled:bg-surface-50`}
-                        onChange={(e) => void save(current.id, { glAccountId: e.target.value || null })}>
-                  <option value="">(needs GL account)</option>
-                  {gls.map((g) => <option key={g.id} value={g.id}>{g.name} {g.description}</option>)}
-                </select>
+                <Combobox value={current.glAccountId ?? ""} disabled={canEdit.disabled} title={canEdit.title}
+                          options={glAccountOptions(gls, { blank: "(needs GL account)" })}
+                          onSelect={(v) => void save(current.id, { glAccountId: v || null })}
+                          ariaLabel="GL account" className="ml-2 w-full" />
               </label>
 
               <label className="mb-2 flex items-center gap-2 text-sm">

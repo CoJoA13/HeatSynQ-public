@@ -23,6 +23,8 @@ import { ActionMenu } from "@/components/ActionMenu";
 import { askConfirm } from "@/lib/modal";
 import { perDivisionConfirm, runConfirm } from "@/lib/statement-confirms";
 import { BUTTON_PRIMARY, CARD, INPUT_COMPACT, LINK, NOTICE } from "@/lib/ui-classes";
+import { Combobox } from "@/components/Combobox";
+import { customerOptions } from "@/lib/menu-options";
 
 // ---------------------------------------------------------------------------------------------
 // Types. Local mirrors of src/server/aging.ts's `AgingRow`, src/server/pdf/statement.ts's
@@ -502,18 +504,11 @@ function StatementsScreen() {
         <div className="flex flex-wrap items-end gap-3 text-sm">
           <label className="block">
             Customer / family
-            <select value={customerId} disabled={!customersGate.allowed} title={customersGate.allowed ? undefined : customersGate.title}
-                    onChange={(e) => setCustomerId(e.target.value)}
-                    className={`${INPUT_COMPACT} mt-1 block disabled:cursor-not-allowed disabled:bg-surface-50`}>
-              <option value="">Select…</option>
-              {/* Inactive customers are LISTED (a deactivated division can still owe money, and its
-                  statement has to be reachable) but marked, so the list stays honest. */}
-              {customers.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.code} · {c.name}{c.active ? "" : " (inactive)"}
-                </option>
-              ))}
-            </select>
+            {/* Inactive customers are LISTED (a deactivated division can still owe money, and its
+                statement has to be reachable) but marked, so the list stays honest. */}
+            <Combobox value={customerId} options={customerOptions(customers, { blank: "Select…", markInactive: true })}
+                    disabled={!customersGate.allowed} title={customersGate.allowed ? undefined : customersGate.title}
+                    onSelect={(v) => setCustomerId(v)} ariaLabel="Customer / family" className="mt-1 w-64" />
           </label>
           <label className="block">
             As of

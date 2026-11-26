@@ -43,7 +43,7 @@
 // exists — this flow only ever touches a period it creates itself; see `db-fixtures.ts`'s
 // `deleteClosePeriodFixture` comment for why a broader self-heal sweep is deliberately not built.
 import assert from "node:assert/strict";
-import { assertNeverVisible, waitForValue } from "../lib/ui.mjs";
+import { assertNeverVisible, comboboxValue, pickComboboxValue, waitForValue } from "../lib/ui.mjs";
 import { answerModal, modalBody, modalTitle, waitForModal } from "../lib/modal.mjs";
 import { openRecordTab } from "../lib/record-tabs.mjs";
 import { batchStatus } from "../lib/receivables.mjs";
@@ -160,18 +160,22 @@ async function postOpenBatch(page, ctx, batchId) {
   assert.equal(await batchStatus(page), "Posted", "the card's Status reads Posted once the PATCH lands");
 }
 
-/** Sets one Admin -> Billing GL-default `<select>` by ACCESSIBLE NAME (never `getByLabel`, the
- *  HANDOFF §5a trap — every `<select>` on this page is wrapped directly by its own `<label>` text,
- *  which `getByLabel`'s computation pollutes with every option's rendered text; `getByRole`'s own
- *  accessible-name computation does not have this problem) and waits for the PUT this page's
- *  `save()` fires on every `onChange` to resolve before returning, so two selects never race each
+/** Sets one Admin -> Billing GL-default picker (a Combobox since #1056, found by its own
+ *  `aria-label`, the account picked by its id) and waits for the PUT this page's
+ *  `save()` fires on every pick to resolve before returning, so two pickers never race each
  *  other into a serialization conflict on the shared `BillingConfig` singleton row (`setBillingConfig`
  *  runs Serializable with no retry when an FK is being assigned).
  */
 async function setBillingGlAccount(page, ctx, labelText, glAccountId) {
+  // A pick of the account the picker already holds sends nothing (a native select's change, which
+  // Playwright's selectOption fired regardless, now holds to that), and an earlier flow may have set
+  // this one: then there is no PUT to wait for.
+  const picker = page.getByRole("combobox", { name: labelText, exact: true });
+  await picker.waitFor({ state: "visible" });
+  if (await comboboxValue(picker) === glAccountId) return;
   const saved = page.waitForResponse((res) =>
     new URL(res.url()).pathname === "/api/admin/billing" && res.request().method() === "PUT" && res.ok());
-  await page.getByRole("combobox", { name: labelText, exact: true }).selectOption(glAccountId);
+  await pickComboboxValue(page, labelText, glAccountId);
   await saved;
 }
 
@@ -286,7 +290,7 @@ export async function run(page, shot, ctx) {
     .waitFor({ state: "visible", timeout: 15000 });
   await shot("batch-created");
 
-  await page.locator("label", { hasText: "Payer customer" }).locator("select").selectOption(fixtures.closeCustomerId);
+  await pickComboboxValue(page, "Payer customer", fixtures.closeCustomerId);
   await page.locator("label", { hasText: "Payment type" }).locator("select").selectOption(fixtures.closePaymentTypeId);
   await page.getByLabel("Amount", { exact: true }).fill(CHECK_AMOUNT);
   await page.getByLabel("Check #", { exact: true }).fill("E2E-CLOSE-1001");

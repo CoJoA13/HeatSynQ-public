@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 
 /**
- * Drives one of this app's hand-built Combobox components (src/app/orders/new/Combobox.tsx) —
+ * Drives one of this app's hand-built Combobox components (src/components/Combobox.tsx) —
  * the customer and part pickers on order entry/the hub, none of which are a plain `<select>`
  * (spec §11 calls for free-text autocomplete, which a native select can't do). `labelText` locates
  * the combobox's own `<input>` by its `aria-label` (every instance carries one — "Customer",
@@ -24,6 +24,63 @@ export async function pickCombobox(page, labelText, filterText, optionNamePatter
   await input.click();
   await input.fill(filterText);
   await page.getByRole("option", { name: optionNamePattern }).click();
+}
+
+/**
+ * Picks the option holding `value` (its `data-value`) in one of the app's Combobox pickers (#1056),
+ * found by its `aria-label` inside `scope` (the page, or a section locator when one label repeats).
+ * The picker opens on focus showing every option, so nothing is typed: the option is found by the id
+ * a fixture carries, as `selectOption(id)` found a native option. A flow that proves the typing half
+ * uses `pickCombobox`. The option list is looked up under the input's own wrapper, so a second picker
+ * with the same option open elsewhere on the page cannot be clicked instead. Returns the input.
+ */
+export async function pickComboboxValue(scope, labelText, value) {
+  const input = scope.getByLabel(labelText, { exact: true });
+  await input.click();
+  await input.locator("xpath=..").locator(`[role="option"][data-value="${value}"]`).click();
+  return input;
+}
+
+/**
+ * Opens a Combobox picker (`input`, its combobox locator) and picks the one option whose accessible
+ * name matches `name` (a string matches exactly; a RegExp as written), without typing. Returns the
+ * picked option's value, so a caller can assert the id it meant to pick. A name no option holds
+ * times out on the click, as a missing native option did.
+ */
+export async function pickComboboxOption(input, name) {
+  await input.click();
+  const option = input.locator("xpath=..").getByRole("option", typeof name === "string" ? { name, exact: true } : { name });
+  const value = (await option.getAttribute("data-value")) ?? "";
+  await option.click();
+  return value;
+}
+
+/** The value a Combobox picker holds (its input's `data-value`), where `inputValue()` reads the label
+ * it shows: a native select's `inputValue()`, for a picker. */
+export async function comboboxValue(input) {
+  return (await input.getAttribute("data-value")) ?? "";
+}
+
+/** Polls until a Combobox picker holds `expected` (its `data-value`), as `waitForValue` polls a
+ * native select's value. */
+export async function waitForComboboxValue(input, expected, timeoutMs = 10000) {
+  const deadline = Date.now() + timeoutMs;
+  let last;
+  for (;;) {
+    last = await input.getAttribute("data-value").catch(() => undefined);
+    if (last === expected) return;
+    if (Date.now() > deadline) assert.fail(`Timed out waiting for the picker to hold ${JSON.stringify(expected)}; last read ${JSON.stringify(last)}`);
+    await new Promise((r) => { setTimeout(r, 100); });
+  }
+}
+
+/** The option texts a Combobox picker offers, in order: opens it, reads them, and closes it again
+ * (Escape), leaving the cursor in it. */
+export async function comboboxOptionTexts(input) {
+  await input.click();
+  const texts = await input.locator("xpath=..").getByRole("option").allTextContents();
+  await input.press("Escape");
+  return texts;
 }
 
 /**

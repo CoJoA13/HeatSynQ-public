@@ -29,7 +29,9 @@ describe("board presets", () => {
   });
 
   it("names the preset the filters equal, as a set", () => {
-    expect(presetFor(defaultFilters())).toBe("all");
+    // #1057: the board opens on Open orders, so its opening filters light that preset.
+    expect(presetFor(defaultFilters())).toBe("open");
+    expect(presetFor({ ...defaultFilters(), status: [] })).toBe("all");
     expect(presetFor({ ...defaultFilters(), status: ["REOPENED", "OPEN", "PARTIAL_SHIPPED"] })).toBe("open");
     expect(presetFor({ ...defaultFilters(), status: [...OPEN], includeVoided: true })).toBe("open");
     expect(presetFor({ ...defaultFilters(), status: ["OPEN"] })).toBeNull();

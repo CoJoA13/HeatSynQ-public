@@ -82,7 +82,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import { login } from "../lib/auth.mjs";
 import { assertRailReachableOnShortWindow, railHeadings } from "../lib/rail.mjs";
-import { assertNeverVisible, pickCombobox, waitForValue } from "../lib/ui.mjs";
+import { assertNeverVisible, pickCombobox, pickComboboxOption, waitForValue } from "../lib/ui.mjs";
 import { printedImages, printedPages, printedRuns, storedPdf } from "../lib/printed-page.mjs";
 import { pageCount } from "../../tests/helpers/pdf.ts";
 import { openRecordTab } from "../lib/record-tabs.mjs";
@@ -483,7 +483,7 @@ export async function run(page, shot, ctx) {
   await openRecordTab(page, "Preview");
   const recordSelect = page.getByRole("combobox", { name: "Preview record" });
   await recordSelect.waitFor({ state: "visible" });
-  await recordSelect.selectOption({ label: orderLabel });
+  await pickComboboxOption(recordSelect, orderLabel);
 
   // `bodyLabel` reads a field's label override out of a submitted config — the preview's proof is
   // that the config the pane POSTs is the WORKING one, edits and all.
@@ -664,7 +664,7 @@ export async function run(page, shot, ctx) {
   assert.equal(await designOnCanvas.isDisabled(), true, "Design on a canvas waits for an order picked in Preview");
   assert.equal(await designOnCanvas.getAttribute("title"), "Pick an order in Preview first");
   await openRecordTab(page, "Preview");
-  await page.getByRole("combobox", { name: "Preview record" }).selectOption({ label: orderLabel });
+  await pickComboboxOption(page.getByRole("combobox", { name: "Preview record" }), orderLabel);
   await openRecordTab(page, "Sections");
   await designOnCanvas.click();
   const confirm = page.getByRole("dialog");
@@ -895,8 +895,7 @@ export async function run(page, shot, ctx) {
   assert.equal(await designOnCanvas.isDisabled(), true, "Design on a canvas waits for a shipment picked in Preview");
   assert.equal(await designOnCanvas.getAttribute("title"), "Pick a single-order shipment in Preview first");
   await openRecordTab(page, "Preview");
-  await page.getByRole("combobox", { name: "Preview record" })
-    .selectOption({ label: `Shipment #${shipment.shipperNumber} — ${fixtures.customerCode} (1 order)` });
+  await pickComboboxOption(page.getByRole("combobox", { name: "Preview record" }), `Shipment #${shipment.shipperNumber} — ${fixtures.customerCode} (1 order)`);
   await openRecordTab(page, "Sections");
   await designOnCanvas.click();
   await confirm.waitFor({ state: "visible" });
@@ -1073,8 +1072,7 @@ export async function run(page, shot, ctx) {
   assert.equal(await designOnCanvas.isDisabled(), true, "Design on a canvas waits for a shipment picked in Preview");
   assert.equal(await designOnCanvas.getAttribute("title"), "Pick a shipment in Preview first");
   await openRecordTab(page, "Preview");
-  await page.getByRole("combobox", { name: "Preview record" })
-    .selectOption({ label: `Shipment #${shipment.shipperNumber} — ${fixtures.customerCode} (1 order)` });
+  await pickComboboxOption(page.getByRole("combobox", { name: "Preview record" }), `Shipment #${shipment.shipperNumber} — ${fixtures.customerCode} (1 order)`);
   await openRecordTab(page, "Sections");
   await designOnCanvas.click();
   await confirm.waitFor({ state: "visible" });
@@ -1297,8 +1295,7 @@ export async function run(page, shot, ctx) {
   assert.equal(await designOnCanvas.isDisabled(), true, "Design on a canvas waits for a certification picked in Preview");
   assert.equal(await designOnCanvas.getAttribute("title"), "Pick a certification in Preview first");
   await openRecordTab(page, "Preview");
-  await page.getByRole("combobox", { name: "Preview record" })
-    .selectOption({ label: `Cert — order #${orderNumber} — ${fixtures.customerCode} (LOAD)` });
+  await pickComboboxOption(page.getByRole("combobox", { name: "Preview record" }), `Cert — order #${orderNumber} — ${fixtures.customerCode} (LOAD)`);
   await openRecordTab(page, "Sections");
   await designOnCanvas.click();
   await confirm.waitFor({ state: "visible" });
@@ -1512,8 +1509,7 @@ export async function run(page, shot, ctx) {
   assert.equal(await designOnCanvas.isDisabled(), true, "Design on a canvas waits for an invoice or credit picked in Preview");
   assert.equal(await designOnCanvas.getAttribute("title"), "Pick an invoice or credit in Preview first");
   await openRecordTab(page, "Preview");
-  await page.getByRole("combobox", { name: "Preview record" })
-    .selectOption({ label: `Invoice ${invoiceNumber} — ${fixtures.customerCode}` });
+  await pickComboboxOption(page.getByRole("combobox", { name: "Preview record" }), `Invoice ${invoiceNumber} — ${fixtures.customerCode}`);
   await openRecordTab(page, "Sections");
   await designOnCanvas.click();
   await confirm.waitFor({ state: "visible" });
@@ -1769,8 +1765,7 @@ export async function run(page, shot, ctx) {
   const asOfToday = new Date().toLocaleDateString("en-CA");
   await openRecordTab(page, "Preview");
   const previewPanel = page.getByRole("tabpanel", { name: "Preview", exact: true });
-  await previewPanel.getByRole("combobox", { name: "Preview record" })
-    .selectOption({ label: `${fixtures.customerCode} — ${target.name}` });
+  await pickComboboxOption(previewPanel.getByRole("combobox", { name: "Preview record" }), `${fixtures.customerCode} — ${target.name}`);
   const previewAsOf = previewPanel.getByLabel("Statement as-of date", { exact: true });
   await previewAsOf.fill(asOfToday);
   await waitForValue(previewAsOf, asOfToday);
@@ -2042,8 +2037,7 @@ export async function run(page, shot, ctx) {
   assert.equal(await designOnCanvas.isDisabled(), true, "Design on a canvas waits for a quote picked in Preview");
   assert.equal(await designOnCanvas.getAttribute("title"), "Pick a quote in Preview first");
   await openRecordTab(page, "Preview");
-  await page.getByRole("tabpanel", { name: "Preview", exact: true }).getByRole("combobox", { name: "Preview record" })
-    .selectOption({ label: `Quote #${quote.quoteNumber} — ${quote.customerCode} (${quote.status})` });
+  await pickComboboxOption(page.getByRole("tabpanel", { name: "Preview", exact: true }).getByRole("combobox", { name: "Preview record" }), `Quote #${quote.quoteNumber} — ${quote.customerCode} (${quote.status})`);
   await openRecordTab(page, "Sections");
   await designOnCanvas.click();
   await confirm.waitFor({ state: "visible" });

@@ -31,6 +31,7 @@ import {
   BREAK_PRICE, BREAK_THRESHOLD, MINIMUM_CHARGE, QUOTE_EACH_WEIGHT, SETUP_CHARGE, UNIT_PRICE,
   type PriceBox,
 } from "@/lib/price-boxes";
+import { inMenuOrder } from "@/lib/menu-order";
 
 // ---------------------------------------------------------------------------------------------
 // Read-model mirrors (src/server/quotes.ts: QuoteBreakRow/QuotePriceRow/QuoteLineDetail/
@@ -323,7 +324,8 @@ export function materialOptions(
   const options: MaterialChoice[] = [];
   if (typed) options.push({ value: TYPED_MATERIAL, label: `${line.materialText} (typed)` });
   options.push({ value: "", label: "— none —" });
-  for (const m of materials ?? []) {
+  // The materials by name, each digit run by value (#1056 ruling 6).
+  for (const m of inMenuOrder(materials ?? [], (x) => x.name)) {
     if (m.active || m.id === materialId) {
       options.push({ value: m.id, label: m.active ? m.name : `${m.name} (inactive)` });
     }

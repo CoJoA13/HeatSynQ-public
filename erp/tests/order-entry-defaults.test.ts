@@ -102,7 +102,7 @@ describe("New order's resume prompt dates its draft (#669)", () => {
 });
 
 describe("the typeahead pickers keep the highlighted option in view (#665)", () => {
-  for (const [file, id] of [["src/app/orders/new/Combobox.tsx", "activeId"], ["src/app/parts/[id]/ProcessCodeSearch.tsx", "activeOptionId"]] as const) {
+  for (const [file, id] of [["src/components/Combobox.tsx", "activeId"], ["src/app/parts/[id]/ProcessCodeSearch.tsx", "activeOptionId"]] as const) {
     it(`${file} scrolls the list to its active option as it moves, and only while one shows`, () => {
       const source = parse(file);
       const scroll = effect(source, "scrollIntoView");
@@ -118,7 +118,7 @@ describe("the typeahead pickers keep the highlighted option in view (#665)", () 
   }
 
   it("each picker's aria-activedescendant names the same option the effect scrolls to", () => {
-    const combo = jsxTags("src/app/orders/new/Combobox.tsx").filter((t) => t.attr("role") === "combobox");
+    const combo = jsxTags("src/components/Combobox.tsx").filter((t) => t.attr("role") === "combobox");
     const search = jsxTags("src/app/parts/[id]/ProcessCodeSearch.tsx").filter((t) => t.attr("role") === "combobox");
     expect(combo.map((t) => t.attr("aria-activedescendant"))).toEqual(["activeId"]);
     expect(search.map((t) => t.attr("aria-activedescendant"))).toEqual(["activeOptionId"]);

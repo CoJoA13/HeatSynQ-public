@@ -23,7 +23,7 @@ import { serialsScope, unsavedPresentInScope } from "@/lib/unsaved-guard";
 import { useUnsavedSection } from "@/lib/use-unsaved-section";
 import { NET_WEIGHT_LB } from "@/lib/weight-terms";
 import { WeightOfferNote } from "@/components/WeightOfferNote";
-import { Combobox, type ComboboxOption } from "../new/Combobox";
+import { Combobox, type ComboboxOption } from "@/components/Combobox";
 import { computeLineWeight } from "../new/OrderLineCard";
 import {
   QuoteLinkPicker, type EligiblePayload, type QuoteLinkPick,
@@ -32,6 +32,7 @@ import { FieldMark } from "./LineFieldStatus";
 import { PanelMessage } from "@/components/PanelMessage";
 import type { ApplyMutation, OrderLine, OrderMutationResult, PartOption } from "./page";
 import { BUTTON_PRIMARY_COMPACT, CARD, INPUT_COMPACT, LINK } from "@/lib/ui-classes";
+import { partOptions } from "@/lib/menu-options";
 
 function lineLabel(line: OrderLine): string {
   return line.position === 1 ? "Lead" : `Line ${line.position}`;
@@ -620,9 +621,7 @@ export function LinesSection({
   // Inactive parts cannot be added (resolveLineParts refuses them server-side) — riders are
   // otherwise unrestricted regardless of hasProcessSteps (spec §11: only the lead locks a
   // revision), so unlike the entry page's lead picker, no option here is ever disabled.
-  const addOptions: ComboboxOption[] = customerParts
-    .filter((p) => p.active)
-    .map((p) => ({ value: p.id, label: `${p.partNumber} — ${p.name}` }));
+  const addOptions: ComboboxOption[] = partOptions(customerParts.filter((p) => p.active), { separator: " — " });
   const addPart = customerParts.find((p) => p.id === addPartId);
   const computedAddWeight = computeLineWeight(addPart, Number(addQty));
   const displayedAddWeight = addWeightOverride ?? (computedAddWeight !== null ? String(computedAddWeight) : "");

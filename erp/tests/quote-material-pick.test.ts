@@ -28,7 +28,8 @@ describe("materialOptions", () => {
   it("a line holding an inactive material keeps it, labelled `(inactive)`", () => {
     const { value, options } = materialOptions(materials, { materialId: "m-old", materialText: "" });
     expect(value).toBe("m-old");
-    expect(options.map((o) => o.label)).toEqual(["— none —", "4140", "1018 (inactive)", "8620"]);
+    // By name, each digit run by value, the inactive one mixed in (#1056 ruling 6).
+    expect(options.map((o) => o.label)).toEqual(["— none —", "1018 (inactive)", "4140", "8620"]);
   });
 
   it("a line holding a material the list does not hold shows `Unavailable selection`", () => {

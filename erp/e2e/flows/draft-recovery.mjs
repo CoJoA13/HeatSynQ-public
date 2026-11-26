@@ -6,6 +6,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { openOrderTab } from "../lib/orders.mjs";
 import { openInvoicingView } from "../lib/invoicing.mjs";
 import { openRecordTab } from "../lib/record-tabs.mjs";
+import { comboboxValue, pickComboboxOption, pickComboboxValue } from "../lib/ui.mjs";
 
 const section = (page, title) => page.locator("section").filter({ has: page.getByRole("heading", { name: title, exact: true }) });
 const sectionQuery = title => `Array.from(document.querySelectorAll('section')).find(s=>s.querySelector('h2')?.textContent.trim()===${JSON.stringify(title)})`;
@@ -195,10 +196,8 @@ export async function run(page, shot, ctx) {
     await page.getByText("Traveler · editing draft v1", { exact: true }).waitFor({ state: "visible" });
     await openRecordTab(page, "Preview");
     const record = page.getByRole("combobox", { name: "Preview record", exact: true });
-    const option = record.locator("option").filter({ hasText: new RegExp(`^#${f.order.number} — `) });
-    const recordId = await option.getAttribute("value");
+    const recordId = await pickComboboxOption(record, new RegExp(`^#${f.order.number} — `));
     assert.ok(recordId, `the owned order #${f.order.number} is offered in Preview`);
-    await record.selectOption(recordId);
     await openRecordTab(page, "Sections");
     await page.getByRole("button", { name: "Design on a canvas", exact: true }).click();
     const confirm = page.getByRole("dialog");
@@ -325,9 +324,9 @@ export async function run(page, shot, ctx) {
       enter: async () => {
         // The Shipping list also labels its customer filter "Customer"; wait for the new page.
         await page.getByRole("heading", { name: "New shipment", exact: true }).waitFor({ state: "visible" });
-        await page.locator('select[aria-label="Customer"]').selectOption(f.newShipment.customerId);
+        await pickComboboxValue(page, "Customer", f.newShipment.customerId);
         await openOrderTab(page, ORDERS);
-        await page.getByLabel("Add order", { exact: true }).selectOption(f.newShipment.orderId);
+        await pickComboboxValue(page, "Add order", f.newShipment.orderId);
         await page.getByRole("button", { name: "Add order", exact: true }).click();
         await page.getByRole("link", { name: `#${f.newShipment.orderNumber}`, exact: true }).waitFor({ state: "visible" });
         // Adding the order prefills the whole remainder (10 of 10), and a row that finishes its line
@@ -339,14 +338,14 @@ export async function run(page, shot, ctx) {
       beforeRestore: async returned => { assert.deepEqual(returned, newFields.map(input => input.raw)); },
       disabled: disabledQuery(newFields),
       afterRestore: async () => {
-        assert.equal(await page.getByLabel("Customer", { exact: true }).inputValue(), f.newShipment.customerId);
+        assert.equal(await comboboxValue(page.getByLabel("Customer", { exact: true })), f.newShipment.customerId);
         await openOrderTab(page, ORDERS);
         await page.getByRole("link", { name: `#${f.newShipment.orderNumber}`, exact: true }).waitFor({ state: "visible" });
       },
       // #456: this form takes a new seed after a discard, and the panel's Discard is outside the
       // page. The blank form must come back by itself; nothing here clicks the re-check link.
       afterDiscard: async () => {
-        await until(() => observe(`Array.from(document.querySelectorAll('h1')).some(h=>h.textContent.trim()==='New shipment')&&document.querySelector('select[aria-label="Customer"]')?.value===''&&(${labelQuery("Route")})?.value===''`),
+        await until(() => observe(`Array.from(document.querySelectorAll('h1')).some(h=>h.textContent.trim()==='New shipment')&&document.querySelector('input[role="combobox"][aria-label="Customer"]')?.dataset.value===''&&(${labelQuery("Route")})?.value===''`),
           "new-shipment blank form back after the panel's Discard, with no click");
         assert.deepEqual(pageErrors, [], "new-shipment reload after the panel's Discard: page errors");
         assert.deepEqual(consoleErrors, [], "new-shipment reload after the panel's Discard: console errors");

@@ -29,7 +29,9 @@ import { methodOf, namesAMethod, resolveLocalModule } from "./helpers/ts-parse";
 //     ActionMenu item's onSelect) must be HELD, ASKED or KEYED;
 //   - SaveButton's onSave and onDiscard are SAVE;
 //   - a change, blur or key event (onChange, onBlur, onKeyDown and their kin) is out of scope: the
-//     plan's blur-saves and whole-value writes, Enter being the blur's own commit (ruling R7);
+//     plan's blur-saves and whole-value writes, Enter being the blur's own commit (ruling R7). A
+//     Combobox picker's `onSelect` is its select's change (#1056 made the growing record lists
+//     pickers), so it is out of scope too, and its option list is not followed as a click;
 //   - a handler handed to another component is followed ONE hop into that component's file, where
 //     its own trigger is judged the same way, and a `disabled=` that reads a prop is judged by the
 //     parent's attribute for that prop against the parent's half of the path;
@@ -254,6 +256,10 @@ const NOT_CLICKS = new Set([
 /** Components that draw one `<button>` and hand it their own `onClick` and `disabled` (pinned
  *  below): their `onClick` is a click, judged by the `disabled` they are handed. */
 const CLICK_WRAPPERS = new Set(["DangerButton"]);
+/** Pickers whose `onSelect` is a native select's `onChange`: one value picked from a list, a
+ *  whole-value write a second pick of the same value does not send (src/lib/combobox.ts's
+ *  `pickAction`). */
+const CHANGE_PICKERS = new Set(["Combobox"]);
 const ASKS = new Set(["askConfirm", "askReason", "askDiscard", "askPassword"]);
 
 type Verdict = "held" | "asked" | "keyed" | "save" | "not a click" | "unguarded" | "unclassified";
@@ -532,7 +538,9 @@ function judge(path: Path, request: ts.CallExpression, hop = 0, bridgeIn?: Bridg
   const tag = tagName(t.element);
   const attr = t.attr.name.getText();
   const intrinsic = /^[a-z]/.test(tag);
-  if (NOT_CLICKS.has(attr)) return [{ verdict: "not a click", where: where(t.attr), why: `${tag} ${attr}` }];
+  if (NOT_CLICKS.has(attr) || (CHANGE_PICKERS.has(tag) && attr === "onSelect")) {
+    return [{ verdict: "not a click", where: where(t.attr), why: `${tag} ${attr}` }];
+  }
   if (tag === "SaveButton" && (attr === "onSave" || attr === "onDiscard")) {
     return [{ verdict: "save", where: where(t.attr), why: `SaveButton ${attr}` }];
   }
@@ -820,6 +828,8 @@ describe("#720 — the detectors themselves, on sources written to break them", 
       `<SaveButton onSave={save} />`))).toEqual(["save"]);
     expect(verdicts(page(`async function save() { await api("/api/x", { method: "PUT" }); }`,
       `<input onBlur={() => void save()} /><select onChange={save} />`))).toEqual(["not a click", "not a click"]);
+    expect(verdicts(page(`async function save(v) { await api("/api/x", { method: "PUT", body: v }); }`,
+      `<Combobox onSelect={(v) => void save(v)} />`))).toEqual(["not a click"]);
     expect(verdicts(page(`useEffect(() => { void api("/api/x", { method: "POST" }); }, []);`, ``)))
       .toEqual(["unclassified"]);
   });

@@ -19,6 +19,8 @@ import { useDebouncedValue } from "@/lib/use-debounced-value";
 import { EACH_WEIGHT_LB } from "@/lib/weight-terms";
 import { BUTTON_NEUTRAL, BUTTON_PRIMARY, BUTTON_PRIMARY_COMPACT, CARD, CARD_FLUSH, INPUT_COMPACT, LINK, NOTICE, TABLE_CELL, TABLE_HEAD } from "@/lib/ui-classes";
 import { oneShotHold } from "@/lib/single-flight";
+import { Combobox } from "@/components/Combobox";
+import { customerOptions } from "@/lib/menu-options";
 
 // Local row type mirrors only the columns this list renders — id, partNumber, name,
 // customerCode, customerName, materialName, eachWeight, active. Not imported from
@@ -110,7 +112,7 @@ export default function PartsPage() {
 
   // The header's Add part: the row's first open box takes the cursor and nothing is sent. The
   // Customer select is closed without customers.view, and a closed box takes no focus.
-  const customerRef = useRef<HTMLSelectElement>(null);
+  const customerRef = useRef<HTMLInputElement>(null);
   const partNumberRef = useRef<HTMLInputElement>(null);
   function focusNewPart() {
     const box = customerRef.current?.disabled ? partNumberRef.current : customerRef.current;
@@ -195,14 +197,10 @@ export default function PartsPage() {
             ))}
             <tr className="border-t bg-surface-50">
               <td className="p-2">
-                <select ref={customerRef} value={draft.customerId} onChange={(e) => setDraft({ ...draft, customerId: e.target.value })}
-                        disabled={!customersGate.allowed} title={customersGate.allowed ? undefined : customersGate.title}
-                        className={`${INPUT_COMPACT} w-full disabled:cursor-not-allowed disabled:bg-surface-50`}>
-                  <option value="">Customer…</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>{c.code} · {c.name}</option>
-                  ))}
-                </select>
+                <Combobox ref={customerRef} value={draft.customerId} options={customerOptions(customers, { blank: "Customer…" })}
+                          onSelect={(v) => setDraft({ ...draft, customerId: v })}
+                          disabled={!customersGate.allowed} title={customersGate.allowed ? undefined : customersGate.title}
+                          ariaLabel="Customer" className="w-full" />
               </td>
               <td className="p-2">
                 <input ref={partNumberRef} value={draft.partNumber} onChange={(e) => setDraft({ ...draft, partNumber: e.target.value })}
